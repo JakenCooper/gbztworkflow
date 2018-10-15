@@ -19,6 +19,13 @@ public class AppConst {
 
     public static final Boolean STDOUT_SWITCH;
 
+    public static final String METADATA_DEFAULT_HOST;
+    public static final String METADATA_DEFAULT_PORT;
+    public static final String METADATA_DEFAULT_DBNAME;
+    public static final String METADATA_DEFAULT_USERNAME;
+    public static final String METADATA_DEFAULT_USERPWD;
+    public static final String METADATA_DEFAULT_DBTYPE;
+
     static{
         PathMatchingResourcePatternResolver resourceLoader = new PathMatchingResourcePatternResolver();
         Resource configResource = resourceLoader.getResource("classpath:app.properties");
@@ -31,5 +38,12 @@ public class AppConst {
         }
         STDOUT_SWITCH = StringUtils.isBlank(prop.getProperty("app.stdout_switch")) ||
                 prop.getProperty("app.stdout_switch").equals("false") ? false:true;
+        METADATA_DEFAULT_HOST = prop.getProperty("jdbc.buss.default.host");
+        METADATA_DEFAULT_PORT = prop.getProperty("jdbc.buss.default.port");
+        METADATA_DEFAULT_DBNAME = prop.getProperty("jdbc.buss.default.dbName");
+        METADATA_DEFAULT_USERNAME = prop.getProperty("jdbc.buss.default.userName");
+        METADATA_DEFAULT_USERPWD = prop.getProperty("jdbc.buss.default.userPwd");
+        METADATA_DEFAULT_DBTYPE= prop.getProperty("jdbc.buss.default.dbType");
     }
+
 }

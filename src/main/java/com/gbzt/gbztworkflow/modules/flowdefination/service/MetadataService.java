@@ -181,10 +181,13 @@ public class MetadataService extends BaseService {
      * */
     public List<TreeNode> buildTree(String rootName,List<String> nodeNames){
         List<TreeNode> nodes = new ArrayList<TreeNode>();
+        Integer currentId = 1;
         TreeNode rootNode = new TreeNode();
         rootNode.setText(rootName);
+        rootNode.setNodeid(String.valueOf(currentId++));
         for(String nodeName : nodeNames){
             TreeNode node = new TreeNode(nodeName);
+            node.setNodeid(String.valueOf(currentId++));
             rootNode.getNodes().add(node);
         }
         nodes.add(rootNode);
