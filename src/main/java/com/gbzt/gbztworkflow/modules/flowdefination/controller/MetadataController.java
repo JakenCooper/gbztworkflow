@@ -1,10 +1,12 @@
 package com.gbzt.gbztworkflow.modules.flowdefination.controller;
 
 import com.gbzt.gbztworkflow.consts.AppConst;
+import com.gbzt.gbztworkflow.consts.ExecResult;
 import com.gbzt.gbztworkflow.modules.base.BaseController;
 import com.gbzt.gbztworkflow.modules.base.TreeNode;
 import com.gbzt.gbztworkflow.modules.flowdefination.model.FlowMetadata;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.MetadataService;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -37,11 +39,29 @@ public class MetadataController extends BaseController {
 
     @RequestMapping(value="/tables",method = RequestMethod.POST,produces = "application/json;charset=UTF-8")
     public ResponseEntity getTables(@RequestBody  FlowMetadata metadata){
-        List<String> tables = new ArrayList<String>();
-        for(int i = 0;i<50;i++){
+        List<String> emptyTables = new ArrayList<String>();
+        String dbname = metadata.getBussDbName();
+        if(StringUtils.isBlank(dbname)){
+            dbname = "unknown";
+        }
+        ExecResult<FlowMetadata> execResult = metadataService.getTables(metadata);
+        /*for(int i = 0;i<50;i++){
             tables.add("tbl_"+(i+1));
         }
-        List<TreeNode> nodes = metadataService.buildTree("oasysdb_1207",tables);
-        return buildResp(200,nodes);
+        List<TreeNode> nodes = metadataService.buildTree("oasysdb_1207",tables);*/
+        return buildResp(execResult.charge == true ?200:400,execResult.result == null ? metadataService.buildTree(dbname,emptyTables)
+                :metadataService.buildTree(dbname,execResult.result.getDbTables()));
+    }
+
+    @RequestMapping(value="/columns",method = RequestMethod.POST,produces = "application/json;charset=UTF-8")
+    public ResponseEntity getColumns(@RequestBody  FlowMetadata metadata){
+        List<String> emptyColumns = new ArrayList<String>();
+        String bussTableName = metadata.getBussTableName();
+        if(StringUtils.isBlank(bussTableName)){
+            bussTableName = "unknown";
+        }
+        ExecResult<FlowMetadata> execResult = metadataService.getColumnsByTable(metadata);
+        return buildResp(execResult.charge == true ?200:400,execResult.result == null ? metadataService.buildTree(bussTableName,emptyColumns)
+                :metadataService.buildTree(bussTableName,execResult.result.getDbTableColumns()));
     }
 }

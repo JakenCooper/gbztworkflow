@@ -3,7 +3,9 @@ require.config({
     paths:{
         'jquery':['jquery/jquery-3.3.1'],
         'jquery.form':['jquery/jquery.form'],
-        'bootstrap':['bootstrap3/js/bootstrap']
+        'bootstrap':['bootstrap3/js/bootstrap'],
+        'bootstrap-treeview':['bootstrp-treeview/bootstrap-treeview'],
+        'jquery-mloading':['mloading/jquerymloading']
     },
     shim:{
         'jquery.form':{
@@ -11,6 +13,14 @@ require.config({
             exports:'jQuery.fn.form'
         },
         'bootstrap':{
+            deps:'jquery',
+            exports:'$'
+        },
+        'bootstrap-treeview':{
+            deps:['bootstrap','jquery'],
+            exports:'$'
+        },
+        'jquery-mloading':{
             deps:'jQuery',
             exports:'$'
         }

@@ -2,10 +2,12 @@ package com.gbzt.gbztworkflow.modules.flowdefination.service;
 
 import com.gbzt.gbztworkflow.consts.ExecResult;
 import com.gbzt.gbztworkflow.modules.base.BaseService;
+import com.gbzt.gbztworkflow.modules.flowdefination.dao.FlowBussDao;
 import com.gbzt.gbztworkflow.modules.flowdefination.dao.FlowDao;
 import com.gbzt.gbztworkflow.modules.flowdefination.dao.LineDao;
 import com.gbzt.gbztworkflow.modules.flowdefination.dao.NodeDao;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
+import com.gbzt.gbztworkflow.modules.flowdefination.entity.FlowBuss;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Line;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
 import com.gbzt.gbztworkflow.utils.CommonUtils;
@@ -26,6 +28,8 @@ public class DefinationService extends BaseService {
     private NodeDao nodeDao;
     @Autowired
     private LineDao lineDao;
+    @Autowired
+    private FlowBussDao flowBussDao;
 
 
 
@@ -34,10 +38,16 @@ public class DefinationService extends BaseService {
      * */
     @Transactional("jtm")
     public ExecResult saveFlow(Flow flow){
-        if(StringUtils.isBlank(flow.getName())){
+        if(StringUtils.isBlank(flow.getFlowName())){
             return buildResult(false,"流程名称为空",null);
         }
-        if(flowDao.countFlowByName(flow.getName()) > 0){
+        if(StringUtils.isBlank(flow.getBussTableName())){
+            return buildResult(false,"业务表为空",null);
+        }
+        if(flow.getBussColumns() == null || flow.getBussColumns().size() == 0){
+            return buildResult(false,"没有选择业务字段",null);
+        }
+        if(flowDao.countFlowByFlowName(flow.getFlowName()) > 0){
             return buildResult(false,"流程名称重复",null);
         }
         if(StringUtils.isBlank(flow.getId())){
@@ -45,6 +55,16 @@ public class DefinationService extends BaseService {
         }
         flow.genCreateTime();
         flowDao.save(flow);
+        List<FlowBuss> flowBusses = new ArrayList<FlowBuss>();
+        for(String column : flow.getBussColumns()){
+            FlowBuss flowBuss = new FlowBuss();
+            flowBuss.setId(CommonUtils.genUUid());
+            flowBuss.setFlowId(flow.getId());
+            flowBuss.setColumnName(column);
+            flowBuss.genCreateTime();
+            flowBusses.add(flowBuss);
+        }
+        flowBussDao.save(flowBusses);
         return buildResult(true,"保存成功",null);
     }
 

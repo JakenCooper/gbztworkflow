@@ -1,0 +1,64 @@
+body{
+    font-family: Georgia, SimSun, "微软雅黑", serif!important;
+    font-family: Arial, "Microsoft YaHei", "微软雅黑", sans-serif!important;
+}
+table{
+    font-size:0.8rem;
+}
+.block-justify{
+    padding-top:10px;
+    padding-bottom: 10px;
+    padding-left:5px;
+    padding-right:5px
+}
+.vertial-center{
+    vertical-align: middle !important;
+}
+.marginleft-normal{
+    margin-left: 20px;
+}
+.marginright-normal{
+    margin-right: 20px;
+}
+.marginleft-small{
+    margin-left: 10px;
+}
+.inlineblock{
+    display:inline-block;
+}
+.largemodal{
+    width:1500px!important;
+    font-size:1.5rem;
+    height:600px!important;
+    max-height:600px!important;
+}
+
+.mediummodal{
+    width:1000px!important;
+    font-size:1.5rem;
+    height:600px!important;
+    max-height:600px!important;
+}
+
+.overflowy{
+    height:600px!important;
+    max-height:600px!important;
+    overflow-y:auto!important;
+}
+
+.line-maintain{
+    overflow: auto;
+}
+.line-node-ele{
+    vertical-align: middle;!important;
+    line-height: 3rem!important;
+    cursor:pointer!important;
+    padding-left:10px;
+}
+.line-node-ele:hover{
+    background: rgb(223,240,216);
+    cursor:pointer!important;
+}
+.hide{
+    display:none;
+}

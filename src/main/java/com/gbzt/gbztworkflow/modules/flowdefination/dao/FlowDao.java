@@ -7,5 +7,5 @@ import org.springframework.stereotype.Repository;
 
 public interface FlowDao extends JpaRepository<Flow,String>,JpaSpecificationExecutor<Flow> {
 
-    public Integer countFlowByName(String name);
+    public Integer countFlowByFlowName(String name);
 }

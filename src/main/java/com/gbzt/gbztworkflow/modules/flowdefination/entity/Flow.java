@@ -17,7 +17,7 @@ public class Flow extends BaseEntity {
     @Column(name="id")
     private String id;
     @Column(name="name")
-    private String name;
+    private String flowName;
     @Transient
     private List<Node> allNodes = new ArrayList<Node>();
     @Transient
@@ -27,9 +27,12 @@ public class Flow extends BaseEntity {
     @Transient
     //以node的name作为key
     private Map<String,Node> nodeMap = new HashMap<String,Node>();
+
     @Column(name="buss_table")
-    private String bussTable;
+    //user selected table.
+    private String bussTableName;
     @Transient
+    //user selected columns.
     private List<String> bussColumns;
 
     public String getId() {
@@ -40,13 +43,6 @@ public class Flow extends BaseEntity {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
 
     public List<Node> getAllNodes() {
         return allNodes;
@@ -80,12 +76,20 @@ public class Flow extends BaseEntity {
         this.nodeMap = nodeMap;
     }
 
-    public String getBussTable() {
-        return bussTable;
+    public String getFlowName() {
+        return flowName;
     }
 
-    public void setBussTable(String bussTable) {
-        this.bussTable = bussTable;
+    public void setFlowName(String flowName) {
+        this.flowName = flowName;
+    }
+
+    public String getBussTableName() {
+        return bussTableName;
+    }
+
+    public void setBussTableName(String bussTableName) {
+        this.bussTableName = bussTableName;
     }
 
     public List<String> getBussColumns() {

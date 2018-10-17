@@ -186,8 +186,10 @@ public class MetadataService extends BaseService {
         rootNode.setText(rootName);
         rootNode.setNodeid(String.valueOf(currentId++));
         for(String nodeName : nodeNames){
-            TreeNode node = new TreeNode(nodeName);
+            TreeNode node = new TreeNode("&nbsp;&nbsp;&nbsp;"+nodeName);
             node.setNodeid(String.valueOf(currentId++));
+            node.setIcon("glyphicon glyphicon-list-alt");
+            node.setSelectedIcon("glyphicon glyphicon-list-alt");
             rootNode.getNodes().add(node);
         }
         nodes.add(rootNode);
