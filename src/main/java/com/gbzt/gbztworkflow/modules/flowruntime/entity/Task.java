@@ -47,4 +47,6 @@ public class Task {
 
     private Integer priority;
     private boolean emergencyTag;
+
+    //TODO 会签逻辑收回或者退回之后额外表设计方式
 }
