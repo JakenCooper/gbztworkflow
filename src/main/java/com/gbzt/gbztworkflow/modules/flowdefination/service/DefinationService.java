@@ -53,7 +53,7 @@ public class DefinationService extends BaseService {
         if(StringUtils.isBlank(flow.getId())){
             flow.setId(CommonUtils.genUUid());
         }
-        flow.genCreateTime();
+        flow.genBaseVariables();
         flowDao.save(flow);
         List<FlowBuss> flowBusses = new ArrayList<FlowBuss>();
         for(String column : flow.getBussColumns()){
@@ -61,7 +61,7 @@ public class DefinationService extends BaseService {
             flowBuss.setId(CommonUtils.genUUid());
             flowBuss.setFlowId(flow.getId());
             flowBuss.setColumnName(column);
-            flowBuss.genCreateTime();
+            flowBuss.genBaseVariables();
             flowBusses.add(flowBuss);
         }
         flowBussDao.save(flowBusses);
@@ -143,7 +143,7 @@ public class DefinationService extends BaseService {
         if(StringUtils.isBlank(node.getId())){
             node.setId(CommonUtils.genUUid());
         }
-        node.genCreateTime();
+        node.genBaseVariables();
         nodeDao.save(node);
         return buildResult(true,"保存成功",null);
     }
@@ -195,7 +195,7 @@ public class DefinationService extends BaseService {
         if(StringUtils.isBlank(line.getId())){
             line.setId(CommonUtils.genUUid());
         }
-        line.genCreateTime();
+        line.genBaseVariables();
         lineDao.save(line);
         return buildResult(true,"保存成功",null);
     }

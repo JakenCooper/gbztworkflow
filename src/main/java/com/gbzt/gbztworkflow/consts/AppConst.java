@@ -26,6 +26,16 @@ public class AppConst {
     public static final String METADATA_DEFAULT_USERPWD;
     public static final String METADATA_DEFAULT_DBTYPE;
 
+    public static final String FLOWRUNTIME_TASKTYPE_USER = "usertask";
+    public static final String FLOWRUNTIME_TASKTYPE_SYS = "systask";
+    public static final String FLOWRUNTIME_SYSTASK_AUTOFINISH = "auto_finish";
+
+    public static final String FLOWRUNTIME_FINISHTYPE_SINGLE = "single";
+    public static final String FLOWRUNTIME_FINISHTYPE_MULTI = "multi";
+
+    public static final String FLOWRUNTIME_TASK_EXEC_TYPE_BLOCK ="block";
+    public static final String FLOWRUNTIME_TASK_EXEC_TYPE_CONCURRENT ="concurrent";
+
     static{
         PathMatchingResourcePatternResolver resourceLoader = new PathMatchingResourcePatternResolver();
         Resource configResource = resourceLoader.getResource("classpath:app.properties");
@@ -45,5 +55,16 @@ public class AppConst {
         METADATA_DEFAULT_USERPWD = prop.getProperty("jdbc.buss.default.userPwd");
         METADATA_DEFAULT_DBTYPE= prop.getProperty("jdbc.buss.default.dbType");
     }
+
+
+    /**
+     *  type for special "done tasks" fetch
+     * */
+    //support multi department
+    public static final String FLOWRUNTIME_OWNERTYPE_DEPARTMENT = "DEPARTMENT";
+    public static final String FLOWRUNTIME_OWNERTYPE_COMPANY = "COMPANY";
+    public static final String FLOWRUNTIME_OWNER_OPERTYPE_READONLY = "READONLY";
+    public static final String FLOWRUNTIME_OWNER_OPERTYPE_OPERABLE = "OPERABLE";
+    public static final String FLOWRUNTIME_OWNER_OPERTYPE_HIDDEN = "HIDDEN";
 
 }

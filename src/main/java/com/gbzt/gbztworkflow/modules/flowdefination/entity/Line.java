@@ -6,6 +6,7 @@ import com.sun.xml.internal.rngom.parse.host.Base;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.Transient;
 
 @Entity(name="gw_def_line")
 public class Line extends BaseEntity {
@@ -29,9 +30,15 @@ public class Line extends BaseEntity {
     @Column(name="can_retreat")
     @org.hibernate.annotations.Type(type="yes_no")
     private boolean canRetreat;
-    @Column(name="is_exec_single")
-    @org.hibernate.annotations.Type(type="yes_no")
-    private boolean execSingle = true;
+    @Column(name="task_type")
+    private String taskType;
+    @Column(name="finish_type")
+    private String finishType;
+    @Column(name="exec_type")
+    private String execType;
+
+    @Transient
+    private String sysTaskName;
 
     public Line() {
     }
@@ -105,11 +112,35 @@ public class Line extends BaseEntity {
         this.canRetreat = canRetreat;
     }
 
-    public boolean isExecSingle() {
-        return execSingle;
+    public String getTaskType() {
+        return taskType;
     }
 
-    public void setExecSingle(boolean execSingle) {
-        this.execSingle = execSingle;
+    public void setTaskType(String taskType) {
+        this.taskType = taskType;
+    }
+
+    public String getFinishType() {
+        return finishType;
+    }
+
+    public void setFinishType(String finishType) {
+        this.finishType = finishType;
+    }
+
+    public String getExecType() {
+        return execType;
+    }
+
+    public void setExecType(String execType) {
+        this.execType = execType;
+    }
+
+    public String getSysTaskName() {
+        return sysTaskName;
+    }
+
+    public void setSysTaskName(String sysTaskName) {
+        this.sysTaskName = sysTaskName;
     }
 }

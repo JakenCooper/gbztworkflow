@@ -15,6 +15,8 @@ public class Node extends BaseEntity {
     @Id
     @Column(name="id")
     private String id;
+    @Column(name="node_def_id")
+    private String nodeDefId;
     @Column(name="name")
     private String name;
     @Column(name="description")
@@ -127,4 +129,11 @@ public class Node extends BaseEntity {
         this.allNodesInFlow = allNodesInFlow;
     }
 
+    public String getNodeDefId() {
+        return nodeDefId;
+    }
+
+    public void setNodeDefId(String nodeDefId) {
+        this.nodeDefId = nodeDefId;
+    }
 }

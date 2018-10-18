@@ -35,6 +35,70 @@ public class Flow extends BaseEntity {
     //user selected columns.
     private List<String> bussColumns;
 
+    @Column(name="form_key")
+    private String formKey;
+
+    @Column(name="buss_db_type")
+    private String bussDbType;
+    @Column(name="buss_db_host")
+    private String bussDbHost;
+    @Column(name="buss_db_port")
+    private String bussDbPort;
+    @Column(name="buss_db_name")
+    private String bussDbName;
+    @Column(name="buss_db_user_name")
+    private String bussDbUserName;
+    @Column(name="buss_db_user_pwd")
+    private String bussDbUserPwd;
+
+    public String getBussDbType() {
+        return bussDbType;
+    }
+
+    public void setBussDbType(String bussDbType) {
+        this.bussDbType = bussDbType;
+    }
+
+    public String getBussDbHost() {
+        return bussDbHost;
+    }
+
+    public void setBussDbHost(String bussDbHost) {
+        this.bussDbHost = bussDbHost;
+    }
+
+    public String getBussDbPort() {
+        return bussDbPort;
+    }
+
+    public void setBussDbPort(String bussDbPort) {
+        this.bussDbPort = bussDbPort;
+    }
+
+    public String getBussDbName() {
+        return bussDbName;
+    }
+
+    public void setBussDbName(String bussDbName) {
+        this.bussDbName = bussDbName;
+    }
+
+    public String getBussDbUserName() {
+        return bussDbUserName;
+    }
+
+    public void setBussDbUserName(String bussDbUserName) {
+        this.bussDbUserName = bussDbUserName;
+    }
+
+    public String getBussDbUserPwd() {
+        return bussDbUserPwd;
+    }
+
+    public void setBussDbUserPwd(String bussDbUserPwd) {
+        this.bussDbUserPwd = bussDbUserPwd;
+    }
+
     public String getId() {
         return id;
     }
@@ -98,5 +162,13 @@ public class Flow extends BaseEntity {
 
     public void setBussColumns(List<String> bussColumns) {
         this.bussColumns = bussColumns;
+    }
+
+    public String getFormKey() {
+        return formKey;
+    }
+
+    public void setFormKey(String formKey) {
+        this.formKey = formKey;
     }
 }

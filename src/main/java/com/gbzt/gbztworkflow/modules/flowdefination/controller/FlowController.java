@@ -39,7 +39,12 @@ public class FlowController extends BaseController {
 
     @RequestMapping(value="",method = RequestMethod.GET)
     public ResponseEntity<List<Flow>> getAllFlows(HttpServletResponse response){
-        List<Flow> flows = definationService.getAllFlows().result;
+        List<Flow> flows = null;
+        try {
+            flows = definationService.getAllFlows().result;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         if(flows == null || flows.size() == 0){
             flows = new ArrayList<Flow>();
         }

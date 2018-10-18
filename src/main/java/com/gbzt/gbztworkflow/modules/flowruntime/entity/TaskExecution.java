@@ -1,6 +1,24 @@
 package com.gbzt.gbztworkflow.modules.flowruntime.entity;
 
+import java.util.List;
+
 public class TaskExecution {
     private String id;
-    //TODO 历史任务，只存储有效的任务历史，收回退回操作之后对数据进行删除或者更新
+    private String procInstId;
+    private String taskId;
+
+    private String passUser;
+    private String passStr;
+
+    private String assignUser;
+    private List<String> assignUserList;
+
+    private boolean claimTag;
+
+    private String executionType;
+    private String executionOrder;
+
+    private String oper;
+    private String runableType;
+
 }

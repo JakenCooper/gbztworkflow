@@ -14,13 +14,12 @@ public class ProcInst {
     private Date finishTime;
     private Long duration;
 
-    //TODO del_flag del_reason 及其他通用属性
     private String latestTaskId;
     private String latestTaskUser;
 
-    //TODO owner range setting
+    // owner range setting
     private String ownerType;
 
-    //TODO formkey setting
+
     private String formKey;
 }

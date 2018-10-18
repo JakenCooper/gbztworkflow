@@ -10,21 +10,22 @@ public class Task {
     private String flowId;
     private String nodeId;
     private String nodeName;
-    //TODO node def id
     private String nodeDefId;
 
     private String parentTaskId;
 
-    private String finishType; //single or multi
-    private String assignUser;
-    private boolean claimTag;
-    private String claimUser;
-    private List<String> assignUserList;
-    private String owner;
-    private Date assignTime;
-    private Date claimTime;
+    private String finishType; // af,due to pass & [model]
+    private String assignUser; // nf (atten:diff from assignuser in tasks and execs)
+    private boolean claimTag; // nf(sub) and af due to claim
+    private String claimUser; // nf(sub) and af due to claim
+    private List<String> assignUserList; // af
+    private String owner; // af,due to finishuser and owner settings [model]
+    private Date assignTime; //nf
+    private Date claimTime; //nf
+    private String passStr; //af
 
     private boolean finishTag;
+    private String finishUser;
     private Date finishTime;
     private Long duration;
     private String description;
@@ -33,8 +34,9 @@ public class Task {
     private String withdrawDescription;
     private String retreatDescription;
 
-    private String executionType; //block or concurrent
-    private String executionOrder; //if block,order for execution
+    // only useful for "multi" finish type
+    private String executionType; // (block or concurrent) [model]
+    private String executionOrder; // (if block,order for execution or decide every step)
 
     private boolean qcTag;
     private String qcUser;
@@ -48,5 +50,7 @@ public class Task {
     private Integer priority;
     private boolean emergencyTag;
 
-    //TODO 会签逻辑收回或者退回之后额外表设计方式
+    private boolean lock;
+
+
 }
