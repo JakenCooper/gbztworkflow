@@ -15,7 +15,7 @@ public class Task {
     private String parentTaskId;
 
     private String finishType; // af,due to pass & [model]
-    private String assignUser; // nf (atten:diff from assignuser in tasks and execs)
+    private String assignUser; // nf (atten:diff from assignuser in tasks and execs: user in next step or current step)
     private boolean claimTag; // nf(sub) and af due to claim
     private String claimUser; // nf(sub) and af due to claim
     private List<String> assignUserList; // af

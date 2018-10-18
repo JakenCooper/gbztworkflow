@@ -8,6 +8,7 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Transient;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Entity(name="gw_def_node")
@@ -29,6 +30,8 @@ public class Node extends BaseEntity {
     @Column(name="is_end_node")
     @org.hibernate.annotations.Type(type="yes_no")
     private boolean endNode;
+    @Column(name="sort_num")
+    private Integer sortNum;
 
     @Transient
     private List<Line> outLines = new ArrayList<Line>();
@@ -135,5 +138,23 @@ public class Node extends BaseEntity {
 
     public void setNodeDefId(String nodeDefId) {
         this.nodeDefId = nodeDefId;
+    }
+
+    public Integer getSortNum() {
+        return sortNum;
+    }
+
+    public void setSortNum(Integer sortNum) {
+        this.sortNum = sortNum;
+    }
+
+    public static List<Node> sortNodes(List<Node> nodes){
+        nodes.sort(new Comparator<Node>() {
+            @Override
+            public int compare(Node n1, Node n32) {
+                return n1.getSortNum()> n32.getSortNum() ? 1 : -1;
+            }
+        });
+        return nodes;
     }
 }

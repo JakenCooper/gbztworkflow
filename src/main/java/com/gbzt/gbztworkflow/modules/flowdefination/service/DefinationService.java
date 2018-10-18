@@ -10,17 +10,26 @@ import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.FlowBuss;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Line;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
+import com.gbzt.gbztworkflow.modules.test.TestController;
 import com.gbzt.gbztworkflow.utils.CommonUtils;
+import com.gbzt.gbztworkflow.utils.LogUtils;
+import com.gbzt.gbztworkflow.utils.SimpleCache;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class DefinationService extends BaseService {
+
+    private Logger logger = Logger.getLogger(TestController.class);
+    private static String LOGGER_TYPE_PREFIX = "DefinationService,";
 
     @Autowired
     private FlowDao flowDao;
@@ -145,6 +154,7 @@ public class DefinationService extends BaseService {
         }
         node.genBaseVariables();
         nodeDao.save(node);
+        refreshDetailDefination(node.getFlowId());
         return buildResult(true,"保存成功",null);
     }
 
@@ -154,6 +164,7 @@ public class DefinationService extends BaseService {
             return buildResult(false,"id为空，删除失败",null);
         }
         nodeDao.delete(node.getId());
+        refreshDetailDefination(node.getFlowId());
         // TODO del all lines related to this node
         return buildResult(true,"删除成功",null);
     }
@@ -179,6 +190,7 @@ public class DefinationService extends BaseService {
                 lineDao.delete(currentLine);
             }
         }
+        refreshDetailDefination(line.getFlowId());
         return buildResult(true,"删除成功",null);
     }
 
@@ -197,6 +209,7 @@ public class DefinationService extends BaseService {
         }
         line.genBaseVariables();
         lineDao.save(line);
+        refreshDetailDefination(line.getFlowId());
         return buildResult(true,"保存成功",null);
     }
 
@@ -204,4 +217,58 @@ public class DefinationService extends BaseService {
      *
      *  ==================   line related end =================
      * */
+
+    private void refreshDetailDefination(String flowId){
+        String loggerType = LOGGER_TYPE_PREFIX+"refreshDetailDefination";
+        String key = "flow_defination_detail_"+flowId;
+        if(SimpleCache.inCache(key)){
+            SimpleCache.remove(key);
+        }
+    }
+
+    public void generateDetailDefination(String flowId){
+        String loggerType = LOGGER_TYPE_PREFIX+"generateDetailDefination";
+        String key = SimpleCache.CACHE_KEY_PREFIX_FLOW_DETAIL+flowId;
+        if(SimpleCache.inCache(key)){
+            return ;
+        }
+        ExecResult flowExecResult = getFlowById(flowId);
+        if(!flowExecResult.charge){
+            logger.error(LogUtils.getMessage(loggerType,flowExecResult.message));
+            return ;
+        }
+        Flow flowInst = (Flow)flowExecResult.result;
+        List<Node> allFlowNode = nodeDao.findNodeByFlowIdOrderByCreateTimeDesc(flowId);
+        Node.sortNodes(allFlowNode);
+        Map<String,Node> nodeMap = new HashMap<String,Node>();
+        for(Node node : allFlowNode){
+            if(node.isBeginNode()){
+                flowInst.setStartNode(node);
+            }
+            if(node.isEndNode()){
+                flowInst.setEndNode(node);
+            }
+            node.setOutLines(lineDao.findLinesByBeginNodeId(node.getId()));
+            node.setInLines(lineDao.findLinesByEndNodeId(node.getId()));
+            if(node.getOutLines() != null && node.getOutLines().size() > 0){
+                List<String> nextNodesIds = new ArrayList<String>();
+                for(Line line : node.getOutLines()){
+                    nextNodesIds.add(line.getEndNodeId());
+                }
+                node.setNextNodes(Node.sortNodes(nodeDao.findNodesByIdIn(nextNodesIds)));
+            }
+            if(node.getInLines() != null && node.getInLines().size() > 0){
+                List<String> foreNodesIds = new ArrayList<String>();
+                for(Line line : node.getInLines()){
+                    foreNodesIds.add(line.getBeginNodeId());
+                }
+                node.setForeNodes(Node.sortNodes(nodeDao.findNodesByIdIn(foreNodesIds)));
+            }
+            nodeMap.put(node.getName(),node);
+        }
+        flowInst.setAllNodes(allFlowNode);
+        flowInst.setNodeMap(nodeMap);
+
+        SimpleCache.putIntoCache(key,flowInst);
+    }
 }

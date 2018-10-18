@@ -11,6 +11,8 @@ public class SimpleCache {
 
     private static final Map<String,Object> cache;
 
+    public static final String CACHE_KEY_PREFIX_FLOW_DETAIL = "flow_defination_detail_";
+
     static{
         cache = new ConcurrentHashMap<String,Object>();
     }
@@ -33,6 +35,14 @@ public class SimpleCache {
     public static boolean inCache(String key){
         synchronized (SimpleCache.class){
             return cache.containsKey(key);
+        }
+    }
+
+    public static void remove(String key){
+        synchronized (SimpleCache.class){
+            if(cache.containsKey(key)){
+                cache.remove(key);
+            }
         }
     }
 
