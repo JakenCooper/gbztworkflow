@@ -246,6 +246,7 @@ public class DefinationService extends BaseService {
         Node.sortNodes(allFlowNode);
         List<Line> allLines = new ArrayList<Line>();
         Map<String,Node> nodeMap = new HashMap<String,Node>();
+        Map<String,Node> nodeIdMap = new HashMap<String,Node>();
         for(Node node : allFlowNode){
             if(node.isBeginNode()){
                 flowInst.setStartNode(node);
@@ -274,9 +275,11 @@ public class DefinationService extends BaseService {
                 node.setForeNodes(Node.sortNodes(nodeDao.findNodesByIdIn(foreNodesIds)));
             }
             nodeMap.put(node.getName(),node);
+            nodeIdMap.put(node.getId(),node);
         }
         flowInst.setAllNodes(allFlowNode);
         flowInst.setNodeMap(nodeMap);
+        flowInst.setNodeIdMap(nodeIdMap);
 
         flowInst.setAllLines(allLines);
         Map<String,Line> lineMap = new HashMap<String,Line>();

@@ -5,20 +5,32 @@ import java.util.List;
 public class TaskExecution {
     public String id;
     public String flowName;
-    public String procInstId;
 
     public String flowId;
     public String bussId;
     public String formKey;
     public String passStr;
-    public String passUser;
+    public String passUser; // -- common
+
+
+    public String procInstId;
+    public String nodeId;
+    public String nodeDefId;
+    public String assignUser;
+    public List<String> assignUserList;
+    public String taskType;
+
 
 
     public String taskId;
+    public String description;
+    // public String passStr;
+    // public String assignUser;
+    // public String assignUserList;
+    /**special argument*/
+    public boolean completeAtOnce;
 
 
-    public String assignUser;
-    public List<String> assignUserList;
 
     public boolean claimTag;
 
@@ -155,5 +167,29 @@ public class TaskExecution {
 
     public void setRunableType(String runableType) {
         this.runableType = runableType;
+    }
+
+    public String getNodeId() {
+        return nodeId;
+    }
+
+    public void setNodeId(String nodeId) {
+        this.nodeId = nodeId;
+    }
+
+    public String getNodeDefId() {
+        return nodeDefId;
+    }
+
+    public void setNodeDefId(String nodeDefId) {
+        this.nodeDefId = nodeDefId;
+    }
+
+    public String getTaskType() {
+        return taskType;
+    }
+
+    public void setTaskType(String taskType) {
+        this.taskType = taskType;
     }
 }

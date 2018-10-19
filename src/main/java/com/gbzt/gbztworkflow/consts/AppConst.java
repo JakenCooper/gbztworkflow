@@ -54,8 +54,16 @@ public class AppConst {
             System.err.println("资源加载错误，找不到资源文件");
             e.printStackTrace();
         }
-        STDOUT_SWITCH = StringUtils.isBlank(prop.getProperty("app.stdout_switch")) ||
-                prop.getProperty("app.stdout_switch").equals("false") ? false:true;
+        if(StringUtils.isBlank(prop.getProperty("app.stdout_switch"))){
+            STDOUT_SWITCH =  false;
+        }else{
+            if(prop.getProperty("app.stdout_switch").equals("true") ){
+                STDOUT_SWITCH = true;
+            }else{
+                STDOUT_SWITCH = false;
+            }
+        }
+
         METADATA_DEFAULT_HOST = prop.getProperty("jdbc.buss.default.host");
         METADATA_DEFAULT_PORT = prop.getProperty("jdbc.buss.default.port");
         METADATA_DEFAULT_DBNAME = prop.getProperty("jdbc.buss.default.dbName");
@@ -68,6 +76,8 @@ public class AppConst {
 
     public static final String TASK_TEMPLATE_GETNEXTSTEP_SYNC = "TASK_TEMPLATE_GETNEXTSTEP_SYNC";
     public static final String TASK_TEMPLATE_STARTPROC_SYNC = "TASK_TEMPLATE_STARTPROC_SYNC";
+    public static final String TASK_TEMPLATE_CREATETASK_SYNC = "TASK_TEMPLATE_CREATETASK_SYNC";
+    public static final String TASK_TEMPLATE_FINISHTASK_SYNC = "TASK_TEMPLATE_FINISHTASK_SYNC";
 
 
 

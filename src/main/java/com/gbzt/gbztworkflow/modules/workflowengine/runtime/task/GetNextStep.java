@@ -38,17 +38,9 @@ public class GetNextStep extends EngineBaseExecutor {
     }
 
     @Override
-    public EngineTask generateDefaultFtpTask(IEngineArg iarg, Object externalArg) {
-        EngineTask engineTask = new EngineTask();
-        EngineTask templateTask = EngineTaskTemplateFactory.buildEngineTaskByTemplate(TASK_TYPE);
-        try {
-            BeanUtils.copyProperties(engineTask,templateTask);
-        } catch (BeansException e) {
-            e.printStackTrace();
-        }
+    public EngineTask generateDefaultEngineTask(IEngineArg iarg, Object externalArg) {
         GetNextStep.GetNextStepArg arg = (GetNextStep.GetNextStepArg)iarg;
-        engineTask.setArgs(arg);
-        engineTask.setTaskId(CommonUtils.genUUid());
+        EngineTask engineTask = super.generateDefaultEngineTask(TASK_TYPE,arg);
         return engineTask;
     }
 

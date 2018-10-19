@@ -44,17 +44,9 @@ public class StartProc extends EngineBaseExecutor {
     }
 
     @Override
-    public EngineTask generateDefaultFtpTask(IEngineArg iarg, Object externalArg) {
-        EngineTask engineTask = new EngineTask();
-        EngineTask templateTask = EngineTaskTemplateFactory.buildEngineTaskByTemplate(TASK_TYPE);
-        try {
-            BeanUtils.copyProperties(engineTask,templateTask);
-        } catch (BeansException e) {
-            e.printStackTrace();
-        }
+    public EngineTask generateDefaultEngineTask(IEngineArg iarg, Object externalArg) {
         StartProc.StartProcArg arg = (StartProc.StartProcArg)iarg;
-        engineTask.setArgs(arg);
-        engineTask.setTaskId(CommonUtils.genUUid());
+        EngineTask engineTask = super.generateDefaultEngineTask(TASK_TYPE,arg);
         return engineTask;
     }
 
@@ -98,6 +90,8 @@ public class StartProc extends EngineBaseExecutor {
         procInst.setBussTable(arg.flowInst.getBussTableName());
         procInst.setCreateUser(execution.passUser);
         arg.procInstDao.save(procInst);
+
+        //TODO cache oper
 
         if(isNotBlank(execution.passStr)){
 

@@ -27,6 +27,7 @@ public class Flow extends BaseEntity {
     @Transient
     //以node的name作为key
     private Map<String,Node> nodeMap = new HashMap<String,Node>();
+    private Map<String,Node> nodeIdMap = new HashMap<String,Node>();
 
     @Transient
     private List<Line> allLines = new ArrayList<Line>();
@@ -191,5 +192,13 @@ public class Flow extends BaseEntity {
 
     public void setLineMap(Map<String, Line> lineMap) {
         this.lineMap = lineMap;
+    }
+
+    public Map<String, Node> getNodeIdMap() {
+        return nodeIdMap;
+    }
+
+    public void setNodeIdMap(Map<String, Node> nodeIdMap) {
+        this.nodeIdMap = nodeIdMap;
     }
 }

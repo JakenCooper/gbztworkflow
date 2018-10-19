@@ -29,6 +29,10 @@ public class Task extends BaseEntity {
 
     @Column(name="parent_task_id")
     private String parentTaskId;
+    @Transient
+    private Task parentTask;
+    @Transient
+    private List<Task> subTasks;
 
     @Column(name="finish_type")
     private String finishType; // af,due to pass & [model]
@@ -407,5 +411,21 @@ public class Task extends BaseEntity {
 
     public void setLock(boolean lock) {
         this.lock = lock;
+    }
+
+    public Task getParentTask() {
+        return parentTask;
+    }
+
+    public void setParentTask(Task parentTask) {
+        this.parentTask = parentTask;
+    }
+
+    public List<Task> getSubTasks() {
+        return subTasks;
+    }
+
+    public void setSubTasks(List<Task> subTasks) {
+        this.subTasks = subTasks;
     }
 }
