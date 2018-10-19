@@ -28,6 +28,11 @@ public class Flow extends BaseEntity {
     //以node的name作为key
     private Map<String,Node> nodeMap = new HashMap<String,Node>();
 
+    @Transient
+    private List<Line> allLines = new ArrayList<Line>();
+    @Transient
+    private Map<String,Line> lineMap = new HashMap<String,Line>();
+
     @Column(name="buss_table")
     //user selected table.
     private String bussTableName;
@@ -170,5 +175,21 @@ public class Flow extends BaseEntity {
 
     public void setFormKey(String formKey) {
         this.formKey = formKey;
+    }
+
+    public List<Line> getAllLines() {
+        return allLines;
+    }
+
+    public void setAllLines(List<Line> allLines) {
+        this.allLines = allLines;
+    }
+
+    public Map<String, Line> getLineMap() {
+        return lineMap;
+    }
+
+    public void setLineMap(Map<String, Line> lineMap) {
+        this.lineMap = lineMap;
     }
 }

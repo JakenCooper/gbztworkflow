@@ -84,6 +84,10 @@ public class DefinationService extends BaseService {
         return buildResult(true,"",flowDao.findOne(id));
     }
 
+    public Flow getFlowByName(String flowName){
+        return flowDao.findFlowByFlowName(flowName);
+    }
+
     public ExecResult<List<Flow>> getAllFlows(){
         return buildResult(true,"",flowDao.findAll());
     }
@@ -240,6 +244,7 @@ public class DefinationService extends BaseService {
         Flow flowInst = (Flow)flowExecResult.result;
         List<Node> allFlowNode = nodeDao.findNodeByFlowIdOrderByCreateTimeDesc(flowId);
         Node.sortNodes(allFlowNode);
+        List<Line> allLines = new ArrayList<Line>();
         Map<String,Node> nodeMap = new HashMap<String,Node>();
         for(Node node : allFlowNode){
             if(node.isBeginNode()){
@@ -250,6 +255,10 @@ public class DefinationService extends BaseService {
             }
             node.setOutLines(lineDao.findLinesByBeginNodeId(node.getId()));
             node.setInLines(lineDao.findLinesByEndNodeId(node.getId()));
+
+            //insert lines.
+            allLines.addAll(node.getOutLines());
+
             if(node.getOutLines() != null && node.getOutLines().size() > 0){
                 List<String> nextNodesIds = new ArrayList<String>();
                 for(Line line : node.getOutLines()){
@@ -268,6 +277,13 @@ public class DefinationService extends BaseService {
         }
         flowInst.setAllNodes(allFlowNode);
         flowInst.setNodeMap(nodeMap);
+
+        flowInst.setAllLines(allLines);
+        Map<String,Line> lineMap = new HashMap<String,Line>();
+        for(Line line : allLines){
+            lineMap.put(line.getBeginNodeId()+","+line.getEndNodeId(),line);
+        }
+        flowInst.setLineMap(lineMap);
 
         SimpleCache.putIntoCache(key,flowInst);
     }

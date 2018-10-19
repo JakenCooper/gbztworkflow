@@ -4,11 +4,18 @@ import com.gbzt.gbztworkflow.consts.ExecResult;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.BaseModel;
 import com.gbzt.gbztworkflow.utils.CommonUtils;
 import com.gbzt.gbztworkflow.utils.LogUtils;
+import org.apache.log4j.Logger;
 
 public class BaseService {
 
+    private Logger logger ;
+
     protected  <T> ExecResult<T> buildResult(boolean charge, String message, T result){
         return CommonUtils.buildResult(charge,message,result);
+    }
+
+    protected void setLogger(Logger logger){
+        this.logger = logger;
     }
 
     protected final BaseModel buildResult(BaseModel model, Integer level, String logType, String logMessage, Throwable e,

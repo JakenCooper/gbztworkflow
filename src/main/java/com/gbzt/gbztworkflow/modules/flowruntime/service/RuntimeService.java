@@ -8,18 +8,20 @@ import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Line;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationService;
-import com.gbzt.gbztworkflow.modules.flowruntime.entity.Task;
-import com.gbzt.gbztworkflow.modules.flowruntime.model.BaseModel;
+import com.gbzt.gbztworkflow.modules.workflowengine.dao.ProcInstDao;
+import com.gbzt.gbztworkflow.modules.workflowengine.dao.TaskDao;
+import com.gbzt.gbztworkflow.modules.workflowengine.pojo.TaskExecution;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.TaskModel;
-import com.gbzt.gbztworkflow.utils.LogUtils;
+import com.gbzt.gbztworkflow.modules.workflowengine.runtime.entity.EngineTask;
+import com.gbzt.gbztworkflow.modules.workflowengine.runtime.EngineManager;
+import com.gbzt.gbztworkflow.modules.workflowengine.runtime.EngineTaskTemplateFactory;
+import com.gbzt.gbztworkflow.modules.workflowengine.runtime.task.GetNextStep;
 import com.gbzt.gbztworkflow.utils.SimpleCache;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +30,10 @@ public class RuntimeService extends BaseService {
 
     private Logger logger = Logger.getLogger(RuntimeService.class);
     private static final String LOGGER_TYPE_PREFIX = "RuntimeService,";
+
+    public RuntimeService(){
+        super.setLogger(logger);
+    }
 
     @Autowired
     private FlowDao flowDao;
@@ -38,48 +44,34 @@ public class RuntimeService extends BaseService {
     @Autowired
     private DefinationService definationService;
 
+    @Autowired
+    private ProcInstDao procInstDao;
+    @Autowired
+    private TaskDao taskDao;
 
-    private static final String ERROR_RUNTIME_
+
 
     /*
     *  rtn : List<Map> ensensial attrs of nodes
     * */
     public TaskModel fetchNextStep(TaskModel model){
         String loggerType = LOGGER_TYPE_PREFIX+"fetchNextStep";
-        if(StringUtils.isBlank(model.getProcInstId())){
-            Flow flowInst = flowDao.findFlowByFlowName(model.getFlowName());
 
-            definationService.generateDetailDefination(flowInst.getId());
-            flowInst = (Flow)SimpleCache.getFromCache(SimpleCache.CACHE_KEY_PREFIX_FLOW_DETAIL
-                    +flowInst.getId());
+        TaskExecution execution = new TaskExecution();
+        BeanUtils.copyProperties(execution,model);
+        GetNextStep.GetNextStepArg arg = new GetNextStep.GetNextStepArg();
+        arg.execution = execution;
+        arg.definationService = definationService;
 
-            if(flowInst == null){
-                return (TaskModel)buildResult(model,4,loggerType,null,new IllegalArgumentException("get null from cache.."),
-                        false,"server internal error!",null);
-            }
-            Node startNode = flowInst.getStartNode();
-            if(startNode == null){
-                return (TaskModel)buildResult(model,4,loggerType,null,new IllegalArgumentException("no start node ..."),
-                        false,"no start node ...",null);
-            }
-            List<Map<String,String>> result = new ArrayList<Map<String,String>>();
-            if(startNode.getNextNodes() == null || startNode.getNextNodes() .size() == 0){
-                return (TaskModel)buildResult(model,4,loggerType,null,new IllegalArgumentException("no nodes next to start node.."),
-                        false,"no nodes next to start node..",null);
-            }
-            for(Node node : startNode.getNextNodes()){
-                Map<String,String> nodeMap = new HashMap<String,String>();
-                nodeMap.put("nodeId",node.getId());
-                nodeMap.put("nodeDefId",node.getNodeDefId());
-                nodeMap.put("nodeName",node.getName());
-                nodeMap.put("flowId",node.getFlowId());
-                result.add(nodeMap);
-            }
+        EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(GetNextStep.class,arg,null);
+        try {
+            List<Map<String,String>> result = EngineManager.execute(engineTask);
             return (TaskModel) buildResult(model,true,"",result);
-        }else{
-            //TODO fetch due to procinstid
-            return model;
+        } catch (Exception e) {
+            return (TaskModel)buildResult(model,4,loggerType,null,e,
+                    false,e.getMessage(),null);
         }
+
     }
 
 
@@ -111,7 +103,7 @@ public class RuntimeService extends BaseService {
         List<Line> lines = lineDao.findLinesByBeginNodeIdAndEndNodeId(flowInst.getStartNode().getId()
                 ,desNode.getId());
 
-
+        return null;
     }
 
 }

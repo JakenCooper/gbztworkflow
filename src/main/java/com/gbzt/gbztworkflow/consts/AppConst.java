@@ -26,6 +26,14 @@ public class AppConst {
     public static final String METADATA_DEFAULT_USERPWD;
     public static final String METADATA_DEFAULT_DBTYPE;
 
+
+    public static final Integer TASK_EXECUTION_POOL_THREAD_INIT_COUNT = 200;
+    public static final String TASK_EXECUTION_TYPE_SYNC = "TASK_EXECUTION_SYNC";
+    public static final String TASK_EXECUTION_TYPE_ASYNC = "TASK_EXECUTION_ASYNC";
+
+    public static final String TASK_EXECUTION_THREAD_TYPE_SINGLE = "TASK_THREAD_SINGLE";
+    public static final String TASK_EXECUTION_THREAD_TYPE_MULTI = "TASK_THREAD_MULTI";
+
     public static final String FLOWRUNTIME_TASKTYPE_USER = "usertask";
     public static final String FLOWRUNTIME_TASKTYPE_SYS = "systask";
     public static final String FLOWRUNTIME_SYSTASK_AUTOFINISH = "auto_finish";
@@ -55,6 +63,12 @@ public class AppConst {
         METADATA_DEFAULT_USERPWD = prop.getProperty("jdbc.buss.default.userPwd");
         METADATA_DEFAULT_DBTYPE= prop.getProperty("jdbc.buss.default.dbType");
     }
+
+
+
+    public static final String TASK_TEMPLATE_GETNEXTSTEP_SYNC = "TASK_TEMPLATE_GETNEXTSTEP_SYNC";
+    public static final String TASK_TEMPLATE_STARTPROC_SYNC = "TASK_TEMPLATE_STARTPROC_SYNC";
+
 
 
     /**
