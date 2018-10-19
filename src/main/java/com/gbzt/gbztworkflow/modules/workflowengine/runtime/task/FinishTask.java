@@ -64,10 +64,12 @@ public class FinishTask extends EngineBaseExecutor {
         // for next task creation
         Line nextLine = null;
         String nextNodeId = null;
-        if(isNotBlank(passStr)){
-            Flow flowInst = (Flow) SimpleCache.getFromCache(SimpleCache.CACHE_KEY_PREFIX_FLOW_DETAIL
+        Node thisNode = null;
+        Flow flowInst = null;
+        if(isNotBlank(passStr) && isBlank(taskObj.getParentTaskId())){
+            flowInst = (Flow) SimpleCache.getFromCache(SimpleCache.CACHE_KEY_PREFIX_FLOW_DETAIL
                 +taskObj.getFlowId());
-            Node thisNode = flowInst.getNodeIdMap().get(taskObj.getNodeId());
+            thisNode = flowInst.getNodeIdMap().get(taskObj.getNodeId());
             String nextNodeDefId = "audit-"+passStr;
             Node nextNode = null;
             for(Node node : thisNode.getNextNodes()){
@@ -81,26 +83,26 @@ public class FinishTask extends EngineBaseExecutor {
             }
         }
 
+        TaskExecution nextExcution = new TaskExecution();
+        nextExcution.flowId  = taskObj.getFlowId();
+        nextExcution.passUser = execution.passUser;
+        nextExcution.passStr = execution.passStr;
+        nextExcution.procInstId = taskObj.getProcInstId();
+        nextExcution.nodeId = nextNodeId;
+        nextExcution.assignUser = execution.assignUser;
+        nextExcution.assignUserList = execution.assignUserList;
+
+        CreateTask.CreateTaskArg nextArg = new CreateTask.CreateTaskArg();
+        nextArg.execution = nextExcution;
+        nextArg.definationService = arg.definationService;
+        nextArg.taskDao = arg.taskDao;
+        nextArg.lineInst = nextLine;
+
         if(isBlank(taskObj.getParentTaskId())){
             if(isBlank(subTasks)){
                 updateTask(taskObj,arg.taskDao,execution);
 
-                TaskExecution nextExcution = new TaskExecution();
-                nextExcution.flowId  = taskObj.getFlowId();
-                nextExcution.passUser = execution.passUser;
-                nextExcution.passStr = execution.passStr;
-                nextExcution.procInstId = taskObj.getProcInstId();
-                nextExcution.nodeId = nextNodeId;
-                nextExcution.assignUser = execution.assignUser;
-                nextExcution.assignUserList = execution.assignUserList;
-
-                CreateTask.CreateTaskArg nextArg = new CreateTask.CreateTaskArg();
-                nextArg.execution = nextExcution;
-                nextArg.definationService = arg.definationService;
-                nextArg.taskDao = arg.taskDao;
-                nextArg.lineInst = nextLine;
-
-                EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(CreateTask.class,arg,null);
+                EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(CreateTask.class,nextArg,null);
                 try {
                     String result = EngineManager.execute(engineTask);
                     task.setExecutedResult(result);
@@ -112,6 +114,28 @@ public class FinishTask extends EngineBaseExecutor {
                     if(!subTask.isFinishTag()){
                         throw new EngineRuntimeException("at least one sub task not finished..");
                     }
+                }
+                if(isBlank(thisNode.getAssignUser())){
+                    throw new EngineRuntimeException("solid assign user not found");
+                }
+                if(thisNode.getNextNodes() == null || thisNode.getNextNodes().size() == 0){
+                    throw new EngineRuntimeException("solid step not found.");
+                }
+                execution.passUser = taskObj.getAssignUser();
+                updateTask(taskObj,arg.taskDao,execution);
+                nextNodeId = thisNode.getNextNodes().get(0).getId();
+                nextLine = flowInst.getLineMap().get(thisNode.getId()+","+nextNodeId);
+                nextArg.execution.nodeId = nextNodeId;
+                nextArg.lineInst = nextLine;
+                nextArg.execution.assignUser = thisNode.getAssignUser();
+                nextArg.execution.assignUserList = null;
+
+                EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(CreateTask.class,nextArg,null);
+                try {
+                    String result = EngineManager.execute(engineTask);
+                    task.setExecutedResult(result);
+                } catch (Exception e) {
+                    throw e;
                 }
             }
         }else{
@@ -126,7 +150,20 @@ public class FinishTask extends EngineBaseExecutor {
                 }
             }
             if(allFinished){
-
+                Task parentTask = arg.taskDao.findOne(taskObj.getParentTaskId());
+                execution.taskId = parentTask.getId();
+                FinishTask.FinishTaskArg parentArg = new FinishTask.FinishTaskArg();
+                parentArg.execution = execution;
+                parentArg.definationService = arg.definationService;
+                parentArg.taskDao = arg.taskDao;
+                parentArg.procInstDao = arg.procInstDao;
+                EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(FinishTask.class,parentArg,null);
+                try {
+                    String result = EngineManager.execute(engineTask);
+                    task.setExecutedResult(result);
+                } catch (Exception e) {
+                    throw e;
+                }
             }
         }
         return null;

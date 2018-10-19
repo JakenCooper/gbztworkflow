@@ -32,6 +32,8 @@ public class Node extends BaseEntity {
     private boolean endNode;
     @Column(name="sort_num")
     private Integer sortNum;
+    @Column(name="assign_user")fdafdsa
+    private String assignUser;
 
     @Transient
     private List<Line> outLines = new ArrayList<Line>();
@@ -146,6 +148,14 @@ public class Node extends BaseEntity {
 
     public void setSortNum(Integer sortNum) {
         this.sortNum = sortNum;
+    }
+
+    public String getAssignUser() {
+        return assignUser;
+    }
+
+    public void setAssignUser(String assignUser) {
+        this.assignUser = assignUser;
     }
 
     public static List<Node> sortNodes(List<Node> nodes){
