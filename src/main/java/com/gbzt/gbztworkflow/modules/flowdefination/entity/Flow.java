@@ -27,6 +27,7 @@ public class Flow extends BaseEntity {
     @Transient
     //以node的name作为key
     private Map<String,Node> nodeMap = new HashMap<String,Node>();
+    @Transient
     private Map<String,Node> nodeIdMap = new HashMap<String,Node>();
 
     @Transient

@@ -37,12 +37,15 @@ public class FinishTask extends EngineBaseExecutor {
         public TaskExecution execution;
         public ProcInstDao procInstDao;
         public TaskDao taskDao;
+
+        private Map<String,String> argMap;
     }
 
     @Override
     public EngineTask generateDefaultEngineTask(IEngineArg iarg, Object externalArg) {
         FinishTask.FinishTaskArg arg = (FinishTask.FinishTaskArg) iarg;
         EngineTask engineTask = super.generateDefaultEngineTask(TASK_TYPE,arg);
+        ((FinishTaskArg)engineTask.getArgs()).argMap = (Map<String,String>) externalArg;
         return engineTask;
     }
 
@@ -66,21 +69,12 @@ public class FinishTask extends EngineBaseExecutor {
         String nextNodeId = null;
         Node thisNode = null;
         Flow flowInst = null;
+        // only parent task can move on to next task
         if(isNotBlank(passStr) && isBlank(taskObj.getParentTaskId())){
-            flowInst = (Flow) SimpleCache.getFromCache(SimpleCache.CACHE_KEY_PREFIX_FLOW_DETAIL
-                +taskObj.getFlowId());
-            thisNode = flowInst.getNodeIdMap().get(taskObj.getNodeId());
-            String nextNodeDefId = "audit-"+passStr;
-            Node nextNode = null;
-            for(Node node : thisNode.getNextNodes()){
-                if(node.getNodeDefId().equals(nextNodeDefId)){
-                    nextNode = node;
-                }
-            }
-            if(nextNode!=null){
-                nextNodeId = nextNode.getId();
-                nextLine = flowInst.getLineMap().get(thisNode.getId()+","+nextNode.getId());
-            }
+            Object[] resultArr = super.getNextNodeInfo(arg.definationService,execution.flowId,
+                    taskObj.getNodeId(),passStr);
+            nextNodeId = ((Node)resultArr[0]).getId();
+            nextLine = (Line)resultArr[1];
         }
 
         TaskExecution nextExcution = new TaskExecution();

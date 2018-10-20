@@ -15,7 +15,10 @@ import com.gbzt.gbztworkflow.modules.flowruntime.model.TaskModel;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.entity.EngineTask;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.EngineManager;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.EngineTaskTemplateFactory;
+import com.gbzt.gbztworkflow.modules.workflowengine.runtime.task.FinishTask;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.task.GetNextStep;
+import com.gbzt.gbztworkflow.modules.workflowengine.runtime.task.GetUndo;
+import com.gbzt.gbztworkflow.modules.workflowengine.runtime.task.StartProc;
 import com.gbzt.gbztworkflow.utils.SimpleCache;
 import org.apache.log4j.Logger;
 import org.springframework.beans.BeanUtils;
@@ -54,14 +57,15 @@ public class RuntimeService extends BaseService {
     /*
     *  rtn : List<Map> ensensial attrs of nodes
     * */
-    public TaskModel fetchNextStep(TaskModel model){
+    public TaskModel getNextStep(TaskModel model){
         String loggerType = LOGGER_TYPE_PREFIX+"fetchNextStep";
 
         TaskExecution execution = new TaskExecution();
-        BeanUtils.copyProperties(execution,model);
+        BeanUtils.copyProperties(model,execution);
         GetNextStep.GetNextStepArg arg = new GetNextStep.GetNextStepArg();
         arg.execution = execution;
         arg.definationService = definationService;
+        arg.taskDao = taskDao;
 
         EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(GetNextStep.class,arg,null);
         try {
@@ -80,30 +84,74 @@ public class RuntimeService extends BaseService {
      * */
     public TaskModel startProc(TaskModel model){
         String loggerType = LOGGER_TYPE_PREFIX+"startProc";
-        //TODO valid flowid null passStr null passUser null
-        definationService.generateDetailDefination(model.getFlowId());
-        Flow flowInst = (Flow)SimpleCache.getFromCache(SimpleCache.CACHE_KEY_PREFIX_FLOW_DETAIL+model.getFlowId());
-        if(flowInst == null || flowInst.getStartNode() == null || flowInst.getStartNode().getNextNodes().size() == 0){
-            return (TaskModel)buildResult(model,4,loggerType,null
-                    ,new IllegalArgumentException(flowInst.getFlowName()+"no nodes next to start node"),
-                    false,"no nodes next to start node",null);
-        }
-        List<Node> nextNodes = flowInst.getStartNode().getNextNodes();
-        Node desNode = null;
-        for(Node node : nextNodes){
-            if(node.getNodeDefId().equals("audit-"+model.getPassStr())){
-                desNode = node;
-            }
-        }
-        if(desNode == null){
-            return (TaskModel)buildResult(model,4,loggerType,null
-                    ,new IllegalArgumentException(flowInst.getFlowName()+"wrong passStr ..."),
-                    false,"wrong passStr ...",null);
-        }
-        List<Line> lines = lineDao.findLinesByBeginNodeIdAndEndNodeId(flowInst.getStartNode().getId()
-                ,desNode.getId());
 
-        return null;
+        TaskExecution execution = new TaskExecution();
+        BeanUtils.copyProperties(model,execution);
+        StartProc.StartProcArg arg = new StartProc.StartProcArg();
+        arg.execution = execution;
+        arg.definationService = definationService;
+        arg.procInstDao = procInstDao;
+        arg.lineDao = lineDao;
+        arg.taskDao = taskDao;
+
+        EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(StartProc.class,arg,null);
+        try {
+            String result = EngineManager.execute(engineTask);
+            return (TaskModel) buildResult(model,true,"",result);
+        } catch (Exception e) {
+            return (TaskModel)buildResult(model,4,loggerType,null,e,
+                    false,e.getMessage(),null);
+        }
+    }
+
+    /*
+     * rtn : List<Map> ensensial attrs of tasks
+     * */
+    public TaskModel finishTask(TaskModel model){
+        String loggerType = LOGGER_TYPE_PREFIX+"finishTask";
+
+        TaskExecution execution = new TaskExecution();
+        BeanUtils.copyProperties(model,execution);
+        FinishTask.FinishTaskArg arg = new FinishTask.FinishTaskArg();
+        arg.execution = execution;
+        arg.definationService = definationService;
+        arg.procInstDao = procInstDao;
+        arg.taskDao = taskDao;
+
+        EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(FinishTask.class,arg,model.getArgMap());
+        try {
+            String result = EngineManager.execute(engineTask);
+            return (TaskModel) buildResult(model,true,"",result);
+        } catch (Exception e) {
+            return (TaskModel)buildResult(model,4,loggerType,null,e,
+                    false,e.getMessage(),null);
+        }
+    }
+
+
+    /*
+     *  rtn : List<Map> ensensial attrs of tasks
+     * */
+    public TaskModel getUndo(TaskModel model){
+        String loggerType = LOGGER_TYPE_PREFIX+"getUndo";
+
+        TaskExecution execution = new TaskExecution();
+        BeanUtils.copyProperties(model,execution);
+        GetUndo.GetUndoArg arg = new GetUndo.GetUndoArg();
+        arg.execution = execution;
+        arg.taskDao = taskDao;
+        arg.taskModel = model;
+
+        EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(GetUndo.class,arg,null);
+        try {
+           TaskModel result = EngineManager.execute(engineTask);
+           //return result directly;
+           return result;
+        } catch (Exception e) {
+            return (TaskModel)buildResult(model,4,loggerType,null,e,
+                    false,e.getMessage(),null);
+        }
+
     }
 
 }

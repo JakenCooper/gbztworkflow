@@ -78,6 +78,7 @@ public class AppConst {
     public static final String TASK_TEMPLATE_STARTPROC_SYNC = "TASK_TEMPLATE_STARTPROC_SYNC";
     public static final String TASK_TEMPLATE_CREATETASK_SYNC = "TASK_TEMPLATE_CREATETASK_SYNC";
     public static final String TASK_TEMPLATE_FINISHTASK_SYNC = "TASK_TEMPLATE_FINISHTASK_SYNC";
+    public static final String TASK_TEMPLATE_GETUNDO_SYNC = "TASK_TEMPLATE_GETUNDO_SYNC";
 
 
 

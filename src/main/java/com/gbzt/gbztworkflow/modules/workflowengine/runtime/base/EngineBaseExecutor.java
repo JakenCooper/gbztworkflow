@@ -1,6 +1,7 @@
 package com.gbzt.gbztworkflow.modules.workflowengine.runtime.base;
 
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
+import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationService;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.EngineTaskTemplateFactory;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.entity.EngineTask;
@@ -37,7 +38,7 @@ public abstract  class EngineBaseExecutor implements EngineExecutable,EngineCall
         EngineTask engineTask = new EngineTask();
         EngineTask templateTask = EngineTaskTemplateFactory.buildEngineTaskByTemplate(taskType);
         try {
-            BeanUtils.copyProperties(engineTask,templateTask);
+            BeanUtils.copyProperties(templateTask,engineTask);
         } catch (BeansException e) {
             e.printStackTrace();
         }
@@ -53,6 +54,29 @@ public abstract  class EngineBaseExecutor implements EngineExecutable,EngineCall
         return  (Flow)SimpleCache.getFromCache(SimpleCache.CACHE_KEY_PREFIX_FLOW_DETAIL+flowId);
     }
 
+    // return :Object[node,line]
+    protected final Object[] getNextNodeInfo(DefinationService definationService,String flowId,
+                                             String thisNodeId,String passStr){
+        Object[] resultArr = new Object[2];
+        Flow flowInst = getFlowComplete(definationService,flowId);
+        Node thisNode = flowInst.getNodeIdMap().get(thisNodeId);
+        String nextNodeDefId = "audit-"+passStr;
+        Node nextNode = null;
+        for(Node node : thisNode.getNextNodes()){
+            if(node.getNodeDefId().equals(nextNodeDefId)){
+                nextNode = node;
+            }
+        }
+        if(nextNode!=null){
+            resultArr[0] = nextNode;
+            resultArr[1] = flowInst.getLineMap().get(thisNodeId+","+nextNode.getId());
+        }
+        return resultArr;
+    }
+
+
+
+    /** utils*/
     protected final boolean isBlank(String target){
         return StringUtils.isBlank(target)?true:false;
     }

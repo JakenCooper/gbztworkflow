@@ -8,6 +8,7 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Transient;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
@@ -31,8 +32,8 @@ public class Node extends BaseEntity {
     @org.hibernate.annotations.Type(type="yes_no")
     private boolean endNode;
     @Column(name="sort_num")
-    private Integer sortNum;
-    @Column(name="assign_user")fdafdsa
+    private Integer sortNum =1;
+    @Column(name="assign_user")
     private String assignUser;
 
     @Transient
@@ -159,12 +160,13 @@ public class Node extends BaseEntity {
     }
 
     public static List<Node> sortNodes(List<Node> nodes){
-        nodes.sort(new Comparator<Node>() {
+        Collections.sort(nodes,new Comparator<Node>() {
             @Override
-            public int compare(Node n1, Node n32) {
-                return n1.getSortNum()> n32.getSortNum() ? 1 : -1;
+            public int compare(Node n1, Node n2) {
+                return n1.getSortNum()> n2.getSortNum() ? 1 : -1;
             }
         });
         return nodes;
     }
+
 }

@@ -51,7 +51,7 @@ public class CreateTask extends EngineBaseExecutor {
     public void preHandleTask(EngineTask task) throws EngineAccessException {
         CreateTask.CreateTaskArg arg = (CreateTask.CreateTaskArg)task.getArgs();
         TaskExecution execution = arg.execution;
-        if(isBlank(execution.flowId) || isBlank(execution.procInstId) || arg.lineInst == null){
+        if(isBlank(execution.flowId) || isBlank(execution.procInstId)){
             throw new EngineAccessException("not enough arguments");
         }
         if(isBlank(execution.nodeDefId) && isBlank(execution.nodeId)){
@@ -69,6 +69,7 @@ public class CreateTask extends EngineBaseExecutor {
         TaskExecution execution = arg.execution;
         Task taskObj = new Task();
         List<Task> subTasks = new ArrayList<Task>();
+        taskObj.setId(CommonUtils.genUUid());
         taskObj.genBaseVariables();
         taskObj.setCreateUser(execution.passUser);
         taskObj.setProcInstId(execution.procInstId);
@@ -90,8 +91,13 @@ public class CreateTask extends EngineBaseExecutor {
         taskObj.setPassStr(execution.nodeDefId.split("-")[1]);
 
         Line lineInst = arg.lineInst;
-        taskObj.setFinishType(lineInst.getFinishType());
-        taskObj.setTaskType(lineInst.getTaskType());
+        if(lineInst != null) {
+            taskObj.setFinishType(lineInst.getFinishType());
+            taskObj.setTaskType(lineInst.getTaskType());
+        }else{
+            taskObj.setFinishType(AppConst.FLOWRUNTIME_FINISHTYPE_SINGLE);
+            taskObj.setTaskType(AppConst.FLOWRUNTIME_TASKTYPE_USER);
+        }
 
         taskObj.setExecutionType(execution.executionType);
         taskObj.setExecutionOrder(execution.executionOrder);
@@ -100,10 +106,11 @@ public class CreateTask extends EngineBaseExecutor {
             taskObj.setAssignUser(execution.assignUser);
             taskObj.setAssignTime(new Date());
             taskObj.setOwner(execution.assignUser);
-        }else{
-            for(String subUser : execution.assignUserList){
+        }
+        if(isNotBlank(execution.assignUserList)) {
+            for (String subUser : execution.assignUserList) {
                 Task subTask = new Task();
-                BeanUtils.copyProperties(subTask,taskObj);
+                BeanUtils.copyProperties(taskObj, subTask);
                 subTask.setId(CommonUtils.genUUid());
                 subTask.setAssignUser(subUser);
                 subTask.setOwner(subUser);

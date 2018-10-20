@@ -12,6 +12,7 @@ import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineAccessExcept
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineRuntimeException;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.ProcInst;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.TaskExecution;
+import com.gbzt.gbztworkflow.modules.workflowengine.runtime.EngineManager;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.EngineTaskTemplateFactory;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.EngineBaseExecutor;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.IEngineArg;
@@ -84,6 +85,7 @@ public class StartProc extends EngineBaseExecutor {
         StartProc.StartProcArg arg = (StartProc.StartProcArg)task.getArgs();
         TaskExecution execution = arg.execution;
         ProcInst procInst = new ProcInst();
+        procInst.setId(CommonUtils.genUUid());
         procInst.genBaseVariables();
         procInst.setFlowId(execution.flowId);
         procInst.setBussId(execution.bussId);
@@ -91,9 +93,49 @@ public class StartProc extends EngineBaseExecutor {
         procInst.setCreateUser(execution.passUser);
         arg.procInstDao.save(procInst);
 
+        Flow flowInst = super.getFlowComplete(arg.definationService,execution.flowId);
         //TODO cache oper
 
         if(isNotBlank(execution.passStr)){
+            TaskExecution nextExcution = new TaskExecution();
+            nextExcution.flowId  = execution.flowId;
+            nextExcution.passUser = execution.passUser;
+            nextExcution.passStr = execution.passStr;
+
+            nextExcution.procInstId = procInst.getId();
+            nextExcution.nodeDefId = flowInst.getStartNode().getNodeDefId();
+            nextExcution.assignUser = execution.passUser;
+
+            CreateTask.CreateTaskArg nextArg = new CreateTask.CreateTaskArg();
+            nextArg.execution = nextExcution;
+            nextArg.definationService = arg.definationService;
+            nextArg.taskDao = arg.taskDao;
+
+            String taskId = null;
+            EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(CreateTask.class,nextArg,null);
+            try {
+                taskId = EngineManager.execute(engineTask);
+            } catch (Exception e) {
+                throw e;
+            }
+
+            nextExcution.passStr = execution.passStr;
+            nextExcution.taskId = taskId;
+            nextExcution.assignUser = execution.assignUser;
+            nextExcution.assignUserList = execution.assignUserList;
+
+            FinishTask.FinishTaskArg finishTaskArg = new FinishTask.FinishTaskArg();
+            finishTaskArg.execution = nextExcution;
+            finishTaskArg.definationService = arg.definationService;
+            finishTaskArg.taskDao = arg.taskDao;
+            finishTaskArg.procInstDao = arg.procInstDao;
+
+            EngineTask  finishTask = EngineTaskTemplateFactory.buildEngineTask(FinishTask.class,finishTaskArg,null);
+            try {
+                taskId = EngineManager.execute(finishTask);
+            } catch (Exception e) {
+                throw e;
+            }
 
         }
         task.setExecutedResult(procInst.getId());

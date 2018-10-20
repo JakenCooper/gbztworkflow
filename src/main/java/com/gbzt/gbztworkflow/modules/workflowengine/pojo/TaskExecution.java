@@ -5,6 +5,7 @@ import java.util.List;
 public class TaskExecution {
     public String id;
     public String flowName;
+    //public String taskId;
 
     public String flowId;
     public String bussId;
@@ -31,6 +32,11 @@ public class TaskExecution {
     public boolean completeAtOnce;
 
 
+    //public String passUser;
+    public Integer pageNum;
+    public Integer pageSize;
+    public Integer totalPage;
+
 
     public boolean claimTag;
 
@@ -39,6 +45,7 @@ public class TaskExecution {
 
     public String oper;
     public String runableType;
+
 
 
     public String getBussId() {
@@ -191,5 +198,45 @@ public class TaskExecution {
 
     public void setTaskType(String taskType) {
         this.taskType = taskType;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public boolean isCompleteAtOnce() {
+        return completeAtOnce;
+    }
+
+    public void setCompleteAtOnce(boolean completeAtOnce) {
+        this.completeAtOnce = completeAtOnce;
+    }
+
+    public Integer getPageNum() {
+        return pageNum;
+    }
+
+    public void setPageNum(Integer pageNum) {
+        this.pageNum = pageNum;
+    }
+
+    public Integer getPageSize() {
+        return pageSize;
+    }
+
+    public void setPageSize(Integer pageSize) {
+        this.pageSize = pageSize;
+    }
+
+    public Integer getTotalPage() {
+        return totalPage;
+    }
+
+    public void setTotalPage(Integer totalPage) {
+        this.totalPage = totalPage;
     }
 }
