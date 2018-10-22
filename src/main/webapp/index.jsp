@@ -55,6 +55,7 @@
             //buss method ...
             $('button:contains("页面编辑器")').click(function(e){
                 alert(window.currentflowid);
+                window.open("${ctx}/formDesign/get?id="+window.currentflowid);
             });
         });
     </script>

@@ -10,6 +10,9 @@ create table gw_def_flow(
 	buss_db_user_pwd varchar(100),
 	buss_table varchar(200),
 	form_key varchar(500),
+	module_name varchar(200),
+	module_name_cn varchar(200),
+	module_root_path varchar(400),
 	create_user varchar(40),
 	create_time datetime,
 	update_user varchar(40),
@@ -191,3 +194,8 @@ alter table gw_def_flow add buss_db_user_pwd varchar(100);
 
 /**20181020*/
 update gw_def_node set sort_num = 1 ;
+
+/**20181022*/
+alter table gw_def_flow add module_name varchar(200);
+alter table gw_def_flow add module_name_cn varchar(200);
+alter table gw_def_flow add module_root_path varchar(400);

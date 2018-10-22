@@ -58,6 +58,13 @@ public class Flow extends BaseEntity {
     @Column(name="buss_db_user_pwd")
     private String bussDbUserPwd;
 
+    @Column(name="module_name")
+    private String  moduleName;
+    @Column(name="module_name_cn")
+    private String moduleNameCn;
+    @Column(name="module_root_path")
+    private String moduleRootPath;
+
     public String getBussDbType() {
         return bussDbType;
     }
@@ -201,5 +208,29 @@ public class Flow extends BaseEntity {
 
     public void setNodeIdMap(Map<String, Node> nodeIdMap) {
         this.nodeIdMap = nodeIdMap;
+    }
+
+    public String getModuleName() {
+        return moduleName;
+    }
+
+    public void setModuleName(String moduleName) {
+        this.moduleName = moduleName;
+    }
+
+    public String getModuleNameCn() {
+        return moduleNameCn;
+    }
+
+    public void setModuleNameCn(String moduleNameCn) {
+        this.moduleNameCn = moduleNameCn;
+    }
+
+    public String getModuleRootPath() {
+        return moduleRootPath;
+    }
+
+    public void setModuleRootPath(String moduleRootPath) {
+        this.moduleRootPath = moduleRootPath;
     }
 }

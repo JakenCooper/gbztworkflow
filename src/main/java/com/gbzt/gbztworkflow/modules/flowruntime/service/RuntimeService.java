@@ -28,8 +28,8 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 
-@Service
-public class RuntimeService extends BaseService {
+@Service(value="runtimeService")
+public class RuntimeService extends BaseService implements  IRuntimeService  {
 
     private Logger logger = Logger.getLogger(RuntimeService.class);
     private static final String LOGGER_TYPE_PREFIX = "RuntimeService,";
@@ -145,7 +145,7 @@ public class RuntimeService extends BaseService {
         EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(GetUndo.class,arg,null);
         try {
            TaskModel result = EngineManager.execute(engineTask);
-           //return result directly;
+           //return result directly,result already setted in executor;
            return result;
         } catch (Exception e) {
             return (TaskModel)buildResult(model,4,loggerType,null,e,

@@ -1,6 +1,10 @@
 package com.gbzt.gbztworkflow.consts;
 
-public class ExecResult<T> {
+import java.io.Serializable;
+
+public class ExecResult<T> implements Serializable {
+
+    private static final long serialVersionUID = -8129066765358809843L;
 
     public final boolean charge;
 

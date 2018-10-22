@@ -11,9 +11,11 @@ import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.*;
+import org.springframework.web.servlet.handler.SimpleUrlHandlerMapping;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 
 import java.util.List;
+import java.util.Properties;
 
 @Configuration
 @EnableWebMvc
@@ -35,6 +37,16 @@ public class WebConfig extends WebMvcConfigurerAdapter {
         //irv.setSuffix(".html");
         irv.setContentType("UTF-8");
         return irv;
+    }
+
+    @Bean
+    public SimpleUrlHandlerMapping getSimpleUrlHandlerMapping(){
+        SimpleUrlHandlerMapping mapping = new SimpleUrlHandlerMapping();
+        mapping.setOrder(Integer.MAX_VALUE -2 );
+        Properties prop = new Properties();
+        prop.setProperty("/flowservice","flowService");
+        mapping.setMappings(prop);
+        return mapping;
     }
 
     @Override

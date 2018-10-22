@@ -1,10 +1,13 @@
 package com.gbzt.gbztworkflow.modules.flowruntime.model;
 
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class TaskModel extends BaseModel{
+public class TaskModel extends BaseModel implements Serializable {
+
+    private static final long serialVersionUID = -1136458177034784424L;
 
     private static final Set<String> allowdOperSet = new HashSet<String>();
 

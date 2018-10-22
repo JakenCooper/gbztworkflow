@@ -77,6 +77,12 @@ public class DefinationService extends BaseService {
         return buildResult(true,"保存成功",null);
     }
 
+    @Transactional("jtm")
+    public void updateFlowName(String flowName,String flowId){
+        int result = flowDao.updateFlow(flowName,flowId);
+        System.out.println(result);
+    }
+
     public ExecResult<Flow> getFlowById(String id){
         if(StringUtils.isBlank(id)){
             return buildResult(false,"查询id为空",null);

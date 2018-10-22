@@ -1,12 +1,13 @@
 package com.gbzt.gbztworkflow.modules.flowruntime.model;
 
 import com.gbzt.gbztworkflow.consts.ExecResult;
-import com.gbzt.gbztworkflow.utils.CommonUtils;
-import com.gbzt.gbztworkflow.utils.LogUtils;
 
+import java.io.Serializable;
 import java.util.Map;
 
-public abstract class BaseModel {
+public abstract class BaseModel implements Serializable {
+
+    private static final long serialVersionUID = -8393847382917284424L;
 
     protected String passStr;
     protected String passUser;

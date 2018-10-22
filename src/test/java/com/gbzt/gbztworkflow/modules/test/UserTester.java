@@ -2,6 +2,7 @@ package com.gbzt.gbztworkflow.modules.test;
 
 import com.gbzt.gbztworkflow.config.RootConfig;
 import com.gbzt.gbztworkflow.consts.AppConst;
+import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,9 @@ import static org.junit.Assert.*;
 public class UserTester {
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private DefinationService definationService;
 
     @Test
     public void adduser(){
@@ -37,5 +41,11 @@ public class UserTester {
     @Test
     public void showconst(){
         System.out.println(AppConst.STDOUT_SWITCH);
+    }
+
+
+    @Test
+    public void updateFlow(){
+        definationService.updateFlowName("hhhhhhhhhh","e64686b8-c1b9-40fa-af67-3a6f4860eb0c");
     }
 }
