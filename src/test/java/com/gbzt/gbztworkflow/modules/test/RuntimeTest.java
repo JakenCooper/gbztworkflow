@@ -2,6 +2,7 @@ package com.gbzt.gbztworkflow.modules.test;
 
 import com.gbzt.gbztworkflow.config.RootConfig;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.TaskModel;
+import com.gbzt.gbztworkflow.modules.flowruntime.model.UserTreeInfo;
 import com.gbzt.gbztworkflow.modules.flowruntime.service.RuntimeService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -52,5 +53,14 @@ public class RuntimeTest {
         undoModel.setPassUser("wangluohao");
         undoModel = runtimeService.getUndo(undoModel);
         System.out.println(undoModel.getExecResult().result);
+    }
+
+    @Test
+    public void getusernodeprivdata(){
+        TaskModel privmodel = new TaskModel();
+        privmodel.setFlowId("c469b5d2-9baf-4912-b637-9c7b9fd25fa4");
+        privmodel.setNodeId("306ae55e-af4f-44d6-acbf-cd948dd59759");
+        privmodel = runtimeService.getUserNodeData(privmodel);
+        System.out.println(privmodel.getExecResult().result);
     }
 }

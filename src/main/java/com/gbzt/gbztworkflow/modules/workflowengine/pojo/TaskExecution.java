@@ -4,16 +4,18 @@ import java.util.List;
 
 public class TaskExecution {
     public String id;
+    // [nextstep]
     public String flowName;
     //public String taskId;
 
+    //[startproc]
     public String flowId;
     public String bussId;
     public String formKey;
     public String passStr;
     public String passUser; // -- common
 
-
+    //[createtask]
     public String procInstId;
     public String nodeId;
     public String nodeDefId;
@@ -22,7 +24,7 @@ public class TaskExecution {
     public String taskType;
 
 
-
+    //[finishtask]
     public String taskId;
     public String description;
     // public String passStr;
@@ -31,12 +33,15 @@ public class TaskExecution {
     /**special argument*/
     public boolean completeAtOnce;
 
-
+    //[getundo]
     //public String passUser;
     public Integer pageNum;
     public Integer pageSize;
     public Integer totalPage;
 
+
+    //[getnodeuserdata]
+    // public String nodeId;
 
     public boolean claimTag;
 

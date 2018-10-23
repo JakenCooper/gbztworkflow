@@ -1,15 +1,19 @@
-package com.gbzt.gbztworkflow.modules.flowdefination.entity;
+package com.gbzt.gbztworkflow.modules.flowruntime.model;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class UserTreeInfo {
+public class UserTreeInfo implements Serializable {
+   private static final long serialVersionUID = -7371016558713584797L;
    private String id;
    private String parentId;
    private String name;
    private String value;
+   private String nodeType;
    private boolean open=false;
-   private boolean checked=false;
+   private boolean checked;
+
 
     public boolean isChecked() {
         return checked;
@@ -94,5 +98,13 @@ public class UserTreeInfo {
 
     public void setValue(String value) {
         this.value = value;
+    }
+
+    public String getNodeType() {
+        return nodeType;
+    }
+
+    public void setNodeType(String nodeType) {
+        this.nodeType = nodeType;
     }
 }

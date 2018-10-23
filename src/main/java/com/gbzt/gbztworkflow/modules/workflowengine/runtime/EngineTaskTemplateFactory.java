@@ -53,6 +53,13 @@ public class EngineTaskTemplateFactory {
                 GetUndo.class,GetUndo.class);
         templateMap.put(getUndoTaskTemplate.getTemplateName(),getUndoTaskTemplate);
 
+        EngineTaskTemplate  getUserNodeDataTaskTemplate= new EngineTaskTemplate(AppConst.TASK_TEMPLATE_GETUSERNODEDTA_SYNC);
+        getUserNodeDataTaskTemplate.fullfillTemplateInfo("[ 查询节点用户数据 ]",
+                AppConst.TASK_EXECUTION_TYPE_SYNC,
+                AppConst.TASK_EXECUTION_THREAD_TYPE_SINGLE,
+                GetUserNodeData.class,GetUserNodeData.class);
+        templateMap.put(getUserNodeDataTaskTemplate.getTemplateName(),getUserNodeDataTaskTemplate);
+
 
     }
 

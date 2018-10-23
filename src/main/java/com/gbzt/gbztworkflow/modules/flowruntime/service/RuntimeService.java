@@ -4,10 +4,9 @@ import com.gbzt.gbztworkflow.modules.base.BaseService;
 import com.gbzt.gbztworkflow.modules.flowdefination.dao.FlowDao;
 import com.gbzt.gbztworkflow.modules.flowdefination.dao.LineDao;
 import com.gbzt.gbztworkflow.modules.flowdefination.dao.NodeDao;
-import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
-import com.gbzt.gbztworkflow.modules.flowdefination.entity.Line;
-import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationService;
+import com.gbzt.gbztworkflow.modules.flowdefination.service.UserNodePrivService;
+import com.gbzt.gbztworkflow.modules.flowruntime.model.UserTreeInfo;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.ProcInstDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.TaskDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.TaskExecution;
@@ -15,15 +14,12 @@ import com.gbzt.gbztworkflow.modules.flowruntime.model.TaskModel;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.entity.EngineTask;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.EngineManager;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.EngineTaskTemplateFactory;
-import com.gbzt.gbztworkflow.modules.workflowengine.runtime.task.FinishTask;
-import com.gbzt.gbztworkflow.modules.workflowengine.runtime.task.GetNextStep;
-import com.gbzt.gbztworkflow.modules.workflowengine.runtime.task.GetUndo;
-import com.gbzt.gbztworkflow.modules.workflowengine.runtime.task.StartProc;
-import com.gbzt.gbztworkflow.utils.SimpleCache;
+import com.gbzt.gbztworkflow.modules.workflowengine.runtime.task.*;
 import org.apache.log4j.Logger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -46,6 +42,8 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
     private LineDao lineDao;
     @Autowired
     private DefinationService definationService;
+    @Autowired
+    private UserNodePrivService nodeUserPrivService;
 
     @Autowired
     private ProcInstDao procInstDao;
@@ -82,6 +80,7 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
     /*
      * rtn : procInstId
      * */
+    @Transactional("jtm")
     public TaskModel startProc(TaskModel model){
         String loggerType = LOGGER_TYPE_PREFIX+"startProc";
 
@@ -107,6 +106,7 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
     /*
      * rtn : List<Map> ensensial attrs of tasks
      * */
+    @Transactional("jtm")
     public TaskModel finishTask(TaskModel model){
         String loggerType = LOGGER_TYPE_PREFIX+"finishTask";
 
@@ -132,6 +132,7 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
     /*
      *  rtn : List<Map> ensensial attrs of tasks
      * */
+    @Transactional("jtm")
     public TaskModel getUndo(TaskModel model){
         String loggerType = LOGGER_TYPE_PREFIX+"getUndo";
 
@@ -147,6 +148,32 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
            TaskModel result = EngineManager.execute(engineTask);
            //return result directly,result already setted in executor;
            return result;
+        } catch (Exception e) {
+            return (TaskModel)buildResult(model,4,loggerType,null,e,
+                    false,e.getMessage(),null);
+        }
+
+    }
+
+
+
+    /*
+     *  rtn : List<UserTreeInfo>
+     * */
+    @Transactional("jtm")
+    public TaskModel getUserNodeData(TaskModel model){
+        String loggerType = LOGGER_TYPE_PREFIX+"getUserNodeData";
+
+        TaskExecution execution = new TaskExecution();
+        BeanUtils.copyProperties(model,execution);
+        GetUserNodeData.GetUserNodeDataArg arg = new GetUserNodeData.GetUserNodeDataArg();
+        arg.execution = execution;
+        arg.userNodePrivService = nodeUserPrivService;
+
+        EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(GetUserNodeData.class,arg,null);
+        try {
+            List<UserTreeInfo> result = EngineManager.execute(engineTask);
+            return (TaskModel) buildResult(model,true,"",result);
         } catch (Exception e) {
             return (TaskModel)buildResult(model,4,loggerType,null,e,
                     false,e.getMessage(),null);

@@ -23,4 +23,9 @@ public interface IRuntimeService {
      *  rtn : List<Map> ensensial attrs of tasks
      * */
     public TaskModel getUndo(TaskModel model);
+
+    /*
+     *  rtn : List<UserTreeInfo>
+     * */
+    public TaskModel getUserNodeData(TaskModel model);
 }

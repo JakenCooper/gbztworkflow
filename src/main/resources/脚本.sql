@@ -149,6 +149,22 @@ create table gw_run_task(
 	remark varchar(500)
 );
 
+drop table if exists gw_def_user_node_priv;
+create table gw_def_user_node_priv(
+  id varchar(36),
+  node_id varchar(36),
+  login_name varchar(100),
+  flow_id varchar(36),
+  node_type varchar(30),
+  create_user varchar(40),
+	create_time datetime,
+	update_user varchar(40),
+	update_time datetime,
+	del_tag char(1),
+	del_reason varchar(500),
+	remark varchar(500)
+);
+
 /* 1018 增量修改*/
 alter table gw_def_flow add create_user varchar(40);
 alter table gw_def_flow add update_user varchar(40);

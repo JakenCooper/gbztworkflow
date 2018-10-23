@@ -70,6 +70,7 @@ public class GetUndo extends EngineBaseExecutor {
                     Predicate belongtoPassUser = criteriaBuilder.equal(root.get("assignUser").as(String.class),execution.passUser);
                     Predicate notFinished = criteriaBuilder.notEqual(root.get("finishTag").as(Boolean.class),false);
                     predicates.add(belongtoPassUser);
+                    predicates.add(notFinished);
                 }
                 return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
             }
