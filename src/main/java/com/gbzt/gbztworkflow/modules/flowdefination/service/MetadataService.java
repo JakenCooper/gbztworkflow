@@ -28,7 +28,7 @@ public class MetadataService extends BaseService {
     private Logger logger = Logger.getLogger(MetadataService.class);
     private static String LOGGER_TYPE_PREFIX = "MetadataService,";
 
-    private Connection getConnection(String driver,String url,String userName,String password){
+    protected Connection getConnection(String driver,String url,String userName,String password){
         try {
             Class.forName(driver);
             return DriverManager.getConnection(url,userName,password);
@@ -38,7 +38,7 @@ public class MetadataService extends BaseService {
         }
     }
 
-    private void closeConnection(Connection connection){
+    protected void closeConnection(Connection connection){
         if(connection == null){
             return ;
         }
