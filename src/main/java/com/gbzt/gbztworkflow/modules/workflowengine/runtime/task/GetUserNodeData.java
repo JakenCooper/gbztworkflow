@@ -10,6 +10,7 @@ import com.gbzt.gbztworkflow.modules.workflowengine.pojo.TaskExecution;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.EngineBaseExecutor;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.IEngineArg;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.entity.EngineTask;
+import com.gbzt.gbztworkflow.utils.SimpleCache;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
@@ -46,6 +47,12 @@ public class GetUserNodeData extends EngineBaseExecutor {
     public String executeEngineTask(EngineTask task) throws EngineRuntimeException {
         GetUserNodeData.GetUserNodeDataArg  arg = (GetUserNodeData.GetUserNodeDataArg)task.getArgs();
         TaskExecution execution = arg.execution;
+        List<UserTreeInfo> cacheinfos = (List<UserTreeInfo>)SimpleCache.getFromCache(SimpleCache.CACHE_KEY_PREFIX_USER_NODE_PRIV
+                +execution.nodeId);
+        if(isNotBlank(cacheinfos)){
+            task.setExecutedResult(cacheinfos);
+            return "success";
+        }
         UserNodePriv userNodePriv = new UserNodePriv();
         userNodePriv.setFlowId(execution.flowId);
         userNodePriv.setNodeId(execution.nodeId);
@@ -54,8 +61,6 @@ public class GetUserNodeData extends EngineBaseExecutor {
             task.setExecutedResult(new ArrayList<UserTreeInfo>());
             return "success";
         }
-        fdafds
-        // TODO cache.
         // use nodeType of first node as nodeType of root node.
         userNodePriv.setNodeType(privindb.get(0).getNodeType());
         // construct loginNames and use  this list to filter users.

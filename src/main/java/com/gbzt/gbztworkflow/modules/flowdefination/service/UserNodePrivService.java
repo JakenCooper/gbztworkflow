@@ -8,6 +8,7 @@ import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.UserNodePriv;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.UserTreeInfo;
 import com.gbzt.gbztworkflow.utils.CommonUtils;
+import com.gbzt.gbztworkflow.utils.SimpleCache;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.PropertySource;
@@ -233,6 +234,12 @@ public class UserNodePrivService extends MetadataService {
             privs.add(priv);
         }
         userNodePrivDao.save(privs);
+        List<UserTreeInfo> infos = getAllUserInfo(userNodePriv);
+        if(infos != null && infos.size() > 0){
+            SimpleCache.putIntoCache(SimpleCache.CACHE_KEY_PREFIX_USER_NODE_PRIV+userNodePriv.getNodeId(),
+                    infos);
+        }
+
         return buildResult(true,"","success");
     }
 

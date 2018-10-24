@@ -11,7 +11,10 @@ public class SimpleCache {
 
     private static final Map<String,Object> cache;
 
+    /** seperation: flowid*/
     public static final String CACHE_KEY_PREFIX_FLOW_DETAIL = "flow_defination_detail_";
+    /** seperation: nodeid*/
+    public static final String CACHE_KEY_PREFIX_USER_NODE_PRIV="user_node_priv_";
 
     static{
         cache = new ConcurrentHashMap<String,Object>();

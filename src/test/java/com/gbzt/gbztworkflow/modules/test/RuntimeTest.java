@@ -58,8 +58,10 @@ public class RuntimeTest {
     @Test
     public void getusernodeprivdata(){
         TaskModel privmodel = new TaskModel();
-        privmodel.setFlowId("c469b5d2-9baf-4912-b637-9c7b9fd25fa4");
-        privmodel.setNodeId("306ae55e-af4f-44d6-acbf-cd948dd59759");
+//        privmodel.setFlowId("c469b5d2-9baf-4912-b637-9c7b9fd25fa4");
+//        privmodel.setNodeId("306ae55e-af4f-44d6-acbf-cd948dd59759");
+        privmodel.setFlowId("b77c3fa1-a23e-46ee-9e61-0381137bd9d8");
+        privmodel.setNodeId("9312d016-5cf7-410f-8aea-b29e478bad0b");
         privmodel = runtimeService.getUserNodeData(privmodel);
         System.out.println(privmodel.getExecResult().result);
     }

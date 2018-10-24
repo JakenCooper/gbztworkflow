@@ -160,7 +160,6 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
     /*
      *  rtn : List<UserTreeInfo>
      * */
-    @Transactional("jtm")
     public TaskModel getUserNodeData(TaskModel model){
         String loggerType = LOGGER_TYPE_PREFIX+"getUserNodeData";
 

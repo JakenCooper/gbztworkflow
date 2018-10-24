@@ -25,6 +25,7 @@ public class TaskModel extends BaseModel implements Serializable {
     private String procInstId;
     private String nodeId;
     private String nodeDefId;
+    private String nodeName;
     private String taskType;
 
     private String taskId;
@@ -34,6 +35,13 @@ public class TaskModel extends BaseModel implements Serializable {
     private String executionType;
     private String executionOrder;
 
+    public String getNodeName() {
+        return nodeName;
+    }
+
+    public void setNodeName(String nodeName) {
+        this.nodeName = nodeName;
+    }
 
     public String getFlowId() {
         return flowId;
