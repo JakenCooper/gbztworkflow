@@ -8,19 +8,23 @@ import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationService;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.TaskModel;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.ProcInstDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.TaskDao;
+import com.gbzt.gbztworkflow.modules.workflowengine.dao.TaskVariableDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineAccessException;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineRuntimeException;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.Task;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.TaskExecution;
+import com.gbzt.gbztworkflow.modules.workflowengine.pojo.TaskVariables;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.EngineManager;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.EngineTaskTemplateFactory;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.EngineBaseExecutor;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.IEngineArg;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.entity.EngineTask;
+import com.gbzt.gbztworkflow.utils.CommonUtils;
 import com.gbzt.gbztworkflow.utils.SimpleCache;
 import org.apache.log4j.Logger;
 import org.springframework.beans.BeanUtils;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -37,14 +41,17 @@ public class FinishTask extends EngineBaseExecutor {
         public TaskExecution execution;
         public ProcInstDao procInstDao;
         public TaskDao taskDao;
+        public TaskVariableDao taskVariableDao;
 
         private Map<String,String> argMap;
+        private Flow flowInst;
     }
 
     @Override
     public EngineTask generateDefaultEngineTask(IEngineArg iarg, Object externalArg) {
         FinishTask.FinishTaskArg arg = (FinishTask.FinishTaskArg) iarg;
         EngineTask engineTask = super.generateDefaultEngineTask(TASK_TYPE,arg);
+        // function repeatable.
         ((FinishTaskArg)engineTask.getArgs()).argMap = (Map<String,String>) externalArg;
         return engineTask;
     }
@@ -67,8 +74,9 @@ public class FinishTask extends EngineBaseExecutor {
         // for next task creation
         Line nextLine = null;
         String nextNodeId = null;
-        Node thisNode = null;
-        Flow flowInst = null;
+        Node thisNode = arg.definationService.getNodeByIdSimple(taskObj.getNodeId());
+        Flow flowInst = super.getFlowComplete(arg.definationService,taskObj.getFlowId());
+        arg.flowInst = flowInst;
         // only parent task can move on to next task
         if(isNotBlank(passStr) && isBlank(taskObj.getParentTaskId())){
             Object[] resultArr = super.getNextNodeInfo(arg.definationService,execution.flowId,
@@ -95,8 +103,8 @@ public class FinishTask extends EngineBaseExecutor {
 
         if(isBlank(taskObj.getParentTaskId())){
             if(isBlank(subTasks)){
-                //TODO vars map for task insertion.
                 updateTask(taskObj,arg.taskDao,execution);
+                addVariables(arg);
 
                 EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(CreateTask.class,nextArg,null);
                 try {
@@ -137,6 +145,7 @@ public class FinishTask extends EngineBaseExecutor {
         }else{
             //TODO consider finishType -
             updateTask(taskObj,arg.taskDao,execution);
+            addVariables(arg);
             List<Task> finalSubTasks = arg.taskDao.findTasksByParentTaskId(taskId);
             boolean allFinished = true;
             for(Task finalTask : finalSubTasks){
@@ -172,6 +181,38 @@ public class FinishTask extends EngineBaseExecutor {
         taskObj.setDuration(new Date().getTime()-taskObj.getCreateTime().getTime());
         taskObj.setDescription(execution.description);
         taskDao.save(taskObj);
+    }
+
+    private void addVariables(FinishTask.FinishTaskArg arg){
+        TaskExecution execution = arg.execution;
+        if(execution.getArgMap() != null  && execution.getArgMap().keySet().size() > 0){
+            Map<String,String> argMap = execution.getArgMap();
+            List<TaskVariables> variables = new ArrayList<TaskVariables>();
+            for(String argKey : argMap.keySet()) {
+                String argValue = argMap.get(argKey);
+                String realKey = null;
+                String varType = null;
+                if (argKey.startsWith(TaskVariables.VARS_TYPE_PROC)) {
+                    realKey = argKey.substring(argKey.indexOf(TaskVariables.VARS_TYPE_PROC) + 5, argKey.length());
+                    varType = "proc";
+                } else if (argKey.startsWith(TaskVariables.VARS_TYPE_TASK)) {
+                    realKey = argKey.substring(argKey.indexOf(TaskVariables.VARS_TYPE_TASK) + 5, argKey.length());
+                    varType = "task";
+                }else{
+                    continue;
+                }
+                TaskVariables taskVariables = new TaskVariables();
+                taskVariables.setId(CommonUtils.genUUid());
+                taskVariables.setNodeId(execution.nodeId);
+                taskVariables.setProcInstId(execution.procInstId);
+                taskVariables.setTaskId(execution.taskId);
+                taskVariables.setKey(realKey);
+                taskVariables.setValue(argValue);
+                taskVariables.setType(varType);
+                variables.add(taskVariables);
+            }
+            arg.taskVariableDao.save(variables);
+        }
     }
 
     @Override

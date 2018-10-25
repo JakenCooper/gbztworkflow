@@ -154,11 +154,29 @@ create table gw_run_task(
 
 drop table if exists gw_def_user_node_priv;
 create table gw_def_user_node_priv(
-  id varchar(36),
+  id varchar(36) primary key,
   node_id varchar(36),
   login_name varchar(100),
   flow_id varchar(36),
   node_type varchar(30),
+  create_user varchar(40),
+	create_time datetime,
+	update_user varchar(40),
+	update_time datetime,
+	del_tag char(1),
+	del_reason varchar(500),
+	remark varchar(500)
+);
+
+drop table if exists gw_run_variables;
+create table gw_run_variables(
+  id varchar(36) primary key,
+  node_id varchar(36),
+  task_id varchar(36),
+  proc_inst_id varchar(36),
+  var_key varchar(300),
+  var_value varchar(300),
+  var_type varchar(30),
   create_user varchar(40),
 	create_time datetime,
 	update_user varchar(40),

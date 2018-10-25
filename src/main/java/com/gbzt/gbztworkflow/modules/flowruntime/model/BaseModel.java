@@ -25,6 +25,7 @@ public abstract class BaseModel implements Serializable {
     protected Integer pageNum;
     protected Integer pageSize;
     protected Integer totalPage;
+    protected Long totalCount;
 
     protected ExecResult execResult;
     protected String token;
@@ -141,5 +142,13 @@ public abstract class BaseModel implements Serializable {
 
     public void setFormKey(String formKey) {
         this.formKey = formKey;
+    }
+
+    public Long getTotalCount() {
+        return totalCount;
+    }
+
+    public void setTotalCount(Long totalCount) {
+        this.totalCount = totalCount;
     }
 }

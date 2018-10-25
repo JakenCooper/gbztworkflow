@@ -122,6 +122,10 @@ public class DefinationService extends BaseService {
         return buildResult(true,"",nodeDao.findNodeByFlowIdOrderByCreateTimeDesc(flowId));
     }
 
+    public Node getNodeByIdSimple(String nodeId){
+        return nodeDao.findOne(nodeId);
+    }
+
     public ExecResult<Node> getNodeById(String nodeId){
         if(StringUtils.isBlank(nodeId)){
             return buildResult(false,"节点id为空",null);

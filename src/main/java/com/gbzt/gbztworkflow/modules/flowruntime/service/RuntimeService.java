@@ -9,6 +9,7 @@ import com.gbzt.gbztworkflow.modules.flowdefination.service.UserNodePrivService;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.UserTreeInfo;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.ProcInstDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.TaskDao;
+import com.gbzt.gbztworkflow.modules.workflowengine.dao.TaskVariableDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.TaskExecution;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.TaskModel;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.entity.EngineTask;
@@ -49,6 +50,8 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
     private ProcInstDao procInstDao;
     @Autowired
     private TaskDao taskDao;
+    @Autowired
+    private TaskVariableDao taskVariableDao;
 
 
 
@@ -119,6 +122,7 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
         arg.definationService = definationService;
         arg.procInstDao = procInstDao;
         arg.taskDao = taskDao;
+        arg.taskVariableDao = taskVariableDao;
 
         EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(FinishTask.class,arg,model.getArgMap());
         try {

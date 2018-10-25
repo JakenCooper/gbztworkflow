@@ -85,7 +85,9 @@ public class GetUndo extends EngineBaseExecutor {
         arg.taskModel.setTotalPage(pageResult.getTotalPages());;
         arg.taskModel.setPageNum(pageNum+1);
         arg.taskModel.setPageSize(pageSize);
+        arg.taskModel.setTotalCount(pageResult.getTotalElements());
         for(Task resultTask : pageResult.getContent()){
+            // TODO fetch variables for proc and task
             Map<String,Object> resultMap = new HashMap<String,Object>();
             resultMap.put("taskId",resultTask.getId());
             resultMap.put("flowId",resultTask.getFlowId());
