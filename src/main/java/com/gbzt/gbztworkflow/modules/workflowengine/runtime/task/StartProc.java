@@ -91,6 +91,7 @@ public class StartProc extends EngineBaseExecutor {
         procInst.setBussId(execution.bussId);
         procInst.setBussTable(arg.flowInst.getBussTableName());
         procInst.setCreateUser(execution.passUser);
+        procInst.setFormKey(arg.flowInst.getFormKey());
         arg.procInstDao.save(procInst);
 
         Flow flowInst = super.getFlowComplete(arg.definationService,execution.flowId);
@@ -110,6 +111,7 @@ public class StartProc extends EngineBaseExecutor {
             nextArg.execution = nextExcution;
             nextArg.definationService = arg.definationService;
             nextArg.taskDao = arg.taskDao;
+            nextArg.procInstDao = arg.procInstDao;
 
             String taskId = null;
             EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(CreateTask.class,nextArg,null);

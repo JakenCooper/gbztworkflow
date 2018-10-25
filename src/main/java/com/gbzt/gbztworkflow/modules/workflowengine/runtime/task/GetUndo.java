@@ -59,18 +59,22 @@ public class GetUndo extends EngineBaseExecutor {
     public String executeEngineTask(EngineTask task) throws EngineRuntimeException {
         GetUndo.GetUndoArg arg =(GetUndo.GetUndoArg)task.getArgs();
         final TaskExecution execution = arg.execution;
-        Integer pageNum = execution.pageNum == null?0:execution.pageNum-1;
-        Integer pageSize = execution.pageSize == null?10:execution.pageNum;
+        Integer pageNum = execution.pageNum == null || execution.pageNum <= 0 ?0:execution.pageNum-1;
+        Integer pageSize = execution.pageSize == null || execution.pageSize <= 0?10:execution.pageNum;
         Sort sort = new Sort(Sort.Direction.DESC,"createTime");
         Specification<Task> specification = new Specification<Task>() {
             @Override
             public Predicate toPredicate(Root<Task> root, CriteriaQuery<?> criteriaQuery, CriteriaBuilder criteriaBuilder) {
                 List<Predicate> predicates = new ArrayList<Predicate>();
-                if(StringUtils.isNotBlank(execution.passUser)){
+                Predicate notFinished = criteriaBuilder.notEqual(root.get("finishTag").as(Boolean.class),false);
+                predicates.add(notFinished);
+                if(isNotBlank(execution.passUser)){
                     Predicate belongtoPassUser = criteriaBuilder.equal(root.get("assignUser").as(String.class),execution.passUser);
-                    Predicate notFinished = criteriaBuilder.notEqual(root.get("finishTag").as(Boolean.class),false);
                     predicates.add(belongtoPassUser);
-                    predicates.add(notFinished);
+                }
+                if(isNotBlank(execution.procInstId)){
+                    Predicate belongtoprocinst = criteriaBuilder.equal(root.get("procInstId").as(String.class),execution.procInstId);
+                    predicates.add(belongtoprocinst);
                 }
                 return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
             }
@@ -83,11 +87,14 @@ public class GetUndo extends EngineBaseExecutor {
         arg.taskModel.setPageSize(pageSize);
         for(Task resultTask : pageResult.getContent()){
             Map<String,Object> resultMap = new HashMap<String,Object>();
+            resultMap.put("taskId",resultTask.getId());
             resultMap.put("flowId",resultTask.getFlowId());
             resultMap.put("assignUser",resultTask.getAssignUser());
             resultMap.put("procInstId",resultTask.getProcInstId());
             resultMap.put("nodeId",resultTask.getNodeId());
             resultMap.put("nodeDefId",resultTask.getNodeDefId());
+            resultMap.put("bussId",resultTask.getBussId());
+            resultMap.put("bussTable",resultTask.getBussTable());
             resultList.add(resultMap);
         }
         arg.taskModel.setExecResult(CommonUtils.buildResult(true,"",resultList));

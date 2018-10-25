@@ -12,6 +12,7 @@ public abstract class BaseModel implements Serializable {
     protected String passStr;
     protected String passUser;
     protected String bussId;
+    protected String bussTable;
     protected String formKey;
     protected String flowId;
 
@@ -29,7 +30,13 @@ public abstract class BaseModel implements Serializable {
     protected String token;
 
 
+    public String getBussTable() {
+        return bussTable;
+    }
 
+    public void setBussTable(String bussTable) {
+        this.bussTable = bussTable;
+    }
 
     public String getPassUser() {
         return passUser;

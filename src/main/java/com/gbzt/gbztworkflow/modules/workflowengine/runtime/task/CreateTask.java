@@ -5,6 +5,7 @@ import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Line;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationService;
+import com.gbzt.gbztworkflow.modules.workflowengine.dao.ProcInstDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.TaskDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineAccessException;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineRuntimeException;
@@ -32,6 +33,7 @@ public class CreateTask extends EngineBaseExecutor {
         private String[] requiredArg = new String[]{"flowId","procInstId","nodeDefId","assignUser","passUser"};
         public DefinationService definationService;
         public TaskDao taskDao;
+        public ProcInstDao procInstDao;
         public TaskExecution execution;
         public Line lineInst;
 
@@ -74,8 +76,9 @@ public class CreateTask extends EngineBaseExecutor {
         taskObj.setCreateUser(execution.passUser);
         taskObj.setProcInstId(execution.procInstId);
         taskObj.setFlowId(execution.flowId);
+        ProcInst procInst = arg.procInstDao.findOne(execution.procInstId);
+        Flow flowInst = super.getFlowComplete(arg.definationService,execution.flowId);
         if(isBlank(execution.nodeId) || isBlank(execution.nodeDefId)){
-            Flow flowInst = super.getFlowComplete(arg.definationService,execution.flowId);
             if(isBlank(execution.nodeId)){
                 for(Node node : flowInst.getAllNodes()){
                     if(node.getNodeDefId().equals(execution.nodeDefId)){
@@ -89,6 +92,8 @@ public class CreateTask extends EngineBaseExecutor {
         taskObj.setNodeId(execution.nodeId);
         taskObj.setNodeDefId(execution.nodeDefId);
         taskObj.setPassStr(execution.nodeDefId.split("-")[1]);
+        taskObj.setBussId(procInst.getBussId());
+        taskObj.setBussTable(procInst.getBussTable());
 
         Line lineInst = arg.lineInst;
         if(lineInst != null) {
@@ -123,8 +128,11 @@ public class CreateTask extends EngineBaseExecutor {
                 subTasks.add(subTask);
             }
         }
+        if(subTasks.size() > 0){
+            taskObj.setChildTaskTag(true);
+        }
         arg.taskDao.save(taskObj);
-        if(subTasks.size()>0){
+        if(subTasks.size() > 0){
             arg.taskDao.save(subTasks);
         }
         task.setExecutedResult(taskObj.getId());

@@ -1,6 +1,7 @@
 package com.gbzt.gbztworkflow.modules.workflowengine.pojo;
 
 import java.util.List;
+import java.util.Map;
 
 public class TaskExecution {
     public String id;
@@ -35,6 +36,7 @@ public class TaskExecution {
 
     //[getundo]
     //public String passUser;
+    //public String procInstId;
     public Integer pageNum;
     public Integer pageSize;
     public Integer totalPage;
@@ -51,7 +53,15 @@ public class TaskExecution {
     public String oper;
     public String runableType;
 
+    public Map<String,String> argMap;
 
+    public Map<String, String> getArgMap() {
+        return argMap;
+    }
+
+    public void setArgMap(Map<String, String> argMap) {
+        this.argMap = argMap;
+    }
 
     public String getBussId() {
         return bussId;

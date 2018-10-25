@@ -20,6 +20,10 @@ public class Task extends BaseEntity {
     private String procInstId;
     @Column(name="flow_id")
     private String flowId;
+    @Column(name="buss_id")
+    private String bussId;
+    @Column(name="buss_table")
+    private String bussTable;
     @Column(name="node_id")
     private String nodeId;
     @Column(name="node_name")
@@ -29,6 +33,9 @@ public class Task extends BaseEntity {
 
     @Column(name="parent_task_id")
     private String parentTaskId;
+    @Column(name="child_task_tag")
+    @org.hibernate.annotations.Type(type="yes_no")
+    private boolean childTaskTag;
     @Transient
     private Task parentTask;
     @Transient
@@ -427,5 +434,29 @@ public class Task extends BaseEntity {
 
     public void setSubTasks(List<Task> subTasks) {
         this.subTasks = subTasks;
+    }
+
+    public boolean isChildTaskTag() {
+        return childTaskTag;
+    }
+
+    public void setChildTaskTag(boolean childTaskTag) {
+        this.childTaskTag = childTaskTag;
+    }
+
+    public String getBussId() {
+        return bussId;
+    }
+
+    public void setBussId(String bussId) {
+        this.bussId = bussId;
+    }
+
+    public String getBussTable() {
+        return bussTable;
+    }
+
+    public void setBussTable(String bussTable) {
+        this.bussTable = bussTable;
     }
 }

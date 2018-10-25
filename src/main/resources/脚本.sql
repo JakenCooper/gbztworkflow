@@ -110,8 +110,11 @@ create table gw_run_task(
 	node_id varchar(36),
 	node_name varchar(200),
 	node_def_id varchar(36),
+	buss_id varchar(36),
+	buss_table varchar(200),
 
 	parent_task_id varchar(36),
+	child_task_tag char(1),
 
 	finish_type varchar(40),
 	assign_user varchar(36),
@@ -215,3 +218,8 @@ update gw_def_node set sort_num = 1 ;
 alter table gw_def_flow add module_name varchar(200);
 alter table gw_def_flow add module_name_cn varchar(200);
 alter table gw_def_flow add module_root_path varchar(400);
+
+/**20181025*/
+alter table gw_run_task add child_task_tag char(1);
+alter table gw_run_task add buss_id varchar(36);
+alter table gw_run_task add buss_table varchar(200);

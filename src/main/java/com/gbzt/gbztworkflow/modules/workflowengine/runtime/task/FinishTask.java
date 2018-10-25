@@ -90,10 +90,12 @@ public class FinishTask extends EngineBaseExecutor {
         nextArg.execution = nextExcution;
         nextArg.definationService = arg.definationService;
         nextArg.taskDao = arg.taskDao;
+        nextArg.procInstDao =  arg.procInstDao;
         nextArg.lineInst = nextLine;
 
         if(isBlank(taskObj.getParentTaskId())){
             if(isBlank(subTasks)){
+                //TODO vars map for task insertion.
                 updateTask(taskObj,arg.taskDao,execution);
 
                 EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(CreateTask.class,nextArg,null);

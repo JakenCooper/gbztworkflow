@@ -86,6 +86,7 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
 
         TaskExecution execution = new TaskExecution();
         BeanUtils.copyProperties(model,execution);
+        execution.setArgMap(model.getArgMap());
         StartProc.StartProcArg arg = new StartProc.StartProcArg();
         arg.execution = execution;
         arg.definationService = definationService;
@@ -104,7 +105,7 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
     }
 
     /*
-     * rtn : List<Map> ensensial attrs of tasks
+     * rtn : too complicate to calculate,so just return tag
      * */
     @Transactional("jtm")
     public TaskModel finishTask(TaskModel model){
@@ -112,6 +113,7 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
 
         TaskExecution execution = new TaskExecution();
         BeanUtils.copyProperties(model,execution);
+        execution.setArgMap(model.getArgMap());
         FinishTask.FinishTaskArg arg = new FinishTask.FinishTaskArg();
         arg.execution = execution;
         arg.definationService = definationService;
@@ -138,6 +140,7 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
 
         TaskExecution execution = new TaskExecution();
         BeanUtils.copyProperties(model,execution);
+        execution.setArgMap(model.getArgMap());
         GetUndo.GetUndoArg arg = new GetUndo.GetUndoArg();
         arg.execution = execution;
         arg.taskDao = taskDao;
@@ -165,6 +168,7 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
 
         TaskExecution execution = new TaskExecution();
         BeanUtils.copyProperties(model,execution);
+        execution.setArgMap(model.getArgMap());
         GetUserNodeData.GetUserNodeDataArg arg = new GetUserNodeData.GetUserNodeDataArg();
         arg.execution = execution;
         arg.userNodePrivService = nodeUserPrivService;
