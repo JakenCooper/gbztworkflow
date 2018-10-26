@@ -41,6 +41,12 @@ public class TaskExecution {
     public Integer pageSize;
     public Integer totalPage;
 
+    //[gethisttask]
+    //public String passUser;  -[necessary]
+//    public Integer pageNum;
+//    public Integer pageSize;
+//    public Integer totalPage;
+
 
     //[getnodeuserdata]
     // public String nodeId;

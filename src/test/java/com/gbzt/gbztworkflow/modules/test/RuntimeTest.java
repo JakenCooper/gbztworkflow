@@ -65,4 +65,11 @@ public class RuntimeTest {
         privmodel = runtimeService.getUserNodeData(privmodel);
         System.out.println(privmodel.getExecResult().result);
     }
+
+    public void gethisttask(){
+        TaskModel htmodel = new TaskModel();
+        htmodel.setPassUser("qujie");
+        htmodel = runtimeService.gethisttask(htmodel);
+        System.out.println(htmodel.getExecResult().result);
+    }
 }

@@ -54,11 +54,18 @@ public class EngineTaskTemplateFactory {
         templateMap.put(getUndoTaskTemplate.getTemplateName(),getUndoTaskTemplate);
 
         EngineTaskTemplate  getUserNodeDataTaskTemplate= new EngineTaskTemplate(AppConst.TASK_TEMPLATE_GETUSERNODEDTA_SYNC);
-        getUserNodeDataTaskTemplate.fullfillTemplateInfo("[ 查询节点用户数据 ]",
+        getUserNodeDataTaskTemplate.fullfillTemplateInfo("[ 查询节点用户权限数据 ]",
                 AppConst.TASK_EXECUTION_TYPE_SYNC,
                 AppConst.TASK_EXECUTION_THREAD_TYPE_SINGLE,
                 GetUserNodeData.class,GetUserNodeData.class);
         templateMap.put(getUserNodeDataTaskTemplate.getTemplateName(),getUserNodeDataTaskTemplate);
+
+        EngineTaskTemplate  getHistTaskTemplate= new EngineTaskTemplate(AppConst.TASK_TEMPLATE_GETHISTTASK_SYNC);
+        getHistTaskTemplate.fullfillTemplateInfo("[ 查询用户已办数据 ]",
+                AppConst.TASK_EXECUTION_TYPE_SYNC,
+                AppConst.TASK_EXECUTION_THREAD_TYPE_SINGLE,
+                GetHistTask.class,GetHistTask.class);
+        templateMap.put(getHistTaskTemplate.getTemplateName(),getHistTaskTemplate);
 
 
     }

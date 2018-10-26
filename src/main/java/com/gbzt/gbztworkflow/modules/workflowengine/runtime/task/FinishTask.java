@@ -6,11 +6,13 @@ import com.gbzt.gbztworkflow.modules.flowdefination.entity.Line;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationService;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.TaskModel;
+import com.gbzt.gbztworkflow.modules.workflowengine.dao.HistTaskDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.ProcInstDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.TaskDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.TaskVariableDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineAccessException;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineRuntimeException;
+import com.gbzt.gbztworkflow.modules.workflowengine.pojo.HistTask;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.Task;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.TaskExecution;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.TaskVariables;
@@ -42,6 +44,7 @@ public class FinishTask extends EngineBaseExecutor {
         public ProcInstDao procInstDao;
         public TaskDao taskDao;
         public TaskVariableDao taskVariableDao;
+        public HistTaskDao histTaskDao;
 
         private Map<String,String> argMap;
         private Flow flowInst;
@@ -105,7 +108,7 @@ public class FinishTask extends EngineBaseExecutor {
             if(isBlank(subTasks)){
                 updateTask(taskObj,arg.taskDao,execution);
                 addVariables(arg);
-
+                addHistTask(taskObj,arg.histTaskDao,execution);
                 EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(CreateTask.class,nextArg,null);
                 try {
                     String result = EngineManager.execute(engineTask);
@@ -146,6 +149,7 @@ public class FinishTask extends EngineBaseExecutor {
             //TODO consider finishType -
             updateTask(taskObj,arg.taskDao,execution);
             addVariables(arg);
+            addHistTask(taskObj,arg.histTaskDao,execution);
             List<Task> finalSubTasks = arg.taskDao.findTasksByParentTaskId(taskId);
             boolean allFinished = true;
             for(Task finalTask : finalSubTasks){
@@ -181,6 +185,17 @@ public class FinishTask extends EngineBaseExecutor {
         taskObj.setDuration(new Date().getTime()-taskObj.getCreateTime().getTime());
         taskObj.setDescription(execution.description);
         taskDao.save(taskObj);
+    }
+
+    private void addHistTask(Task taskObj,HistTaskDao histTaskDao,TaskExecution execution){
+        histTaskDao.deleteHistTaskByProcInstIdAndUserId(taskObj.getProcInstId(),execution.passUser);
+        HistTask histTask = new HistTask();
+        histTask.genBaseVariables();;
+        histTask.setId(CommonUtils.genUUid());
+        histTask.setTaskId(taskObj.getId());
+        histTask.setProcInstId(taskObj.getProcInstId());
+        histTask.setUserId(execution.passUser);
+        histTaskDao.save(histTask);
     }
 
     private void addVariables(FinishTask.FinishTaskArg arg){

@@ -7,6 +7,7 @@ import com.gbzt.gbztworkflow.modules.flowdefination.dao.NodeDao;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationService;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.UserNodePrivService;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.UserTreeInfo;
+import com.gbzt.gbztworkflow.modules.workflowengine.dao.HistTaskDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.ProcInstDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.TaskDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.TaskVariableDao;
@@ -52,6 +53,8 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
     private TaskDao taskDao;
     @Autowired
     private TaskVariableDao taskVariableDao;
+    @Autowired
+    private HistTaskDao histTaskDao;
 
 
 
@@ -96,6 +99,7 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
         arg.procInstDao = procInstDao;
         arg.lineDao = lineDao;
         arg.taskDao = taskDao;
+        arg.histTaskDao = histTaskDao;
 
         EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(StartProc.class,arg,null);
         try {
@@ -123,6 +127,7 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
         arg.procInstDao = procInstDao;
         arg.taskDao = taskDao;
         arg.taskVariableDao = taskVariableDao;
+        arg.histTaskDao = histTaskDao;
 
         EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(FinishTask.class,arg,model.getArgMap());
         try {
@@ -146,6 +151,7 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
         BeanUtils.copyProperties(model,execution);
         execution.setArgMap(model.getArgMap());
         GetUndo.GetUndoArg arg = new GetUndo.GetUndoArg();
+        arg.definationService = definationService;
         arg.execution = execution;
         arg.taskDao = taskDao;
         arg.taskModel = model;
@@ -161,7 +167,6 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
         }
 
     }
-
 
 
     /*
@@ -185,7 +190,38 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
             return (TaskModel)buildResult(model,4,loggerType,null,e,
                     false,e.getMessage(),null);
         }
+    }
+
+
+
+    /*
+     *  rtn : List<Map> ensensial attrs of tasks
+     * */
+    @Transactional("jtm")
+    public TaskModel gethisttask(TaskModel model){
+        String loggerType = LOGGER_TYPE_PREFIX+"getHistTask";
+
+        TaskExecution execution = new TaskExecution();
+        BeanUtils.copyProperties(model,execution);
+        execution.setArgMap(model.getArgMap());
+        GetHistTask.GetHistTaskArg arg = new GetHistTask.GetHistTaskArg();
+        arg.definationService = definationService;
+        arg.execution = execution;
+        arg.taskDao = taskDao;
+        arg.taskModel = model;
+        arg.histTaskDao = histTaskDao;
+
+        EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(GetHistTask.class,arg,null);
+        try {
+            TaskModel result = EngineManager.execute(engineTask);
+            //return result directly,result already setted in executor;
+            return result;
+        } catch (Exception e) {
+            return (TaskModel)buildResult(model,4,loggerType,null,e,
+                    false,e.getMessage(),null);
+        }
 
     }
+
 
 }

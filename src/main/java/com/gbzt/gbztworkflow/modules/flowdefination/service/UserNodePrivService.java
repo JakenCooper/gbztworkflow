@@ -83,7 +83,7 @@ public class UserNodePrivService extends MetadataService {
 
             PreparedStatement ps = connection.prepareStatement("select a.id,a.name,a.login_name,a.office_id,b.name,b.parent_id\n" +
                     "\tfrom sys_user a LEFT JOIN sys_office b on a.office_id = b.id\n" +
-                    "\twhere b.parent_id!='0' and b.parent_id = (select id from sys_office where name='"+partyName+"')\n" +
+                    "\twhere a.del_flag!='1' and b.parent_id!='0' and b.parent_id = (select id from sys_office where name='"+partyName+"')\n" +
                     "\torder by b.code  ");
             ResultSet resultSet = ps.executeQuery();
             while(resultSet.next()){
@@ -169,7 +169,7 @@ public class UserNodePrivService extends MetadataService {
 
             PreparedStatement ps = connection.prepareStatement("select a.id,a.name,a.login_name,a.office_id,b.name,b.parent_id\n" +
                     "\tfrom sys_user a LEFT JOIN sys_office b on a.office_id = b.id\n" +
-                    "\twhere b.parent_id!='0' and b.parent_id = (select id from sys_office where name='"+partyName+"')\n" +
+                    "\twhere a.del_flag!='1' and  b.parent_id!='0' and b.parent_id = (select id from sys_office where name='"+partyName+"')\n" +
                     "\tand a.login_name in "+inBuffer.toString()+"order by b.code  ");
             ResultSet resultSet = ps.executeQuery();
             while(resultSet.next()){

@@ -6,6 +6,7 @@ import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Line;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationService;
+import com.gbzt.gbztworkflow.modules.workflowengine.dao.HistTaskDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.ProcInstDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.TaskDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineAccessException;
@@ -39,6 +40,7 @@ public class StartProc extends EngineBaseExecutor {
         public LineDao lineDao;
         public ProcInstDao procInstDao;
         public TaskExecution execution;
+        public HistTaskDao histTaskDao;
 
         private Flow flowInst;
         private Line targetLine;
@@ -131,6 +133,7 @@ public class StartProc extends EngineBaseExecutor {
             finishTaskArg.definationService = arg.definationService;
             finishTaskArg.taskDao = arg.taskDao;
             finishTaskArg.procInstDao = arg.procInstDao;
+            finishTaskArg.histTaskDao = arg.histTaskDao;
 
             EngineTask  finishTask = EngineTaskTemplateFactory.buildEngineTask(FinishTask.class,finishTaskArg,null);
             try {

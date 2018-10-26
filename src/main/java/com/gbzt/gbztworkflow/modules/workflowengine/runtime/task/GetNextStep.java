@@ -46,17 +46,15 @@ public class GetNextStep extends EngineBaseExecutor {
     @Override
     public void preHandleTask(EngineTask task) throws EngineAccessException {
         GetNextStep.GetNextStepArg arg = (GetNextStep.GetNextStepArg)task.getArgs();
-        if(StringUtils.isBlank(arg.execution.taskId)){
-            Flow flowInst = arg.definationService.getFlowByName(arg.execution.flowName);
-            // TODO not necessary
-            arg.definationService.generateDetailDefination(flowInst.getId());
-            //TODO cache oper..
-            flowInst = (Flow)SimpleCache.getFromCache(SimpleCache.CACHE_KEY_PREFIX_FLOW_DETAIL+flowInst.getId());
-            if(flowInst == null || flowInst.getStartNode() == null){
-                throw new EngineAccessException("flow not exist or no start node.");
-            }
-            arg.flowInst = flowInst;
+        Flow flowInst = arg.definationService.getFlowByName(arg.execution.flowName);
+        // TODO not necessary
+        arg.definationService.generateDetailDefination(flowInst.getId());
+        //TODO cache oper..
+        flowInst = (Flow)SimpleCache.getFromCache(SimpleCache.CACHE_KEY_PREFIX_FLOW_DETAIL+flowInst.getId());
+        if(flowInst == null || flowInst.getStartNode() == null){
+            throw new EngineAccessException("flow not exist or no start node.");
         }
+        arg.flowInst = flowInst;
     }
 
     @Override
