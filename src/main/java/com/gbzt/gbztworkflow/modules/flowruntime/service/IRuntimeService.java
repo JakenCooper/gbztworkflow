@@ -32,5 +32,10 @@ public interface IRuntimeService {
     /*
      *  rtn : List<Map> ensensial attrs of tasks
      * */
-    public TaskModel gethisttask(TaskModel model);
+    public TaskModel getHistTask(TaskModel model);
+
+    /*
+     *  rtn : List<Map> ensensial attrs of tasks
+     * */
+    public TaskModel getProcHistoric(TaskModel model);
 }

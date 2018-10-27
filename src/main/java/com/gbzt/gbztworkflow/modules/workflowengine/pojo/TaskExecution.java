@@ -51,6 +51,16 @@ public class TaskExecution {
     //[getnodeuserdata]
     // public String nodeId;
 
+    //[gettaskhistoric]
+    // childTaskTag : true value desperated !!!!
+    public boolean childTaskTag; //false:[default] search historic infos for proc,true: help searching GetHisTask for user done task (un-handled data for real runtime)
+//    public List<String> procInstIds;  // 暂时不实现，同 childTaskTag = true的情况暂时弃用
+    //public String procInstId;
+   // public Integer pageNum;
+   // public Integer pageSize;
+   // public Integer totalPage;
+
+
     public boolean claimTag;
 
     public String executionType;
@@ -58,6 +68,14 @@ public class TaskExecution {
 
     public String oper;
     public String runableType;
+
+//    public List<String> getProcInstIds() {
+//        return procInstIds;
+//    }
+//
+//    public void setProcInstIds(List<String> procInstIds) {
+//        this.procInstIds = procInstIds;
+//    }
 
     public Map<String,String> argMap;
 
@@ -67,6 +85,14 @@ public class TaskExecution {
 
     public void setArgMap(Map<String, String> argMap) {
         this.argMap = argMap;
+    }
+
+    public boolean isChildTaskTag() {
+        return childTaskTag;
+    }
+
+    public void setChildTaskTag(boolean childTaskTag) {
+        this.childTaskTag = childTaskTag;
     }
 
     public String getBussId() {

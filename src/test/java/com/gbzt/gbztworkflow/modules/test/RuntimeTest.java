@@ -66,10 +66,19 @@ public class RuntimeTest {
         System.out.println(privmodel.getExecResult().result);
     }
 
+    @Test
     public void gethisttask(){
         TaskModel htmodel = new TaskModel();
         htmodel.setPassUser("qujie");
-        htmodel = runtimeService.gethisttask(htmodel);
+        htmodel = runtimeService.getHistTask(htmodel);
         System.out.println(htmodel.getExecResult().result);
+    }
+
+    @Test
+    public void getProcHistoric(){
+        TaskModel historicModel = new TaskModel();
+        historicModel.setProcInstId("0a8ce256-c9e5-4f6a-bc6b-814132c6a857");
+        historicModel = runtimeService.getProcHistoric(historicModel);
+        System.out.println(historicModel.getExecResult().result);
     }
 }

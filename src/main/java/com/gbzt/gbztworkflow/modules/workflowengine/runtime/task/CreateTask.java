@@ -117,6 +117,19 @@ public class CreateTask extends EngineBaseExecutor {
                 Task subTask = new Task();
                 BeanUtils.copyProperties(taskObj, subTask);
                 subTask.setId(CommonUtils.genUUid());
+
+                subTask.genBaseVariables();
+                subTask.setCreateUser(execution.passUser);
+                subTask.setProcInstId(execution.procInstId);
+                subTask.setFlowId(execution.flowId);
+
+                subTask.setNodeId(execution.nodeId);
+                subTask.setNodeDefId(execution.nodeDefId);
+                subTask.setPassStr(execution.nodeDefId.split("-")[1]);
+                subTask.setBussId(procInst.getBussId());
+                subTask.setBussTable(procInst.getBussTable());
+
+
                 subTask.setAssignUser(subUser);
                 subTask.setOwner(subUser);
                 subTask.setParentTaskId(taskObj.getId());

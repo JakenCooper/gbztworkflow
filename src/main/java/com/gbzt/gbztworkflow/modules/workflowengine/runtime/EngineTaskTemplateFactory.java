@@ -6,7 +6,6 @@ import com.gbzt.gbztworkflow.modules.workflowengine.runtime.entity.EngineTaskTem
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.EngineBaseExecutor;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.IEngineArg;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.task.*;
-import com.sun.tools.javadoc.Start;
 
 import java.util.Hashtable;
 
@@ -66,6 +65,13 @@ public class EngineTaskTemplateFactory {
                 AppConst.TASK_EXECUTION_THREAD_TYPE_SINGLE,
                 GetHistTask.class,GetHistTask.class);
         templateMap.put(getHistTaskTemplate.getTemplateName(),getHistTaskTemplate);
+
+        EngineTaskTemplate  getProcHistoricTemplate= new EngineTaskTemplate(AppConst.TASK_TEMPLATE_GETPROCHISTORIC_SYNC);
+        getProcHistoricTemplate.fullfillTemplateInfo("[ 查询流程流转数据 ]",
+                AppConst.TASK_EXECUTION_TYPE_SYNC,
+                AppConst.TASK_EXECUTION_THREAD_TYPE_SINGLE,
+                GetProcHistoric.class,GetProcHistoric.class);
+        templateMap.put(getProcHistoricTemplate.getTemplateName(),getProcHistoricTemplate);
 
 
     }

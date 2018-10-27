@@ -13,4 +13,10 @@ public interface TaskDao extends JpaRepository<Task,String>,JpaSpecificationExec
     public List<Task> findTasksByAssignUser(String assignUser);
 
     public List<Task> findTasksByIdIn(List<String> ids);
+
+    public List<Task> findTasksByProcInstIdInAndChildTaskTagOrderByCreateTimeDesc(List<String> procInstIds,boolean childTaskTag);
+
+    public List<Task> findTasksByProcInstIdAndChildTaskTagOrderByCreateTimeDesc(String procInstId,boolean childTaskTag);
+
+    public Task findFirstByProcInstIdOrderByCreateTimeDesc(String procInstId);
 }

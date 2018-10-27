@@ -7,10 +7,7 @@ import com.gbzt.gbztworkflow.modules.flowdefination.dao.NodeDao;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationService;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.UserNodePrivService;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.UserTreeInfo;
-import com.gbzt.gbztworkflow.modules.workflowengine.dao.HistTaskDao;
-import com.gbzt.gbztworkflow.modules.workflowengine.dao.ProcInstDao;
-import com.gbzt.gbztworkflow.modules.workflowengine.dao.TaskDao;
-import com.gbzt.gbztworkflow.modules.workflowengine.dao.TaskVariableDao;
+import com.gbzt.gbztworkflow.modules.workflowengine.dao.*;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.TaskExecution;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.TaskModel;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.entity.EngineTask;
@@ -55,6 +52,8 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
     private TaskVariableDao taskVariableDao;
     @Autowired
     private HistTaskDao histTaskDao;
+    @Autowired
+    private HistProcDao histProcDao;
 
 
 
@@ -197,13 +196,11 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
     /*
      *  rtn : List<Map> ensensial attrs of tasks
      * */
-    @Transactional("jtm")
-    public TaskModel gethisttask(TaskModel model){
+    public TaskModel getHistTask(TaskModel model){
         String loggerType = LOGGER_TYPE_PREFIX+"getHistTask";
 
         TaskExecution execution = new TaskExecution();
         BeanUtils.copyProperties(model,execution);
-        execution.setArgMap(model.getArgMap());
         GetHistTask.GetHistTaskArg arg = new GetHistTask.GetHistTaskArg();
         arg.definationService = definationService;
         arg.execution = execution;
@@ -223,5 +220,30 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
 
     }
 
+
+
+    /*
+     *  rtn : List<Map> ensensial attrs of tasks
+     * */
+    public TaskModel getProcHistoric(TaskModel model){
+        String loggerType = LOGGER_TYPE_PREFIX+"getProcHistoric";
+
+        TaskExecution execution = new TaskExecution();
+        BeanUtils.copyProperties(model,execution);
+        GetProcHistoric.GetProcHistoricArg arg = new GetProcHistoric.GetProcHistoricArg();
+        arg.definationService = definationService;
+        arg.execution = execution;
+        arg.taskDao = taskDao;
+
+        EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(GetProcHistoric.class,arg,null);
+        try {
+            List<Map<String,Object>> result = EngineManager.execute(engineTask);
+            return (TaskModel)buildResult(model,true,"",result);
+        } catch (Exception e) {
+            return (TaskModel)buildResult(model,4,loggerType,null,e,
+                    false,e.getMessage(),null);
+        }
+
+    }
 
 }

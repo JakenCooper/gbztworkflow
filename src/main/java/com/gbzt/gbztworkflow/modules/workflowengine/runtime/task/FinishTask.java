@@ -130,6 +130,7 @@ public class FinishTask extends EngineBaseExecutor {
                 }
                 execution.passUser = taskObj.getAssignUser();
                 updateTask(taskObj,arg.taskDao,execution);
+                addHistTask(taskObj,arg.histTaskDao,execution);
                 nextNodeId = thisNode.getNextNodes().get(0).getId();
                 nextLine = flowInst.getLineMap().get(thisNode.getId()+","+nextNodeId);
                 nextArg.execution.nodeId = nextNodeId;

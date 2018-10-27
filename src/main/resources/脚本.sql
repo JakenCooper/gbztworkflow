@@ -199,6 +199,22 @@ create  table gw_run_histtask(
 	del_reason varchar(500),
 	remark varchar(500)
 );
+drop table if exists gw_run_histproc;
+create table gw_run_histproc(
+  id varchar(36) primary  key,
+  task_id varchar(36),
+  proc_inst_id varchar(36),
+  user_id varchar(36),
+  node_id varchar(36),
+  node_name varchar(200),
+  create_user varchar(40),
+	create_time datetime,
+	update_user varchar(40),
+	update_time datetime,
+	del_tag char(1),
+	del_reason varchar(500),
+	remark varchar(500)
+);
 
 /* 1018 增量修改*/
 alter table gw_def_flow add create_user varchar(40);

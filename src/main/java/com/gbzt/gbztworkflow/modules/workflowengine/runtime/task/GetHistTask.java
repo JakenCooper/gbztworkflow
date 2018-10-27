@@ -72,7 +72,7 @@ public class GetHistTask extends EngineBaseExecutor {
         // TODO wrong usage... must use join search !
         List<HistTask> histTasks = arg.histTaskDao.findHistTasksByUserId(execution.passUser);
         if(isBlank(histTasks)){
-            arg.taskModel.setTotalPage(0);;
+            arg.taskModel.setTotalPage(0);
             arg.taskModel.setPageNum(pageNum+1);
             arg.taskModel.setPageSize(pageSize);
             arg.taskModel.setTotalCount(0l);
@@ -110,13 +110,14 @@ public class GetHistTask extends EngineBaseExecutor {
             // TODO fetch variables for proc and task (cache)
             Map<String,Object> resultMap = new HashMap<String,Object>();
             Flow flowInst = super.getFlowComplete(arg.definationService,resultTask.getFlowId());
+            Task lastTask = arg.taskDao.findFirstByProcInstIdOrderByCreateTimeDesc(resultTask.getProcInstId());
             resultMap.put("taskId",resultTask.getId());
             resultMap.put("flowId",resultTask.getFlowId());
             resultMap.put("flowName",flowInst.getFlowName());
             resultMap.put("assignUser",resultTask.getAssignUser());
             resultMap.put("procInstId",resultTask.getProcInstId());
             resultMap.put("nodeId",resultTask.getNodeId());
-            resultMap.put("nodeName",flowInst.getNodeIdMap().get(resultTask.getNodeId()).getName());
+            resultMap.put("nodeName",flowInst.getNodeIdMap().get(lastTask.getNodeId()).getName());
             resultMap.put("nodeDefId",resultTask.getNodeDefId());
             resultMap.put("bussId",resultTask.getBussId());
             resultMap.put("bussTable",resultTask.getBussTable());
