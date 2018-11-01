@@ -14,6 +14,26 @@
     <link rel="stylesheet" href="leipi.style.css">
     <script type="text/javascript" src="../dialogs/internal.js"></script>
     <script type="text/javascript">
+        $(function () {
+            getCurrentflowid();
+            addColumnName();
+            var id=$("#id").val();
+            if(id ==''){
+                $("#id").val('form_text_'+MathRand());
+            }
+
+        });
+        function getURLParameter(name)
+        {
+            return decodeURIComponent((new RegExp("[?|&]"+name+"="+"([^&;]+?)(&|#|;|$)").exec(
+                location.search)||[,""])[1].replace(/\s+/g,"%20"))||null;
+        }
+        function getCurrentflowid()
+        {
+            var currentflowid=getURLParameter("currentflowid");
+            alert(currentflowid);
+            document.getElementById("currentflowid").value=currentflowid;
+        }
 function createElement(type, name)
 {     
     var element = null;     
@@ -47,7 +67,6 @@ function createElement(type, name)
 <script type="text/javascript">
 var oNode = null,thePlugins = 'checkbox';
 window.onload = function() {
-    debugger
     if( UE.plugins[thePlugins].editdom ){
         oNode = UE.plugins[thePlugins].editdom;
         var gTitle=oNode.getAttribute('title').replace(/&quot;/g,"\"");

@@ -35,6 +35,34 @@ public class TaskModel extends BaseModel implements Serializable {
     private String executionType;
     private String executionOrder;
 
+    public String retreatOperType;
+    public boolean retreatSubmitTag;
+    public boolean retreatOperPermission;
+
+    public String getRetreatOperType() {
+        return retreatOperType;
+    }
+
+    public void setRetreatOperType(String retreatOperType) {
+        this.retreatOperType = retreatOperType;
+    }
+
+    public boolean isRetreatSubmitTag() {
+        return retreatSubmitTag;
+    }
+
+    public void setRetreatSubmitTag(boolean retreatSubmitTag) {
+        this.retreatSubmitTag = retreatSubmitTag;
+    }
+
+    public boolean isRetreatOperPermission() {
+        return retreatOperPermission;
+    }
+
+    public void setRetreatOperPermission(boolean retreatOperPermission) {
+        this.retreatOperPermission = retreatOperPermission;
+    }
+
     public String getNodeName() {
         return nodeName;
     }

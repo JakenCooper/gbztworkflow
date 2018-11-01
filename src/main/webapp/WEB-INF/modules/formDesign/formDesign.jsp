@@ -27,21 +27,76 @@
 
 </head>
 <body>
+<style type="text/css">
 
+    <style>
+    label { /*flex布局让子元素水平垂直居中*/
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    input[type=checkbox],input[type=radio] {
+        -webkit-appearance: none;
+        appearance: none;
+        outline: none;
+        width: 12px;
+        height: 12px;
+        cursor: pointer;
+        vertical-align: center;
+        background: #fff;
+        border: 1px solid #ccc;
+        position: relative;
+    }
+
+    input[type=checkbox]:checked::after {
+        content: "\2713";
+        display: block;
+        position: absolute;
+        top: -1px;
+        left: -1px;
+        right: 0;
+        bottom: 0;
+        width: 10px;
+        height: 10px;
+        line-height: 10px;
+        border: 1px solid #ddd;
+        color: #3afff7;
+        font-size: 12px;
+    }
+    input[type=radio]:checked::after {
+        content: "";
+        display: block;
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        right: 0;
+        bottom: 0;
+        width: 6px;
+        height: 6px;
+        background-color: #ffc832;
+    }
+    input[type=radio], input[type=radio]:checked::after {
+        border-radius: 50%;
+    }
+</style>
 <div style="padding: 20px;">
     <form id="frm" method="post" target="mywin">
         <div style="font-size: 40px;width:100%;text-align: center;">表单设计</div>
         <button type="button" onclick="leipiFormDesign.exec('text',GetRequest());" class="btn btn-info btn-small">单行输入框</button>
-        <button type="button" onclick="leipiFormDesign.exec('textarea');" class="btn btn-info btn-small">多行输入框</button>
-        <button type="button" onclick="leipiFormDesign.exec('select');" class="btn btn-info btn-small">下拉菜单</button>
-        <button type="button" onclick="leipiFormDesign.exec('radios');" class="btn btn-info btn-small">单选框</button>
-        <button type="button" onclick="leipiFormDesign.exec('checkboxs');" class="btn btn-info btn-small">复选框</button>
-        <button type="button" onclick="leipiFormDesign.exec('macros');" class="btn btn-info btn-small">宏控件</button>
-        <button type="button" onclick="leipiFormDesign.exec('progressbar');" class="btn btn-info btn-small">进度条</button>
-        <button type="button" onclick="leipiFormDesign.exec('qrcode');" class="btn btn-info btn-small">二维码</button>
+        <button type="button" onclick="leipiFormDesign.exec('textarea',GetRequest());" class="btn btn-info btn-small">多行输入框</button>
+        <button type="button" onclick="leipiFormDesign.exec('select',GetRequest());" class="btn btn-info btn-small">下拉菜单</button>
+        <button type="button" onclick="leipiFormDesign.exec('radios',GetRequest());" class="btn btn-info btn-small">单选框</button>
+        <button type="button" onclick="leipiFormDesign.exec('checkboxs',GetRequest());" class="btn btn-info btn-small">复选框</button>
+        <button type="button" onclick="leipiFormDesign.exec('macros',GetRequest());" class="btn btn-info btn-small">宏控件</button>
+        <button type="button" onclick="leipiFormDesign.exec('file',GetRequest());" class="btn btn-info btn-small">文件选择</button>
+        <label><input type="radio" name="mode" value="0"/>紧凑模式</label>
+        <label><input type="radio" name="mode" value="1"/>非紧凑模式</label>
+       <%-- <button type="button" onclick="leipiFormDesign.exec('progressbar');" class="btn btn-info btn-small">进度条</button>--%>
+       <%-- <button type="button" onclick="leipiFormDesign.exec('qrcode');" class="btn btn-info btn-small">二维码</button>--%>
         <div class="alert alert-warning">
             <button type="button" class="close" data-dismiss="alert">×</button>
-            <strong>提醒：</strong>单选框和复选框，如：<code>{|-</code>选项<code>-|}</code>两边边界是防止误删除控件，程序会把它们替换为空，请不要手动删除！
+            <strong>提醒：</strong>单选框和复选框，如：<code>{|-</code>选项<code>-|}</code>两边边界是防止误删除控件，程序会把它们替换为空，请不要手动删除！     树结构人员选择控件请复制: <code>"\${selectTree}"粘贴至相应位置</code> || 时间选择控件请复制: <code>"\${timeSelect}"粘贴至相应位置</code>
         </div>
         <textarea style="width:100%;height:100%" name="html" id="container"></textarea></form>
 
@@ -70,7 +125,9 @@
 </div>
 </div>
 <script type="text/javascript">
-
+    function treeselect(){
+        UE.getEditor('container').execCommand('insertHtml', '${treeSelect}')
+    }
     function GetRequest() {
         var url = location.search; //获取url中"?"符后的字串
         var theRequest = new Object();
@@ -83,7 +140,7 @@
         }
         var json=JSON.stringify(theRequest);
         var currentflowid=JSON.parse(json).id;
-        document.cookie = "currentflowid="+currentflowid;
+        /*document.cookie = "currentflowid="+currentflowid;*/
         return currentflowid;
     }
 
@@ -100,8 +157,24 @@
         tableDragable: false,
         textarea: 'design_content',
         //这里可以选择自己需要的工具按钮名称,此处仅选择如下五个
+      /*  toolbars: [[
+            'edittd', 'fullscreen', 'source', '|', 'undo', 'redo', '|', 'bold', 'italic', 'underline', 'fontborder', 'strikethrough', 'removeformat', '|', 'forecolor', 'backcolor', 'insertorderedlist', 'insertunorderedlist', '|', 'fontfamily', 'fontsize', '|', 'indent', '|', 'justifyleft', 'justifycenter', 'justifyright', 'justifyjustify', '|', 'link', 'unlink', '|', 'horizontal', 'spechars', 'wordimage', '|', 'inserttable', 'deletetable', 'mergecells', 'splittocells',
+            'insertparagraphbeforetable','splittocols','splittorows','formatmatch','mergeright'
+        ]],*/
         toolbars: [[
-            'fullscreen', 'source', '|', 'undo', 'redo', '|', 'bold', 'italic', 'underline', 'fontborder', 'strikethrough', 'removeformat', '|', 'forecolor', 'backcolor', 'insertorderedlist', 'insertunorderedlist', '|', 'fontfamily', 'fontsize', '|', 'indent', '|', 'justifyleft', 'justifycenter', 'justifyright', 'justifyjustify', '|', 'link', 'unlink', '|', 'horizontal', 'spechars', 'wordimage', '|', 'inserttable', 'deletetable', 'mergecells', 'splittocells']],
+            'fullscreen', 'source', '|', 'undo', 'redo', '|',
+            'bold', 'italic', 'underline', 'fontborder', 'strikethrough', 'superscript', 'subscript', 'removeformat', 'formatmatch', 'autotypeset', 'blockquote', 'pasteplain', '|', 'forecolor', 'backcolor', 'insertorderedlist', 'insertunorderedlist', 'selectall', 'cleardoc', '|',
+            'rowspacingtop', 'rowspacingbottom', 'lineheight', '|',
+            'customstyle', 'paragraph', 'fontfamily', 'fontsize', '|',
+            'directionalityltr', 'directionalityrtl', 'indent', '|',
+            'justifyleft', 'justifycenter', 'justifyright', 'justifyjustify', '|', 'touppercase', 'tolowercase', '|',
+            'link', 'unlink', 'anchor', '|', 'imagenone', 'imageleft', 'imageright', 'imagecenter', '|',
+             'emotion',  'insertcode', , 'pagebreak', 'template', 'background', '|',
+            'horizontal', 'snapscreen', 'wordimage', '|',
+            'inserttable', 'deletetable', 'insertparagraphbeforetable', 'insertrow', 'deleterow', 'insertcol', 'deletecol', 'mergecells', 'mergeright', 'mergedown', 'splittocells', 'splittorows', 'splittocols', 'charts', '|',
+            'print', 'searchreplace', 'drafts', 'help','edittd'
+        ]],
+
         //focus时自动清空初始化时的内容
         //autoClearinitialContent:true,
         //关闭字数统计
@@ -111,7 +184,6 @@
         //默认的编辑区域高度
         initialFrameHeight: 500,
         scaleEnabled:true,
-        disabledTableInTable:false,
         //禁止表格嵌套
         //,iframeCssUrl:"/Public/css/bootstrap/css/bootstrap.css" //引入自身 css使编辑器兼容你网站css
         //更多其他参数，请参考ueditor.config.js中的配置项
@@ -294,6 +366,7 @@
         },
         /*type  =  save 保存设计 versions 保存版本  close关闭 */
         fnCheckForm: function (type) {
+            var mode=$("input[name='mode']:checked").val();
             if (leipiEditor.queryCommandState('source'))
                 leipiEditor.execCommand('source');//切换到编辑模式才提交，否则有bug
 
@@ -328,16 +401,8 @@
                    type: 'POST',
                    url : '${ctx}/formDesign/save',
                    dataType : 'json',
-                   data : {'type' : type_value,'formid':formid,'parse_form':parse_form,'currentFlowId':GetRequest()},
+                   data : {'type' : type_value,'formid':formid,'parse_form':parse_form,'currentFlowId':GetRequest(),'mode':mode},
                    success : function(data){
-                    /*   if(confirm('查看js解析后，提交到服务器的数据，请临时允许弹窗'))
-                       {
-                           win_parse=window.open('','','width=800,height=600');
-                           //这里临时查看，所以替换一下，实际情况下不需要替换
-                           data  = data.replace(/<\/+textarea/,'&lt;textarea');
-                           win_parse.document.write('<textarea style="width:100%;height:100%">'+data+'</textarea>');
-                           win_parse.focus();
-                       }*/
                      if(data.success==1){
                          alert('保存成功');
                          $('#submitbtn').button('reset');

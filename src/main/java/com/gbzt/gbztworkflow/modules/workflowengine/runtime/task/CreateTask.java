@@ -5,10 +5,12 @@ import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Line;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationService;
+import com.gbzt.gbztworkflow.modules.workflowengine.dao.HistProcDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.ProcInstDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.TaskDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineAccessException;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineRuntimeException;
+import com.gbzt.gbztworkflow.modules.workflowengine.pojo.HistProc;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.ProcInst;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.Task;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.TaskExecution;
@@ -34,6 +36,7 @@ public class CreateTask extends EngineBaseExecutor {
         public DefinationService definationService;
         public TaskDao taskDao;
         public ProcInstDao procInstDao;
+        public HistProcDao histProcDao;
         public TaskExecution execution;
         public Line lineInst;
 
@@ -76,6 +79,7 @@ public class CreateTask extends EngineBaseExecutor {
         taskObj.setCreateUser(execution.passUser);
         taskObj.setProcInstId(execution.procInstId);
         taskObj.setFlowId(execution.flowId);
+        taskObj.setCreateTimeMills(System.currentTimeMillis());
         ProcInst procInst = arg.procInstDao.findOne(execution.procInstId);
         Flow flowInst = super.getFlowComplete(arg.definationService,execution.flowId);
         if(isBlank(execution.nodeId) || isBlank(execution.nodeDefId)){
@@ -89,6 +93,7 @@ public class CreateTask extends EngineBaseExecutor {
                 execution.nodeDefId = flowInst.getNodeIdMap().get(execution.nodeId).getNodeDefId();
             }
         }
+        taskObj.setNodeName(flowInst.getNodeIdMap().get(execution.nodeId).getName());
         taskObj.setNodeId(execution.nodeId);
         taskObj.setNodeDefId(execution.nodeDefId);
         taskObj.setPassStr(execution.nodeDefId.split("-")[1]);
@@ -128,6 +133,7 @@ public class CreateTask extends EngineBaseExecutor {
                 subTask.setPassStr(execution.nodeDefId.split("-")[1]);
                 subTask.setBussId(procInst.getBussId());
                 subTask.setBussTable(procInst.getBussTable());
+                subTask.setCreateTimeMills(System.currentTimeMillis());
 
 
                 subTask.setAssignUser(subUser);
@@ -148,6 +154,18 @@ public class CreateTask extends EngineBaseExecutor {
         if(subTasks.size() > 0){
             arg.taskDao.save(subTasks);
         }
+        // handle histproc data...
+        HistProc histProc = new HistProc();
+        histProc.setId(CommonUtils.genUUid());
+        histProc.genBaseVariables();
+        histProc.setNodeId(taskObj.getNodeId());
+        histProc.setNodeName(taskObj.getNodeName());
+        histProc.setProcInstId(taskObj.getProcInstId());
+        histProc.setTaskId(taskObj.getId());
+        histProc.setUserId(taskObj.getAssignUser());
+        histProc.setCreateTimeMills(System.currentTimeMillis());
+        arg.histProcDao.save(histProc);
+
         task.setExecutedResult(taskObj.getId());
         return null;
     }

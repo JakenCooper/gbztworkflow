@@ -7,11 +7,15 @@
     <link rel="stylesheet" type="text/css" href="${ctxStatic}/bootstrap-treeview/bootstrap-treeview.css">
     <link rel="stylesheet" type="text/css" href="${ctxStatic}/mloading/jquery.mloading.css">
     <link rel="stylesheet" type="text/css" href="${ctxStatic}/index.css">
+    <link rel="stylesheet" type="text/css" href="${ctxStatic}/jquery-ztree/css/metroStyle/metroStyle.css">
 
     <script type="text/javascript" src="${ctxStatic}/jquery/jquery-3.3.1.js"></script>
     <script type="text/javascript" src="${ctxStatic}/bootstrap3/js/bootstrap.js"></script>
     <script type="text/javascript" src="${ctxStatic}/mloading/jquery.mloading.js"></script>
     <script type="text/javascript" src="${ctxStatic}/bootstrap-treeview/bootstrap-treeview.js"></script>
+    <script type="text/javascript" src="${ctxStatic}/jquery-ztree/js/jquery.ztree.all-3.5.js"></script>
+    <script type="text/javascript" src="${ctxStatic}/jquery-ztree/js/jquery.ztree.exhide-3.5.js"></script>
+    <script type="text/javascript" src="${ctxStatic}/jquery-ztree/userztree.js"></script>
 
     <script type="text/javascript">
         var alert_tag = true;
@@ -45,18 +49,18 @@
                 $(event.target).find('a').click();
             });
             $('#linecanvas').hide();
-            $('body').mLoading({
+           /* $('body').mLoading({
                 mask:false,
                 text:' ☎ 提交ing... ☏'
             });
-            $('body').mLoading('hide');
+            $('body').mLoading('hide');*/
 
 
             //buss method ...
-            $('button:contains("页面编辑器")').click(function(e){
+           /* $('button:contains("页面编辑器")').click(function(e){
                 alert(window.currentflowid);
-                window.open("${ctx}/formDesign/get?id="+window.currentflowid);
-            });
+                window.open("{ctx}/formDesign/get?id="+window.currentflowid);
+            });*/
         });
     </script>
 </body>

@@ -1,0 +1,24 @@
+package com.thinkgem.jeesite.modules.${package}.dao;
+
+import com.thinkgem.jeesite.common.persistence.annotation.MyBatisDao;
+import com.thinkgem.jeesite.modules.${package}.entity.${EntityName};
+
+/**
+* 单表生成Dao
+* @version ${date}
+*/
+@MyBatisDao
+public interface ${EntityName}Dao {
+
+    int deleteByPrimaryKey(String ${entityName}Id);
+    
+    int insert(${EntityName} record);
+    
+    int insertSelective(${EntityName} record);
+
+    ${EntityName} selectByPrimaryKey(String ${entityName}Id);
+    
+    int updateByPrimaryKeySelective(${EntityName} record);
+    
+    int updateByPrimaryKey(${EntityName} record);
+}

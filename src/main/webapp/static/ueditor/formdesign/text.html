@@ -38,12 +38,17 @@ function getURLParameter(name)
 function getCurrentflowid()
 {
     var currentflowid=getURLParameter("currentflowid");
+    alert(currentflowid);
     document.getElementById("currentflowid").value=currentflowid;
 }
 $(function () {
     getCurrentflowid();
     addColumnName();
-    $("#id").val('form_input_'+MathRand());
+    var id=$("#id").val();
+    if(id ==''){
+        $("#id").val('form_text_'+MathRand());
+    }
+
 });
 
 function addColumnName() {
@@ -74,7 +79,7 @@ function addColumnName() {
 function MathRand()
 {
     var num="";
-    for(var i=0;i<10;i++)
+    for(var i=0;i<15;i++)
     {
         num+=Math.floor(Math.random()*10);
     }
@@ -186,7 +191,7 @@ function addPower() {
     </tr>
     <tr>
         <td>
-            <input type="text" id="id" >
+            <input type="text" id="id" style="width: 200px;">
         </td>
         <td>
            <select id="name"></select>

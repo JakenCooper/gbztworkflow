@@ -1,0 +1,9 @@
+## 测试Velocity模板
+#set( $iAmVariable = "good!" )
+Welcome $name to velocity.com
+today is $date.
+#foreach ($i in $list)
+    $i
+    $velocityCount
+#end
+$iAmVariable

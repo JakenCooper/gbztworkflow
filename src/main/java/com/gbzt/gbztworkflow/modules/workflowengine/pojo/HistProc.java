@@ -22,6 +22,17 @@ public class HistProc extends BaseEntity {
     @Column(name="node_name")
     private String nodeName;
 
+    @Column(name="create_time_mills")
+    private Long createTimeMills;
+
+    public Long getCreateTimeMills() {
+        return createTimeMills;
+    }
+
+    public void setCreateTimeMills(Long createTimeMills) {
+        this.createTimeMills = createTimeMills;
+    }
+
     public String getId() {
         return id;
     }

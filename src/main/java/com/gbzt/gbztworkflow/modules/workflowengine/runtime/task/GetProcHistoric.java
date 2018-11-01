@@ -49,7 +49,7 @@ public class GetProcHistoric extends EngineBaseExecutor {
         List<Task> finalTasks = new ArrayList<>();
         if(!execution.childTaskTag){
             // historic runtime infos for proc.
-            finalTasks  = arg.taskDao.findTasksByProcInstIdAndChildTaskTagOrderByCreateTimeDesc(execution.procInstId,false);
+            finalTasks  = arg.taskDao.findTasksByProcInstIdAndChildTaskTagOrderByCreateTimeMillsDesc(execution.procInstId,false);
         }else{
             Set<String> taskIdFilter = new HashSet<String>();
             List<Task> preTakss = arg.taskDao.findTasksByProcInstIdAndChildTaskTagOrderByCreateTimeDesc(execution.procInstId,false);
@@ -68,7 +68,6 @@ public class GetProcHistoric extends EngineBaseExecutor {
         }
         List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
         for(Task resultTask : finalTasks){
-            // TODO fetch variables for proc and task (cache)
             Map<String,Object> resultMap = new HashMap<String,Object>();
             Flow flowInst = super.getFlowComplete(arg.definationService,resultTask.getFlowId());
             resultMap.put("taskId",resultTask.getId());

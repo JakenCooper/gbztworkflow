@@ -73,6 +73,13 @@ public class EngineTaskTemplateFactory {
                 GetProcHistoric.class,GetProcHistoric.class);
         templateMap.put(getProcHistoricTemplate.getTemplateName(),getProcHistoricTemplate);
 
+        EngineTaskTemplate  retreatTaskTemplate= new EngineTaskTemplate(AppConst.TASK_TEMPLATE_RETREATTASK_SYNC);
+        retreatTaskTemplate.fullfillTemplateInfo("[ 收回或退回任务 ]",
+                AppConst.TASK_EXECUTION_TYPE_SYNC,
+                AppConst.TASK_EXECUTION_THREAD_TYPE_SINGLE,
+                RetreatTask.class,RetreatTask.class);
+        templateMap.put(retreatTaskTemplate.getTemplateName(),retreatTaskTemplate);
+
 
     }
 

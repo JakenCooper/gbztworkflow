@@ -147,6 +147,7 @@ create table gw_run_task(
 	create_time datetime,
 	update_user varchar(40),
 	update_time datetime,
+	create_time_mills long,
 	del_tag char(1),
 	del_reason varchar(500),
 	remark varchar(500)
@@ -209,6 +210,7 @@ create table gw_run_histproc(
   node_name varchar(200),
   create_user varchar(40),
 	create_time datetime,
+	create_time_mills long,
 	update_user varchar(40),
 	update_time datetime,
 	del_tag char(1),
@@ -271,3 +273,7 @@ alter table gw_def_flow add module_root_path varchar(400);
 alter table gw_run_task add child_task_tag char(1);
 alter table gw_run_task add buss_id varchar(36);
 alter table gw_run_task add buss_table varchar(200);
+
+/**20181101*/
+alter table gw_run_task add create_time_mills long;
+alter table gw_run_histproc add create_time_mills long;

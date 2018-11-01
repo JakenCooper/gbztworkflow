@@ -4,13 +4,45 @@ import com.gbzt.gbztworkflow.consts.ExecResult;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import java.util.UUID;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class CommonUtils {
 
     public static String genUUid(){
         UUID uuid = UUID.randomUUID();
         return uuid.toString();
+    }
+
+    public static String formatDate(Date date){
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return sdf.format(date);
+    }
+
+    public static String convertTableName(String tableName){
+        if(tableName.indexOf("_") == -1 || tableName.indexOf("_") == tableName.length()-1){
+            return tableName;
+        }
+        String[] tableNameArr = tableName.split("_");
+        List<char[]> charArrList = new ArrayList<char[]>();
+        for(int i=0;i<tableNameArr.length;i++){
+            if(i == 0){
+                continue;
+            }
+            charArrList.add(tableNameArr[i].toCharArray());
+        }
+        List<char[]> resultArrList = new ArrayList<char[]>();
+        for(char[] charr : charArrList){
+            char[] resultarr = Arrays.copyOf(charr,charr.length);
+            resultarr[0] = Character.toUpperCase(resultarr[0]);
+            resultArrList.add(resultarr);
+        }
+        StringBuffer resultBuffer = new StringBuffer();
+        resultBuffer.append(tableNameArr[0]);
+        for(char[] resultarr : resultArrList){
+            resultBuffer.append(new String(resultarr));
+        }
+        return resultBuffer.toString();
     }
 
     public static <T> ExecResult<T> buildResult(boolean charge,String message,T result){
@@ -50,5 +82,8 @@ public class CommonUtils {
            default:result = ResponseEntity.status(code).body(t);break;
         }
         return result;
+    }
+
+    public static void main(String[] args) {
     }
 }

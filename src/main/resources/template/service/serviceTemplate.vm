@@ -1,0 +1,51 @@
+package com.thinkgem.jeesite.modules.${package}.service;
+
+import java.util.List;
+
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.thinkgem.jeesite.modules.${package}.entity.${EntityName};
+import com.thinkgem.jeesite.modules.${package}.dao.${EntityName}Dao;
+
+/**
+* 单表生成Service
+* @version ${date}
+*/
+@Service
+@Transactional(readOnly = true)
+public class ${EntityName}Service {
+
+    @Autowired
+    private ${EntityName}Dao dao;
+
+    public ${EntityName} get(String id) {
+        return dao.selectByPrimaryKey(id);
+    }
+    
+//    public List<${EntityName}> findList(${EntityName} ${entityName}) {
+//        return dao.findList(${entityName});
+//    }
+    
+//    public Page<${EntityName}> findPage(Page<${EntityName}> page, ${EntityName} ${entityName}) {
+//        return dao.findPage(page, ${entityName});
+//    }
+    
+    @Transactional(readOnly = false)
+    public void insert(${EntityName} ${entityName}) {
+        dao.insertSelective(${entityName});
+    }
+
+    @Transactional(readOnly = false)
+    public void update(${EntityName} ${entityName}) {
+        dao.updateByPrimaryKeySelective(${entityName});
+    }
+    
+    @Transactional(readOnly = false)
+    public void delete(${EntityName} ${entityName}) {
+        dao.deleteByPrimaryKey(${entityName}.getId());// 这里需要传入id
+    }
+
+}

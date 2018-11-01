@@ -38,4 +38,16 @@ public interface IRuntimeService {
      *  rtn : List<Map> ensensial attrs of tasks
      * */
     public TaskModel getProcHistoric(TaskModel model);
+
+    /*
+     *  retreatSubmitTag : false
+     *  rtn : boolean
+     * */
+    public TaskModel canRetreat(TaskModel model);
+
+    /*
+     *  retreatSubmitTag : true
+     *  rtn : String
+     * */
+    public TaskModel retreatSubmit(TaskModel model);
 }

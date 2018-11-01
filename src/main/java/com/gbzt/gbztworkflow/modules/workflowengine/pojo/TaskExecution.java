@@ -51,7 +51,7 @@ public class TaskExecution {
     //[getnodeuserdata]
     // public String nodeId;
 
-    //[gettaskhistoric]
+    //[getprochistoric]
     // childTaskTag : true value desperated !!!!
     public boolean childTaskTag; //false:[default] search historic infos for proc,true: help searching GetHisTask for user done task (un-handled data for real runtime)
 //    public List<String> procInstIds;  // 暂时不实现，同 childTaskTag = true的情况暂时弃用
@@ -59,6 +59,14 @@ public class TaskExecution {
    // public Integer pageNum;
    // public Integer pageSize;
    // public Integer totalPage;
+
+    //[retreat task]
+    //public String taskId;
+    //public String procInstId;
+    //public String passUser;
+    public String retreatOperType;  // -- withdraw or  retreat
+    public boolean retreatSubmitTag = false; // -- is real submit or not
+    public boolean retreatOperPermission;
 
 
     public boolean claimTag;
@@ -76,6 +84,30 @@ public class TaskExecution {
 //    public void setProcInstIds(List<String> procInstIds) {
 //        this.procInstIds = procInstIds;
 //    }
+
+    public String getRetreatOperType() {
+        return retreatOperType;
+    }
+
+    public void setRetreatOperType(String retreatOperType) {
+        this.retreatOperType = retreatOperType;
+    }
+
+    public boolean isRetreatSubmitTag() {
+        return retreatSubmitTag;
+    }
+
+    public void setRetreatSubmitTag(boolean retreatSubmitTag) {
+        this.retreatSubmitTag = retreatSubmitTag;
+    }
+
+    public boolean isRetreatOperPermission() {
+        return retreatOperPermission;
+    }
+
+    public void setRetreatOperPermission(boolean retreatOperPermission) {
+        this.retreatOperPermission = retreatOperPermission;
+    }
 
     public Map<String,String> argMap;
 

@@ -64,8 +64,8 @@ public class GetNextStep extends EngineBaseExecutor {
 
         List<Map<String,String>> result = new ArrayList<Map<String,String>>();
         Node targetNode = null;
+        Flow flowInst = arg.flowInst;
         if(StringUtils.isBlank(arg.execution.taskId)){
-            Flow flowInst = arg.flowInst;
             targetNode = flowInst.getStartNode();
         }else{
             Task taskObj = arg.taskDao.findOne(execution.taskId);
@@ -77,6 +77,7 @@ public class GetNextStep extends EngineBaseExecutor {
             nodeMap.put("nodeDefId",node.getNodeDefId());
             nodeMap.put("nodeName",node.getName());
             nodeMap.put("flowId",node.getFlowId());
+            nodeMap.put("startNodeName",flowInst.getStartNode().getName());
             result.add(nodeMap);
         }
         task.setExecutedResult(result);

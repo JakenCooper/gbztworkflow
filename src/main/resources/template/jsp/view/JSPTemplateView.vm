@@ -1,0 +1,83 @@
+<%@ page contentType="text/html;charset=UTF-8" %>
+<%@ include file="/WEB-INF/views/include/taglib.jsp"%>
+
+<html>
+<head>
+	<title>${map.title}</title>
+	<meta name="decorator" content="default"/>
+	<%@ include file="/WEB-INF/views/include/treeview.jsp" %>
+    <%@ include file="/WEB-INF/views/include/selectNext.jsp" %>
+    <%@include file="/WEB-INF/views/include/head.jsp" %>
+	<script type="text/javascript">
+		$(document).ready(function() {
+			//$("#name").focus();
+			
+            // 根据流程加载tree数据
+            selectNextPersonAudit();
+
+            // 设置选择下一步流程窗口的高度
+            setTreeH();
+            
+			$("#inputForm").validate({
+				submitHandler: function(form){
+					loading('正在提交，请稍等...');
+					form.submit();
+				},
+				errorContainer: "#messageBox",
+				errorPlacement: function(error, element) {
+					$("#messageBox").text("输入有误，请先更正。");
+					if (element.is(":checkbox")||element.is(":radio")||element.parent().is(".input-append")){
+						error.appendTo(element.parent().parent());
+					} else {
+						error.insertAfter(element);
+					}
+				}
+			});
+		});
+        //提交表单方式
+        function submitForm(flagTrans) {
+            /***start***********************check是否有正在上传的附件**********************start***/
+            if(attsUploading()){
+                return;
+            }
+            /***end*************************check是否有正在上传的附件************************end***/
+            if(flagTrans=="yes"){
+                cheackForm(flagTrans);
+            }else if(flagTrans=="saveData"){
+                submitSaveData(flagTrans);
+            }
+        }
+
+        // 根据流程加载tree数据
+        function selectNextPersonAudit(){
+            var procDefKey = "unit_send_file";
+            var taskKey = "2";
+            var labelName = '处室发文';
+
+            var procInsId = "";
+            var office_id="";
+            selectAudit(procDefKey,taskKey,labelName,procInsId,office_id);
+        }
+	</script>
+</head>
+<body>
+<ul id="headView" class="nav nav-tabs">
+	<li class="active">
+		<a style="font-size:15px;font-weight:bold;width:auto;padding: 15px 10px;">
+				<span style="padding: 8px;background-repeat:repeat-x;background-size:cover;background-image:url('${pageContext.request.contextPath}/images/shadow.png');border-radius:5px;">
+					${map.title}
+				</span>
+		</a>
+	</li>
+	<div id="buttonDiv" style="float: right;margin-right: 30%;margin-top: 10px">
+	</div>
+</ul>
+<div id="mainView" style="overflow-y: auto;height:0px;float: left;width: 75%;">
+	<form:form id="inputForm" modelAttribute="${map.entityName}" name="form"
+			   action="${ctx}/${map.package}/${map.entityName}/" method="post"
+			   class="form-horizontal" enctype="multipart/form-data">
+		<div style="width: 75%">${map.form}</div>
+	</form:form>
+</div>
+</body>
+</html>

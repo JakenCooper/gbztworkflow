@@ -13,6 +13,103 @@
     <![endif]-->
     <link rel="stylesheet" href="leipi.style.css">
     <script type="text/javascript" src="../dialogs/internal.js"></script>
+    <script type="text/javascript" src="../../jquery/jquery-3.3.1.js"></script>
+    <script type="text/javascript">
+        $(function () {
+            getCurrentflowid();
+            addColumnName();
+            var id=$("#id").val();
+            if(id ==''){
+                $("#id").val('form_rdio_'+MathRand());
+            }
+        });
+        function addColumnName() {
+            var currentflowid=$("#currentflowid").val();
+            alert(currentflowid);
+            $.ajax({
+                type:'post',
+                url:'http://localhost:8081/Design/defination/flows/findAllByFlowId',
+                dataType:'json',
+                data:{"currentflowid":currentflowid},
+                success:function(data){
+                    $.each(data, function (index) {
+                        var text = data[index].columnName;
+                        $("#name").append("<option value='"+text+"'>"+text+"</option>");
+                    });
+
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    // 状态码
+                    console.log(XMLHttpRequest.status);
+                    // 状态
+                    console.log(XMLHttpRequest.readyState);
+                    // 错误信息
+                    console.log(textStatus);
+                }
+            });
+        }
+        function getURLParameter(name)
+        {
+            return decodeURIComponent((new RegExp("[?|&]"+name+"="+"([^&;]+?)(&|#|;|$)").exec(
+                location.search)||[,""])[1].replace(/\s+/g,"%20"))||null;
+        }
+        function getCurrentflowid()
+        {
+            var currentflowid=getURLParameter("currentflowid");
+            document.getElementById("currentflowid").value=currentflowid;
+        }
+
+        function MathRand()
+        {
+            var num="";
+            for(var i=0;i<15;i++)
+            {
+                num+=Math.floor(Math.random()*10);
+            }
+            return num;
+        }
+
+        function addPower() {
+
+            var currentflowid=$("#currentflowid").val();
+            $.ajax({
+                type:'post',
+                url:'http://localhost:8081/Design/defination/nodes/findNodeByFlowIdOrderByCreateTimeDesc',
+                dataType:'json',
+                data:{"currentflowid":currentflowid},
+                success:function(data){
+                    if(data.length==0){
+                        alert("请先配置节点!!!!!");
+                        return false;
+                    }
+                    var nid=MathRand();
+                    var pid=MathRand();
+                    var oTable = document.getElementById('options_table');
+                    var new_tr_node= oTable.insertRow(oTable.rows.length);
+                    var new_td_node0 = new_tr_node.insertCell(0),new_td_node1 = new_tr_node.insertCell(1);
+
+                    new_td_node0.innerHTML = '<td><select class="nodesSelect" id='+nid+' ></select></td>';
+                    new_td_node1.innerHTML = '<td><select class="powerSelect '+nid+'" id='+pid+'></select></td>';
+                    $.each(data, function (index) {
+                        var text = data[index].name;
+                        $("#"+nid).append("<option value='"+text+"'>"+text+"</option>");
+                    });
+                    $("#"+pid).append("<option value='可见'>可见</option>");
+                    $("#"+pid).append("<option value='不可见'>不可见</option>");
+                    $("#"+pid).append("<option value='可编辑'>可编辑</option>");
+                    $("#"+pid).append("<option value='不可编辑'>不可编辑</option>");
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    // 状态码
+                    console.log(XMLHttpRequest.status);
+                    // 状态
+                    console.log(XMLHttpRequest.readyState);
+                    // 错误信息
+                    console.log(textStatus);
+                }
+            });
+        }
+    </script>
     <script type="text/javascript">
         function createElement(type, name)
         {
@@ -122,9 +219,10 @@
         function fnAdd() {
             var dName = $G('hidname').value;
             if(!dName) dName = 'NEWFIELD';
+            var name=$G('name').value;
             fnAddComboTr(dName,{
                 "checked":false,
-                "name":'NEWFIELD',
+                "name":name,
                 "value":''
             });
         }
@@ -158,6 +256,7 @@
     <input id="hidname"  type="hidden"/>
     <table class="table table-bordered table-striped">
         <tr>
+            <input type="hidden" id="currentflowid" name="currentflowid">
             <th><span>字段名称</span><span class="label label-important">*</span></th>
             <th><span>字段标题</span><span class="label label-important">*</span> </th>
         </tr>
@@ -174,6 +273,18 @@
             <td>
                 <label class="radio" title="选项一 选项二"><input id="orgchecked0" checked="checked" name="checked" type="radio"> 横排 </label>
                 <label class="radio" title="选项一&#10;选项二"><input id="orgchecked1" name="checked" type="radio" > 竖排 </label>
+            </td>
+        </tr>
+        <tr>
+            <th><span>ID</span> </th>
+            <th><span>NAME</span></th>
+        </tr>
+        <tr>
+            <td>
+                <input type="text" id="id">
+            </td>
+            <td>
+                <select id="name" name="name"></select>
             </td>
         </tr>
         <tr>
@@ -214,6 +325,9 @@
             var gFlow=oNode.getAttribute('fieldflow');
             $G('orgname').value = gTitle;
             $G('fieldname').value = oNode.getAttribute('fieldname');
+            var  id=oNode.getAttribute('id');
+            id =id == null?'':id;
+            $G('id').value=id;
             if (gFlow == '1')
             {
                 $G('fieldflow').checked = true;
@@ -242,7 +356,6 @@
         }
     };
     dialog.onok = function (){
-        debugger
         if($G('fieldname').value==''){
             alert('请输入字段名称');
             return false;
@@ -252,25 +365,24 @@
             return false;
         }
         var gTitle=$G('orgname').value.replace(/\"/g,"&quot;"),gName=$G('fieldname').value;
-
+        var name=$G('name').value;
         var gChecked = 'orgchecked0';
         var gFlow = '0';
         if ($G('orgchecked1').checked) gChecked = 'orgchecked1';
         if ($G('fieldflow').checked ) gFlow = '1';
-
+        var id=$G('id').value;
         if( !oNode ) {
             try {
-                var options = fnParseOptions("NEWFIELD",gChecked);
+                var options = fnParseOptions(name,gChecked);
                 if(!options)
                 {
                     alert('请添加选项');
                     return false;
                 }
                 //{|- 使用边界，防止用户删除了span标签
-                var html = '{|-<span plugins="radios" title="'+gTitle+'" name="NEWFIELD" fieldname="' + gName + '" fieldflow="' + gFlow + '">';
+                var html = '{|-<span leipiplugins="radios" id="'+id+'" plugins="radios" title="'+gTitle+'" name="NEWFIELD" fieldname="' + gName + '" fieldflow="' + gFlow + '">';
                 html +=options;
                 html +='</span>-|}';
-                oNode.setAttribute('leipiplugins',thePlugins);
                 editor.execCommand('insertHtml',html);
                 return true ;
             } catch ( e ) {
@@ -287,7 +399,11 @@
             oNode.setAttribute('orgchecked',gChecked);
             oNode.setAttribute('fieldname',gName);
             oNode.setAttribute('fieldflow',gFlow);
-            option
+            if(id!=''){
+                oNode.setAttribute('id',id);
+            }else{
+                oNode.setAttribute('id','');
+            }
             oNode.innerHTML = fnParseOptions(gName,gChecked);
             delete UE.plugins[thePlugins].editdom;
             return true;

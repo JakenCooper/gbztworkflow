@@ -22,7 +22,7 @@ public class RuntimeTest {
     @Test
     public void getnextstep(){
         TaskModel taskModel = new TaskModel();
-        taskModel.setFlowName("喵喵？");
+        taskModel.setFlowName("发文");
         taskModel = runtimeService.getNextStep(taskModel);
         System.out.println(taskModel.getExecResult().result);
     }

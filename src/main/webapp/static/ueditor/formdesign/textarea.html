@@ -13,11 +13,119 @@
     <![endif]-->
     <link rel="stylesheet" href="leipi.style.css">
     <script type="text/javascript" src="../dialogs/internal.js"></script>
+    <script type="text/javascript" src="../../jquery/jquery-3.3.1.js"></script>
 </head>
 <body>
+<script type="text/javascript">
+    $(function () {
+        getCurrentflowid();
+        addColumnName();
+        $("#id").val('form_areaText_'+MathRand());
+    });
+    function addColumnName() {
+        var currentflowid=$("#currentflowid").val();
+        $.ajax({
+            type:'post',
+            url:'http://localhost:8081/Design/defination/flows/findAllByFlowId',
+            dataType:'json',
+            data:{"currentflowid":currentflowid},
+            success:function(data){
+                $.each(data, function (index) {
+                    var text = data[index].columnName;
+                    $("#name").append("<option value='"+text+"'>"+text+"</option>");
+                });
+
+            },
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                // 状态码
+                console.log(XMLHttpRequest.status);
+                // 状态
+                console.log(XMLHttpRequest.readyState);
+                // 错误信息
+                console.log(textStatus);
+            }
+        });
+    }
+    function getURLParameter(name)
+    {
+        return decodeURIComponent((new RegExp("[?|&]"+name+"="+"([^&;]+?)(&|#|;|$)").exec(
+            location.search)||[,""])[1].replace(/\s+/g,"%20"))||null;
+    }
+    function getCurrentflowid()
+    {
+        var currentflowid=getURLParameter("currentflowid");
+        document.getElementById("currentflowid").value=currentflowid;
+    }
+    function GetRequest() {
+        var url = location.search; //获取url中"?"符后的字串
+        var theRequest = new Object();
+        if (url.indexOf("?") != -1) {
+            var str = url.substr(1);
+            strs = str.split("&");
+            for(var i = 0; i < strs.length; i ++) {
+                theRequest[strs[i].split("=")[0]]=unescape(strs[i].split("=")[1]);
+            }
+        }
+        var json=JSON.stringify(theRequest);
+        var currentflowid=JSON.parse(json).id;
+        document.cookie = "currentflowid="+currentflowid;
+        return currentflowid;
+    }
+    function MathRand()
+    {
+        var num="";
+        for(var i=0;i<15;i++)
+        {
+            num+=Math.floor(Math.random()*10);
+        }
+        return num;
+    }
+
+    function addPower() {
+
+        var currentflowid=$("#currentflowid").val();
+        $.ajax({
+            type:'post',
+            url:'http://localhost:8081/Design/defination/nodes/findNodeByFlowIdOrderByCreateTimeDesc',
+            dataType:'json',
+            data:{"currentflowid":currentflowid},
+            success:function(data){
+                if(data.length==0){
+                    alert("请先配置节点!!!!!");
+                    return false;
+                }
+                var nid=MathRand();
+                var pid=MathRand();
+                var oTable = document.getElementById('options_table');
+                var new_tr_node= oTable.insertRow(oTable.rows.length);
+                var new_td_node0 = new_tr_node.insertCell(0),new_td_node1 = new_tr_node.insertCell(1);
+
+                new_td_node0.innerHTML = '<td><select class="nodesSelect" id='+nid+' ></select></td>';
+                new_td_node1.innerHTML = '<td><select class="powerSelect '+nid+'" id='+pid+'></select></td>';
+                $.each(data, function (index) {
+                    var text = data[index].name;
+                    $("#"+nid).append("<option value='"+text+"'>"+text+"</option>");
+                });
+                $("#"+pid).append("<option value='可见'>可见</option>");
+                $("#"+pid).append("<option value='不可见'>不可见</option>");
+                $("#"+pid).append("<option value='可编辑'>可编辑</option>");
+                $("#"+pid).append("<option value='不可编辑'>不可编辑</option>");
+            },
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                // 状态码
+                console.log(XMLHttpRequest.status);
+                // 状态
+                console.log(XMLHttpRequest.readyState);
+                // 错误信息
+                console.log(textStatus);
+            }
+        });
+    }
+</script>
 <div class="content">
     <table class="table table-bordered table-striped table-hover">
      <tr>
+         <input type="hidden" name="currentflowid" id="currentflowid">
         <th><span>字段名称</span><span class="label label-important">*</span></th>
         <th><span>字段标题</span><span class="label label-important">*</span> </th>
     </tr>
@@ -56,8 +164,19 @@
         <th><span>name</span></th>
     </tr>
         <tr>
-            <td><input id="id" type="text"></td>
-            <td><input id="name" type="text"></td>
+            <td><input id="id" type="text" readonly style="width: 230px;"></td>
+            <td><select id="name"></select></td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <table class="table table-hover table-condensed" id="options_table">
+                    <tr>
+                        <th>节点名称</th>
+                        <th>节点权限</th>
+                    </tr>
+                </table>
+                <a title="添加节点权限" class="btn btn-primary" onclick=" addPower();">添加节点权限</a>
+            </td>
         </tr>
     </table>
 </div>
@@ -104,6 +223,40 @@ dialog.onok = function (){
     if($G('orgname').value==''){
         alert('请输入控件名称');
         return false;
+    }
+
+    if( $G('id').value==''){
+        alert('请输入控件id');
+        return false;
+    }
+
+
+    var array=new Array();
+    var index=document.getElementsByClassName('nodesSelect').length;
+    if(index!=0){
+        for(var i=0;i<index;i++){
+            var nodesId=document.getElementsByClassName('nodesSelect')[i].getAttribute('id');
+            array.push($("#"+nodesId).val()+":"+$("."+nodesId).val()+":"+$G('id').value+":"+$("#currentflowid").val()+":"+$("#name").val());
+        }
+        console.log(array);
+        $.ajax({
+            type:'post',
+            url:'http://localhost:8081/Design/taskNodePermissions/savePermissions',
+            dataType:'json',
+            data:{"array":array},
+            traditional: true,
+            success:function(data){
+                alert(data.msg.msg);
+            },
+            error: function (XMLHttpRequest, textStatus) {
+                // 状态码
+                console.log(XMLHttpRequest.status);
+                // 状态
+                console.log(XMLHttpRequest.readyState);
+                // 错误信息
+                console.log(textStatus);
+            }
+        });
     }
     var gValue=$G('orgvalue').value.replace(/\"/g,"&quot;"),gTitle=$G('orgname').value.replace(/\"/g,"&quot;"),gName=$G('fieldname').value,gFontSize=$G('orgfontsize').value,gWidth=$G('orgwidth').value,gHeight=$G('orgheight').value,id=$G('id').value,name=$G('name').value;
 

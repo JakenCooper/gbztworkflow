@@ -13,7 +13,25 @@
     <![endif]-->
     <link rel="stylesheet" href="leipi.style.css">
     <script type="text/javascript" src="../dialogs/internal.js"></script>
+    <script type="text/javascript" src="../../jquery/jquery-3.3.1.js"></script>
     <script type="text/javascript">
+        $(function () {
+            getCurrentflowid();
+            addColumnName();
+            var id=$("#id").val();
+            if(id ==''){
+                $("#id").val('form_ckb_'+MathRand());
+            }
+        });
+        function MathRand()
+        {
+            var num="";
+            for(var i=0;i<15;i++)
+            {
+                num+=Math.floor(Math.random()*10);
+            }
+            return num;
+        }
         function createElement(type, name)
         {
             var element = null;
@@ -26,7 +44,30 @@
             }
             return element;
         }
+        function addColumnName() {
+            var currentflowid=$("#currentflowid").val();
+            $.ajax({
+                type:'post',
+                url:'http://localhost:8081/Design/defination/flows/findAllByFlowId',
+                dataType:'json',
+                data:{"currentflowid":currentflowid},
+                success:function(data){
+                    $.each(data, function (index) {
+                        var text = data[index].columnName;
+                        $("#name").append("<option value='"+text+"'>"+text+"</option>");
+                    });
 
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    // 状态码
+                    console.log(XMLHttpRequest.status);
+                    // 状态
+                    console.log(XMLHttpRequest.readyState);
+                    // 错误信息
+                    console.log(textStatus);
+                }
+            });
+        }
 
         //checkboxs
         function isIE()
@@ -148,12 +189,25 @@
             return html;
 
         }
+        //获取url参数
+        function getURLParameter(name)
+        {
+            return decodeURIComponent((new RegExp("[?|&]"+name+"="+"([^&;]+?)(&|#|;|$)").exec(
+                location.search)||[,""])[1].replace(/\s+/g,"%20"))||null;
+        }
+        function getCurrentflowid()
+        {
+            var currentflowid=getURLParameter("currentflowid");
+            alert(currentflowid);
+            document.getElementById("currentflowid").value=currentflowid;
+        }
     </script>
 </head>
 <body>
 <div class="content">
     <table class="table table-bordered table-striped">
         <tr>
+            <input type="hidden" id="currentflowid" name="currentflowid">
             <th><span>字段名称</span><span class="label label-important">*</span></th>
             <th><span>字段标题</span><span class="label label-important">*</span> </th>
         </tr>
@@ -193,16 +247,16 @@
                     </tr-->
 
                 </table>
-                <a title="添加选项" class="btn btn-primary" onclick="fnAdd($G('names').value);">添加选项</a>
+                <a title="添加选项" class="btn btn-primary" onclick="fnAdd($G('name').value);">添加选项</a>
             </td>
         </tr>
         <tr>
+            <th>ID</th>
             <th>name</th>
-            <th></th>
         </tr>
         <tr>
-            <td><input type="text" name="names" id="names"></td>
-            <td></td>
+            <td><input type="text" id="id" name="id"></td>
+            <td><select id="name" name="name"></select></td>
         </tr>
 
 
@@ -212,10 +266,13 @@
     var oNode = null,thePlugins = 'checkboxs';
     window.onload = function() {
         if( UE.plugins[thePlugins].editdom ){
-            oNode = UE.plugins[thePlugins].editdom;
             debugger
-            /*var gTitle=oNode.getAttribute('title').replace(/&quot;/g,"\"");*/
+            oNode = UE.plugins[thePlugins].editdom;
+            var gTitle=oNode.getAttribute('title').replace(/&quot;/g,"\"");
             var gFlow=oNode.getAttribute('fieldflow');
+            var  id=oNode.getAttribute('id');
+            id =id == null?'':id;
+            $G('id').value=id;
             $G('orgname').value = gTitle;
             $G('fieldname').value = oNode.getAttribute('fieldname');
             if (gFlow == '1')
@@ -251,7 +308,7 @@
             return false;
         }
         var gTitle=$G('orgname').value.replace(/\"/g,"&quot;"),gName=$G('fieldname').value;
-
+        var id=$G('id').value;
         var gChecked = 'orgchecked0';
         var gFlow = '0';
         if ($G('orgchecked1').checked) gChecked = 'orgchecked1';
@@ -267,7 +324,8 @@
                     return false;
                 }
                 //{|- 使用边界，防止用户删除了span标签，程序处理要把边界替换为空
-                var html = '{|-<span plugins="checkboxs" title="'+gTitle+'" fieldname="' + gName + '" fieldflow="' + gFlow + '">';
+
+                var html = '{|-<span leipiplugins="checkboxs" id="'+id+'" title="'+gTitle+'" fieldname="' + gName + '" fieldflow="' + gFlow + '">';
                 html +=options;
                 html +='</span>-|}';
                 editor.execCommand('insertHtml',html);
@@ -285,6 +343,11 @@
             oNode.setAttribute('orgchecked',gChecked);
             oNode.setAttribute('fieldname',gName);
             oNode.setAttribute('fieldflow',gFlow);
+            if(id!=''){
+                oNode.setAttribute('id',id);
+            }else{
+                oNode.setAttribute('id','');
+            }
             oNode.innerHTML = fnParseOptions(gChecked);
             delete UE.plugins[thePlugins].editdom;
             return true;

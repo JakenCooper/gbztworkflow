@@ -83,6 +83,9 @@ public class Task extends BaseEntity {
     @Column(name="retreat_description")
     private String retreatDescription;
 
+    @Column(name="create_time_mills")
+    private Long createTimeMills;
+
     // only useful for "multi" finish type
     @Column(name="execution_type")
     private String executionType; // (block or concurrent) [model]
@@ -115,6 +118,14 @@ public class Task extends BaseEntity {
     @org.hibernate.annotations.Type(type="yes_no")
     private boolean lock;
 
+
+    public Long getCreateTimeMills() {
+        return createTimeMills;
+    }
+
+    public void setCreateTimeMills(Long createTimeMills) {
+        this.createTimeMills = createTimeMills;
+    }
 
     public String getId() {
         return id;

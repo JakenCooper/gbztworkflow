@@ -27,7 +27,7 @@ UE.plugins['text'] = function () {
 				name:thePlugins,
 				editor:this,
 				title: '文本框',
-				cssRules:"width:600px;height:310px;",
+				cssRules:"width:730px;height:420px;",
 				buttons:[
 				{
 					className:'edui-okbutton',
@@ -81,6 +81,81 @@ UE.plugins['text'] = function () {
 			}
 		}
 	});
+};
+
+/**
+ * 文本框
+ * @command textfield
+ * @method execCommand
+ * @param { String } cmd 命令字符串
+ * @example
+ * ```javascript
+ * editor.execCommand( 'textfield');
+ * ```
+ */
+UE.plugins['file'] = function () {
+    var me = this,thePlugins = 'file';
+    me.commands[thePlugins] = {
+        execCommand:function () {
+            var dialog = new UE.ui.Dialog({
+                iframeUrl:this.options.UEDITOR_HOME_URL + UE.leipiFormDesignUrl+'/file.html',
+                name:thePlugins,
+                editor:this,
+                title: '文件选择',
+                cssRules:"width:600px;height:170px;",
+                buttons:[
+                    {
+                        className:'edui-okbutton',
+                        label:'确定',
+                        onclick:function () {
+                            dialog.close(true);
+                        }
+                    },
+                    {
+                        className:'edui-cancelbutton',
+                        label:'取消',
+                        onclick:function () {
+                            dialog.close(false);
+                        }
+                    }]
+            });
+            dialog.render();
+            dialog.open();
+        }
+    };
+    var popup = new baidu.editor.ui.Popup( {
+        editor:this,
+        content: '',
+        className: 'edui-bubble',
+        _edittext: function () {
+            baidu.editor.plugins[thePlugins].editdom = popup.anchorEl;
+            me.execCommand(thePlugins);
+            this.hide();
+        },
+        _delete:function(){
+            if( window.confirm('确认删除该控件吗？') ) {
+                baidu.editor.dom.domUtils.remove(this.anchorEl,false);
+            }
+            this.hide();
+        }
+    } );
+    popup.render();
+    me.addListener( 'mouseover', function( t, evt ) {
+        evt = evt || window.event;
+        var el = evt.target || evt.srcElement;
+        var leipiPlugins = el.getAttribute('leipiplugins');
+        if ( /input/ig.test( el.tagName ) && leipiPlugins==thePlugins) {
+            var html = popup.formatHtml(
+                '<nobr>文件: <span onclick=$$._edittext() class="edui-clickable">编辑</span>&nbsp;&nbsp;<span onclick=$$._delete() class="edui-clickable">删除</span></nobr>' );
+            if ( html ) {
+                popup.getDom( 'content' ).innerHTML = html;
+                popup.anchorEl = el;
+                popup.showAnchor( popup.anchorEl );
+            } else {
+                popup.hide();
+            }
+        }
+    });
 };
 /**
  * 宏控件
@@ -322,9 +397,9 @@ UE.plugins['radios'] = function () {
 
     var me = this,thePlugins = 'radios';
     me.commands[thePlugins] = {
-        execCommand:function () {
+        execCommand:function (method,currentflowid) {
             var dialog = new UE.ui.Dialog({
-                iframeUrl:this.options.UEDITOR_HOME_URL + UE.leipiFormDesignUrl+'/radios.html',
+                iframeUrl:this.options.UEDITOR_HOME_URL + UE.leipiFormDesignUrl+'/radios.html?currentflowid='+currentflowid,
                 name:thePlugins,
                 editor:this,
                 title: '单选框组',
@@ -398,9 +473,9 @@ UE.plugins['radios'] = function () {
 UE.plugins['checkboxs'] = function () {
     var me = this,thePlugins = 'checkboxs';
     me.commands[thePlugins] = {
-        execCommand:function () {
+        execCommand:function (method,currentflowid) {
             var dialog = new UE.ui.Dialog({
-                iframeUrl:this.options.UEDITOR_HOME_URL + UE.leipiFormDesignUrl+'/checkboxs.html',
+                iframeUrl:this.options.UEDITOR_HOME_URL + UE.leipiFormDesignUrl+'/checkboxs.html?currentflowid='+currentflowid,
                 name:thePlugins,
                 editor:this,
                 title: '复选框组',
@@ -474,13 +549,13 @@ UE.plugins['checkboxs'] = function () {
 UE.plugins['textarea'] = function () {
     var me = this,thePlugins = 'textarea';
     me.commands[thePlugins] = {
-        execCommand:function () {
+        execCommand:function (method,currentflowid) {
             var dialog = new UE.ui.Dialog({
-                iframeUrl:this.options.UEDITOR_HOME_URL + UE.leipiFormDesignUrl+'/textarea.html',
+                iframeUrl:this.options.UEDITOR_HOME_URL + UE.leipiFormDesignUrl+'/textarea.html?currentflowid='+currentflowid,
                 name:thePlugins,
                 editor:this,
                 title: '多行文本框',
-                cssRules:"width:600px;height:330px;",
+                cssRules:"width:730px;height:420px;",
                 buttons:[
                 {
                     className:'edui-okbutton',
@@ -547,9 +622,9 @@ UE.plugins['textarea'] = function () {
 UE.plugins['select'] = function () {
     var me = this,thePlugins = 'select';
     me.commands[thePlugins] = {
-        execCommand:function () {
+        execCommand:function (method,currentflowid) {
             var dialog = new UE.ui.Dialog({
-                iframeUrl:this.options.UEDITOR_HOME_URL + UE.leipiFormDesignUrl+'/select.html',
+                iframeUrl:this.options.UEDITOR_HOME_URL + UE.leipiFormDesignUrl+'/select.html?currentflowid='+currentflowid,
                 name:thePlugins,
                 editor:this,
                 title: '下拉菜单',

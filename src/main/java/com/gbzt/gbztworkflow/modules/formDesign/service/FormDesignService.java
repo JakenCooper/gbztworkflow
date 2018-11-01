@@ -2,12 +2,15 @@ package com.gbzt.gbztworkflow.modules.formDesign.service;
 
 
 import com.gbzt.gbztworkflow.modules.formDesign.Util.HtmlConstant;
+import com.gbzt.gbztworkflow.modules.formDesign.Util.UeditorTools;
 import com.gbzt.gbztworkflow.modules.formDesign.dao.FormDesignDao;
 import com.gbzt.gbztworkflow.modules.formDesign.entity.FormDesign;
 import com.gbzt.gbztworkflow.modules.taskNodePermissions.dao.TaskPermissionsDao;
 import com.gbzt.gbztworkflow.modules.taskNodePermissions.entity.TaskNodePermissions;
+import com.gbzt.gbztworkflow.modules.velocity.service.VelocityService;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
+import org.jsoup.helper.StringUtil;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -17,6 +20,10 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -108,38 +115,46 @@ public class FormDesignService {
 
     public Document addLabel(String html){
         Document doc= Jsoup.parse(html);
-        Document permissionsDoc=Jsoup.parse(html);
         Elements inputElements=doc.getElementsByTag(HtmlConstant.INPUT_TAG);
-        Elements allElements=doc.getAllElements();
 
-        for(int i=0;i<inputElements.size();i++){
+  /*      for(int i=0;i<inputElements.size();i++){
             Element element=inputElements.get(i);
             String id=element.attr("id");
-            //拼接lable
-            String lable="<lable for="+id+">"+id+"</lable>:";
+            //拼接lable lable="<lable for="+id+">"+id+"</lable>:";
+            String lable="";
+            if(element.parentNode().outerHtml().contains("lable")){
+                 continue;
+            }else{
+                lable="<lable for="+id+">"+id+"</lable>:";
+            }
+
             element.before(lable);
-        }
-        Elements textAreaElements=doc.getElementsByTag(HtmlConstant.TEXT_AREA_TAG);
-        for(int i=0;i<textAreaElements.size();i++){
-            Element element=textAreaElements.get(i);
+        }*/
+        Elements tableElements=doc.getElementsByTag(HtmlConstant.TABLE_AREA_TAG);
+        for(int i=0;i<tableElements.size();i++){
+            Element element=tableElements.get(i);
             element.addClass("table  table-bordered table-condensed");
         }
         return doc;
     }
 
-    public String createJsp(String parse_form, String currentFlowId, HttpServletRequest request, HttpServletResponse response, HttpSession session) {
-        Document doc= Jsoup.parseBodyFragment(parse_form);
-        Document permissionsDoc=Jsoup.parse(parse_form);
-        //Document document=Jsoup.parseBodyFragment(parse_form);
-        System.out.println("_______________________格式化代码——————————————————————");
-        //System.out.println(document.outerHtml());
-        System.out.println("_______________________格式化代码——————————————————————");
+    public String createJsp(String parseForm, String currentFlowId, HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+        Document doc= Jsoup.parseBodyFragment(parseForm);
         Elements inputElements=doc.getElementsByTag(HtmlConstant.INPUT_TAG);
+        Elements textareaElements=doc.getElementsByTag(HtmlConstant.TEXT_AREA_TAG);
+        Elements selectElements=doc.getElementsByTag(HtmlConstant.SELECT_TAG);
+        //用来jsp code
         Map<String,String> nodesMap=new HashMap<>();
         try {
+            /*input -------------------------------------------------------------start*/
             for(int i=0;i<inputElements.size();i++){
                 Element element=inputElements.get(i);
                 String id=element.attr("id");
+                String name=element.attr("name");
+                if(name.contains("_")){
+                    name= UeditorTools.humpNomenclature(name);
+                    element.attr("name",name);
+                }
                 String style=element.attr("style");
                 //字段名称
                 String fieldName=element.attr("fieldname");
@@ -150,7 +165,7 @@ public class FormDesignService {
                     String taskName=taskNodePermissionsList.get(j).getTaskName();
                     String startCif="\n\r\t\t##start_:if test=\"${'"+taskName+"'==taskName"+"}\"_###end\n\r";
                     String endCif="\n\r\t\t##end_c:if_###end\n\r";
-                    String lable="\n\r\t\t\t<lable for=\""+id+"\">"+fieldName+"</lable>:\n\r";
+                    /*String lable="\n\r\t\t\t<lable for=\""+id+"\">"+fieldName+"</lable>:\n\r";*/
                     //重置前一个input样式
                     element.attr("style",style);
                     element.removeAttr("readonly");
@@ -159,52 +174,149 @@ public class FormDesignService {
                         element.attr("style",style+"display:none");
                     }
                     if("不可编辑".equals(permission)){
-                        element.attr("readonly","readonly");
+                        element.attr("readonly","${readonly}");
                     }
-               /*   element.before(startCif);
-                    element.after(endCif);
-                    element.before(lable); */
                     String outerHtml=element.outerHtml();
-                    outerHtml=outerHtml.replace("input","form:input").replace("name","path").replace(">","/>");
-                    if(outerHtml.contains("readonly")){
-                        outerHtml=outerHtml.replace("readonly","readonly=\"readonly\"");
+                    String type=element.attr("type");
+                    if(HtmlConstant.INPUT_TYPE_TEXT.equals(type)){
+                        outerHtml=outerHtml.replace("input","form:input").replace("name","path").replace(">","/>");
                     }
-                    String code=startCif+lable+"\t\t\t"+outerHtml+endCif;
+                   /* if(outerHtml.contains("readonly")){
+                        outerHtml=outerHtml.replace("readonly","readonly=\"readonly\"");
+                    }*/
+                    String code=startCif+"\t\t\t"+outerHtml+endCif;
                     String uuid=UUID.randomUUID().toString();
-                    System.out.println("复制的节点"+code);
-                    element.after("##tranJsp"+uuid+"##tranJsp_");
-                    nodesMap.put("##tranJsp"+uuid+"##tranJsp_",code);
+                    String key="##tranJsp"+uuid+"##tranJsp_";
+                    element.after(key);
+                    nodesMap.put(key,code);
+
+                }
+                if(taskNodePermissionsList.size()==0){
+                    String uuid=UUID.randomUUID().toString();
+
+                    String type=element.attr("type");
+                    String key="##tranJsp"+uuid+"##tranJsp_";
+
+                    if(HtmlConstant.INPUT_TYPE_TEXT.equals(type)){
+                        String outerHtml=element.removeAttr("type").outerHtml();
+                        // = 号为避免实体类属性中也存在name字符串
+                        outerHtml=outerHtml.replace("input","form:input").replace("name=","path=").replace(">","/>");
+                        nodesMap.put(key,"\t\t\t"+outerHtml);
+                    }
+                    if(HtmlConstant.CHECK_BOX_TAG.equals(type)){
+                        String outerHtml=element.removeAttr("type").outerHtml();
+                        outerHtml=outerHtml.replace("input","form:checkbox").replace("name=","path=").replace(">","/>");
+                        nodesMap.put(key,"\t\t\t"+outerHtml);
+                    }
+                    if(HtmlConstant.INPUT_TYPE_RADIO.equals(type)){
+                        String outerHtml=element.removeAttr("type").outerHtml();
+                        outerHtml=outerHtml.replace("input","form:radiobutton").replace("name=","path=").replace(">","/>");
+                        if(outerHtml.contains("checked")){
+                            outerHtml=outerHtml.replace("checked","${checkState}");
+                        }
+                        nodesMap.put(key,"\t\t\t"+outerHtml);
+                    }
+                    if(HtmlConstant.FILE_TAG.equals(type)){
+                        String outerHtml=element.outerHtml();
+                        nodesMap.put(key,"\t\t\t"+HtmlConstant.NEW_FILE_TAG);
+                    }
+
+                    element.after(key);
+                }
+                element.remove();
+            }
+            /*input    ---------------------------------------------------------end*/
+            /*textarea ---------------------------------------------------------start*/
+            for(int i=0;i<textareaElements.size();i++){
+                Element element=textareaElements.get(i);
+                String id=element.attr("id");
+                String style=element.attr("style");
+                //字段名称
+                String fieldName=element.attr("fieldname");
+                String name=element.attr("name");
+                if(name.contains("_")){
+                    name= UeditorTools.humpNomenclature(name);
+                    element.attr("name",name);
+                }
+                //拼接c:if
+                List<TaskNodePermissions> taskNodePermissionsList=taskPermissionsDao.findByTaskNodeIdAndAndCurrentFlowId(id,currentFlowId);
+                for(int j=0;j<taskNodePermissionsList.size();j++){
+                    String permission=taskNodePermissionsList.get(j).getPermission();
+                    String taskName=taskNodePermissionsList.get(j).getTaskName();
+                    String startCif="\n\r\t\t##start_:if test=\"${'"+taskName+"'==taskName"+"}\"_###end\n\r";
+                    String endCif="\n\r\t\t##end_c:if_###end\n\r";
+                   /* String lable="\n\r\t\t\t<lable for=\""+id+"\">"+fieldName+"</lable>:\n\r";*/
+                    //重置前一个input样式
+                    element.attr("style",style);
+                    element.removeAttr("readonly");
+                    if("不可见".equals(permission)){
+                        //设置新的权限
+                        element.attr("style",style+"display:none");
+                    }
+                    if("不可编辑".equals(permission)){
+                        element.attr("readonly","${readonly}");
+                    }
+                    String outerHtml=element.outerHtml();
+                    outerHtml=outerHtml.replace("textarea","form:textarea").replace("name","path").replace(">","/>");
+                   /* if(element.parentNode().outerHtml().contains("lable")){
+                        lable="";
+                    }*/
+                    String code=startCif+"\t\t\t"+outerHtml+endCif;
+                    String uuid=UUID.randomUUID().toString();
+                    String key="##tranJsp"+uuid+"##tranJsp_";
+                    element.after(key);
+                    nodesMap.put(key,code);
 
                 }
                 if(taskNodePermissionsList.size()==0){
                     String uuid=UUID.randomUUID().toString();
                     String outerHtml=element.outerHtml();
-                    outerHtml=outerHtml.replace("input","form:input").replace("name","path").replace(">","/>");
-                    if(outerHtml.contains("readonly")){
-                        outerHtml=outerHtml.replace("readonly","readonly=\"readonly\"");
-                    }
-                    nodesMap.put("##tranJsp"+uuid+"##tranJsp_","\t\t\t"+outerHtml);
-                    element.after("##tranJsp"+uuid+"##tranJsp_");
+                    String key="##tranJsp"+uuid+"##tranJsp_";
+                    /*outerHtml=outerHtml.replace("input","form:input").replace("name","path").replace(">","/>");*/
+
+                    nodesMap.put(key,"\t\t\t"+outerHtml);
+                    element.after(key);
                 }
                 element.remove();
             }
+            /*textarea ---------------------------------------------------------end*/
+            /*select -----------------------------------------------------------start*/
+            for(int i=0;i<selectElements.size();i++){
+                Element selectElement=selectElements.get(i);
+                String name=selectElement.attr("name");
+                if(name.contains("_")){
+                    name= UeditorTools.humpNomenclature(name);
+                    selectElement.attr("name",name);
+                }
+                // < 避免字段中有option 字符串
+                String outerHtml=selectElement.outerHtml().replaceFirst("select","form:select").replace("<option","<form:option").replace("name","path");
+                if(outerHtml.contains("selected")){
+                    outerHtml=outerHtml.replace("selected","${selectState}");
+                }
+                String uuid=UUID.randomUUID().toString();
+                String key="##tranJsp"+uuid+"##tranJsp_";
+                selectElement.after(key);
+                nodesMap.put(key,outerHtml);
+                selectElement.remove();
+            }
+            /*select -----------------------------------------------------------end*/
+
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+
+
         //table添加样式
-        Elements textAreaElements=doc.getElementsByTag(HtmlConstant.TABLE_AREA_TAG);
-        for(int i=0;i<textAreaElements.size();i++){
-            Element element=textAreaElements.get(i);
-            element.addClass("table  table-bordered table-condensed");
+        Elements tableElements=doc.getElementsByTag(HtmlConstant.TABLE_AREA_TAG);
+        for(int i=0;i<tableElements.size();i++){
+            Element element=tableElements.get(i);
+            element.addClass("table table-bordered table-condensed");
         }
         String jspCode=doc.outerHtml();
-    /*    if(jspCode.contains("##start_")&&jspCode.contains("##end_")&&jspCode.contains("###end")){
-            jspCode=jspCode.replaceAll("##start_","<c").replaceAll("##end_","</").replaceAll("_###end",">");
-        }*/
         for (String key : nodesMap.keySet()) {
             if(StringUtils.isNotBlank(key)){
                 if(jspCode.contains(key)){
-                    System.out.println(nodesMap.get(key));
                     jspCode=jspCode.replace(key,nodesMap.get(key));
                     if(jspCode.contains("##start_")&&jspCode.contains("##end_")&&jspCode.contains("###end")){
                         jspCode=jspCode
@@ -212,21 +324,35 @@ public class FormDesignService {
                                 .replaceAll("##end_","</")
                                 .replaceAll("_###end",">");
                     }
+
                 }
             }
         }
 
-
-        System.out.println("-----------------------------------------code------------------------------------------");
-        System.out.println(jspCode);
-        System.out.println("----------------------------------------create-----------------------------------------");
-        String path = session.getServletContext().getRealPath("/");
-        System.out.println("路径"+path);
         Document bodyCode = Jsoup.parseBodyFragment(jspCode);
         Element body = bodyCode.body();
-        System.out.println("-----------------------------------------code  body------------------------------------------");
-        System.out.println();
-        jspCode=body.outerHtml().replace("<body>","").replace("</body>","");
+        //只保留body标签中的数据
+        jspCode=body.outerHtml().replace("<body>","").replace("</body>","").replaceAll("\\{\\|\\-","").replaceAll("-\\|}","");
+        if(jspCode.contains("${selectTree}")){
+            jspCode=jspCode.replace("${selectTree}",HtmlConstant.TREE_SELECT_TAG);
+        }
+        if(jspCode.contains("${readonly}")){
+            jspCode=jspCode.replace("${readonly}","readonly");
+        }
+        if(jspCode.contains("${timeSelect}")){
+            jspCode=jspCode.replace("${timeSelect}",HtmlConstant.TIME_SELECT_TAG);
+        }
+        if(jspCode.contains("${checkState}")){
+            jspCode=jspCode.replace("${checkState}","checked");
+        }
+        File file = new File("d://test.jsp");
+        PrintStream ps = null;
+        try {
+            ps = new PrintStream(new FileOutputStream(file));
+            ps.println(jspCode);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
         return jspCode;
     }
 
@@ -234,4 +360,5 @@ public class FormDesignService {
         FormDesign formDesign=formDesignDao.findFormDesignByCurrentFlowId(currentFlowId);
         return formDesign;
     }
+
 }

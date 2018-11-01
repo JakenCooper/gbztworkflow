@@ -1,6 +1,9 @@
 package com.gbzt.gbztworkflow.modules.formDesign.Util;
 
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class UeditorTools {
     /**
      * 去掉分界符 {|- 和  -|}
@@ -30,5 +33,16 @@ public class UeditorTools {
             }
         }
         return keyword;
+    }
+    public static String humpNomenclature(String str){
+        str = str.toLowerCase();
+        final StringBuffer sb = new StringBuffer();
+        Pattern p = Pattern.compile("_(\\w)");
+        Matcher m = p.matcher(str);
+        while (m.find()){
+            m.appendReplacement(sb,m.group(1).toUpperCase());
+        }
+        m.appendTail(sb);
+        return sb.toString();
     }
 }

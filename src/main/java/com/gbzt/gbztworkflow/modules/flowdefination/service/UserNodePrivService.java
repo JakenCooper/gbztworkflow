@@ -72,7 +72,9 @@ public class UserNodePrivService extends MetadataService {
         Set<String> officeSet =new HashSet<String>();
         try {
             connection = getConnection(driver,url,flowInst.getBussDbUserName(),flowInst.getBussDbUserPwd());
-
+            if(connection == null){
+                return buildResult(false,"connection is null",null);
+            }
             String rootId = "";
             PreparedStatement rootPs = connection.prepareStatement("select id from sys_office where name='"+partyName+"'");
             ResultSet rootRs = rootPs.executeQuery();
@@ -152,7 +154,9 @@ public class UserNodePrivService extends MetadataService {
         List<UserOffice> userOffices = new ArrayList<UserOffice>();
         try {
             connection = getConnection(driver,url,flowInst.getBussDbUserName(),flowInst.getBussDbUserPwd());
-
+            if(connection == null){
+                return new ArrayList<UserTreeInfo>();
+            }
             String rootId = "";
             PreparedStatement rootPs = connection.prepareStatement("select id from sys_office where name='"+partyName+"'");
             ResultSet rootRs = rootPs.executeQuery();

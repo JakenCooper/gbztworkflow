@@ -6,10 +6,7 @@ import com.gbzt.gbztworkflow.modules.flowdefination.entity.Line;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationService;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.TaskModel;
-import com.gbzt.gbztworkflow.modules.workflowengine.dao.HistTaskDao;
-import com.gbzt.gbztworkflow.modules.workflowengine.dao.ProcInstDao;
-import com.gbzt.gbztworkflow.modules.workflowengine.dao.TaskDao;
-import com.gbzt.gbztworkflow.modules.workflowengine.dao.TaskVariableDao;
+import com.gbzt.gbztworkflow.modules.workflowengine.dao.*;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineAccessException;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineRuntimeException;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.HistTask;
@@ -45,6 +42,7 @@ public class FinishTask extends EngineBaseExecutor {
         public TaskDao taskDao;
         public TaskVariableDao taskVariableDao;
         public HistTaskDao histTaskDao;
+        public HistProcDao histProcDao;
 
         private Map<String,String> argMap;
         private Flow flowInst;
@@ -103,6 +101,7 @@ public class FinishTask extends EngineBaseExecutor {
         nextArg.taskDao = arg.taskDao;
         nextArg.procInstDao =  arg.procInstDao;
         nextArg.lineInst = nextLine;
+        nextArg.histProcDao = arg.histProcDao;
 
         if(isBlank(taskObj.getParentTaskId())){
             if(isBlank(subTasks)){

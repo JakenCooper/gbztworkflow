@@ -14,6 +14,7 @@ import com.gbzt.gbztworkflow.modules.workflowengine.runtime.entity.EngineTask;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.EngineManager;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.EngineTaskTemplateFactory;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.task.*;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -99,6 +100,7 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
         arg.lineDao = lineDao;
         arg.taskDao = taskDao;
         arg.histTaskDao = histTaskDao;
+        arg.histProcDao = histProcDao;
 
         EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(StartProc.class,arg,null);
         try {
@@ -127,6 +129,7 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
         arg.taskDao = taskDao;
         arg.taskVariableDao = taskVariableDao;
         arg.histTaskDao = histTaskDao;
+        arg.histProcDao = histProcDao;
 
         EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(FinishTask.class,arg,model.getArgMap());
         try {
@@ -243,7 +246,71 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
             return (TaskModel)buildResult(model,4,loggerType,null,e,
                     false,e.getMessage(),null);
         }
+    }
 
+    /*
+     *  retreatSubmitTag : false
+     *  rtn : boolean
+     * */
+    public TaskModel canRetreat(TaskModel model){
+        String loggerType = LOGGER_TYPE_PREFIX+"canRetreat";
+
+        if(StringUtils.isBlank(model.getRetreatOperType())){
+            throw new IllegalArgumentException("illegal retreat oper type.");
+        }
+        if(model.isRetreatSubmitTag()){
+            throw new IllegalArgumentException("wrong interface call.");
+        }
+        TaskExecution execution = new TaskExecution();
+        BeanUtils.copyProperties(model,execution);
+        RetreatTask.RetreatTaskArg arg = new RetreatTask.RetreatTaskArg();
+        arg.definationService = definationService;
+        arg.execution = execution;
+        arg.taskDao = taskDao;
+        arg.histProcDao = histProcDao;
+        arg.procInstDao = procInstDao;
+
+        EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(RetreatTask.class,arg,null);
+        try {
+            boolean result = EngineManager.execute(engineTask);
+            return (TaskModel)buildResult(model,true,"",result);
+        } catch (Exception e) {
+            return (TaskModel)buildResult(model,4,loggerType,null,e,
+                    false,e.getMessage(),null);
+        }
+    }
+
+    /*
+     *  retreatSubmitTag : true
+     *  rtn : String
+     * */
+    @Transactional("jtm")
+    public TaskModel retreatSubmit(TaskModel model){
+        String loggerType = LOGGER_TYPE_PREFIX+"retreatSubmit";
+
+        if(StringUtils.isBlank(model.getRetreatOperType())){
+            throw new IllegalArgumentException("illegal retreat oper type.");
+        }
+        if(!model.isRetreatSubmitTag()){
+            throw new IllegalArgumentException("wrong interface call.");
+        }
+        TaskExecution execution = new TaskExecution();
+        BeanUtils.copyProperties(model,execution);
+        RetreatTask.RetreatTaskArg arg = new RetreatTask.RetreatTaskArg();
+        arg.definationService = definationService;
+        arg.execution = execution;
+        arg.taskDao = taskDao;
+        arg.histProcDao = histProcDao;
+        arg.procInstDao = procInstDao;
+
+        EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(RetreatTask.class,arg,null);
+        try {
+            String result = EngineManager.execute(engineTask);
+            return (TaskModel)buildResult(model,true,"",result);
+        } catch (Exception e) {
+            return (TaskModel)buildResult(model,4,loggerType,null,e,
+                    false,e.getMessage(),null);
+        }
     }
 
 }

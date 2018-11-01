@@ -62,6 +62,12 @@ public class DefinationService extends BaseService {
         if(StringUtils.isBlank(flow.getId())){
             flow.setId(CommonUtils.genUUid());
         }
+        if(StringUtils.isBlank(flow.getFormKey())){
+            StringBuffer formBuffer = new StringBuffer("/");
+            formBuffer.append(flow.getModuleName()).append("/").append(CommonUtils.convertTableName(flow.getBussTableName()))
+                        .append("/").append("form");
+            flow.setFormKey(formBuffer.toString());
+        }
         flow.genBaseVariables();
         flowDao.save(flow);
         List<FlowBuss> flowBusses = new ArrayList<FlowBuss>();
@@ -165,6 +171,9 @@ public class DefinationService extends BaseService {
         }
         if(StringUtils.isBlank(node.getId())){
             node.setId(CommonUtils.genUUid());
+        }
+        if(node.getSortNum() == null){
+            node.setSortNum(1);
         }
         node.genBaseVariables();
         nodeDao.save(node);

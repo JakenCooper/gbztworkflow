@@ -1,0 +1,92 @@
+package com.thinkgem.jeesite.modules.${package}.web;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.thinkgem.jeesite.common.config.Global;
+import org.apache.shiro.authz.annotation.RequiresPermissions;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import com.thinkgem.jeesite.common.persistence.Page;
+import com.thinkgem.jeesite.common.web.BaseController;
+import com.thinkgem.jeesite.common.utils.StringUtils;
+import com.thinkgem.jeesite.modules.sys.entity.User;
+import com.thinkgem.jeesite.modules.sys.utils.UserUtils;
+import com.thinkgem.jeesite.modules.${package}.entity.${EntityName};
+import com.thinkgem.jeesite.modules.${package}.service.${EntityName}Service;
+
+/**
+* 单表生成${EntityName}Controller
+* @version ${date}
+*/
+@Controller
+@RequestMapping(value = "/${adminPath}/${package}/${entityName}")
+public class ${EntityName}Controller extends BaseController {
+    
+    @Autowired
+    private ${EntityName}Service ${entityName}Service;
+    
+    @ModelAttribute
+    public ${EntityName} get(@RequestParam(required=false) String id) {
+        ${EntityName} entity = null;
+        if (StringUtils.isNotBlank(id)){
+            entity = ${entityName}Service.get(id);
+        }
+        if (entity == null){
+        entity = new ${EntityName}();
+        }
+            return entity;
+    }
+
+    @RequiresPermissions("${package}:${entityName}:view")
+    @RequestMapping(value = {"list", ""})
+    public String list(${EntityName} ${entityName}, HttpServletRequest request, HttpServletResponse response, Model model) {
+//    Page<${EntityName}> page = ${entityName}Service.findPage(new Page<${EntityName}>(request, response), ${entityName});
+//        model.addAttribute("page", page);
+        return null;//"modules/${package}/${entityName}List";
+    }
+    
+    @RequiresPermissions("${package}:${entityName}:view")
+    @RequestMapping(value = "form")
+    public String form(${EntityName} ${entityName}, Model model) {
+        model.addAttribute("${entityName}", ${entityName});
+        return "modules/${package}/${entityName}Form";
+    }
+
+    @RequiresPermissions("${package}:${entityName}:edit")
+    @RequestMapping(value = "insert")
+    public String insert(${EntityName} ${entityName}, Model model, RedirectAttributes redirectAttributes) {
+        if (!beanValidator(model, ${entityName})){
+            return form(${entityName}, model);
+        }
+        ${entityName}Service.insert(${entityName});
+        addMessage(redirectAttributes, "保存单表成功");
+        return "redirect:"+Global.getAdminPath()+"/${package}/${entityName}/?repage";
+    }
+
+    @RequiresPermissions("${package}:${entityName}:edit")
+    @RequestMapping(value = "update")
+    public String update(${EntityName} ${entityName}, Model model, RedirectAttributes redirectAttributes) {
+        if (!beanValidator(model, ${entityName})){
+            return form(${entityName}, model);
+        }
+        ${entityName}Service.update(${entityName});
+        addMessage(redirectAttributes, "修改单表成功");
+        return "redirect:"+Global.getAdminPath()+"/${package}/${entityName}/?repage";
+    }
+
+    @RequiresPermissions("${package}:${entityName}:edit")
+    @RequestMapping(value = "delete")
+    public String delete(${EntityName} ${entityName}, RedirectAttributes redirectAttributes) {
+        ${entityName}Service.delete(${entityName});
+        addMessage(redirectAttributes, "删除单表成功");
+        return "redirect:"+Global.getAdminPath()+"/${package}/${entityName}/?repage";
+    } 
+}

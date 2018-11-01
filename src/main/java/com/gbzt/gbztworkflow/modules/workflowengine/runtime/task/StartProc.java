@@ -6,11 +6,13 @@ import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Line;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationService;
+import com.gbzt.gbztworkflow.modules.workflowengine.dao.HistProcDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.HistTaskDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.ProcInstDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.TaskDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineAccessException;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineRuntimeException;
+import com.gbzt.gbztworkflow.modules.workflowengine.pojo.HistProc;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.ProcInst;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.TaskExecution;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.EngineManager;
@@ -41,6 +43,7 @@ public class StartProc extends EngineBaseExecutor {
         public ProcInstDao procInstDao;
         public TaskExecution execution;
         public HistTaskDao histTaskDao;
+        public HistProcDao histProcDao;
 
         private Flow flowInst;
         private Line targetLine;
@@ -114,6 +117,7 @@ public class StartProc extends EngineBaseExecutor {
             nextArg.definationService = arg.definationService;
             nextArg.taskDao = arg.taskDao;
             nextArg.procInstDao = arg.procInstDao;
+            nextArg.histProcDao = arg.histProcDao;
 
             String taskId = null;
             EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(CreateTask.class,nextArg,null);
@@ -134,6 +138,7 @@ public class StartProc extends EngineBaseExecutor {
             finishTaskArg.taskDao = arg.taskDao;
             finishTaskArg.procInstDao = arg.procInstDao;
             finishTaskArg.histTaskDao = arg.histTaskDao;
+            finishTaskArg.histProcDao = arg.histProcDao;
 
             EngineTask  finishTask = EngineTaskTemplateFactory.buildEngineTask(FinishTask.class,finishTaskArg,null);
             try {
