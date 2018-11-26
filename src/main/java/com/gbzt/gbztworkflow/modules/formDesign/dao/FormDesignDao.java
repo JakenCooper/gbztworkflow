@@ -28,9 +28,9 @@ public interface FormDesignDao extends JpaRepository<FormDesign,Integer>,JpaSpec
 
 
     @Modifying
-    @Query(value="UPDATE com.gbzt.gbztworkflow.modules.formDesign.entity.FormDesign  fd SET fd.formHtml= ?1 ,fd.jspCode=?2 WHERE fd.currentFlowId= ?3")
+    @Query(value="UPDATE com.gbzt.gbztworkflow.modules.formDesign.entity.FormDesign  fd SET fd.formHtml= ?1 ,fd.jspCode=?2 ,fd.jspCodeView=?3 ,fd.remark =?4 WHERE fd.currentFlowId= ?5")
     @Transactional
-    public int updateByflow(@Param("formHtml")String formHtml, @Param("jspCode")String jspCode, @Param("currentFlowId")String currentFlowId);
+    public int updateByflow(@Param("formHtml")String formHtml, @Param("jspCode")String jspCode,@Param("jspCodeView")String  jspCodeView,@Param("remark")String remark,@Param("currentFlowId")String currentFlowId);
 
     /**
      * @author ch

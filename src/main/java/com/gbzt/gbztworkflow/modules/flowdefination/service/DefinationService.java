@@ -109,6 +109,7 @@ public class DefinationService extends BaseService {
         if(flow == null || StringUtils.isBlank(flow.getId())){
             return buildResult(false,"id为空，删除失败",null);
         }
+
         flowDao.delete(flow.getId());
         return buildResult(true,"删除成功",null);
     }
@@ -125,7 +126,7 @@ public class DefinationService extends BaseService {
         if(StringUtils.isBlank(flowId)){
             return buildResult(false,"流程id为空",null);
         }
-        return buildResult(true,"",nodeDao.findNodeByFlowIdOrderByCreateTimeDesc(flowId));
+        return buildResult(true,"",nodeDao.findNodeByFlowIdOrderByNodeDefIdDesc(flowId));
     }
 
     public Node getNodeByIdSimple(String nodeId){
@@ -138,7 +139,7 @@ public class DefinationService extends BaseService {
         }
         Node node = nodeDao.findOne(nodeId);
         // 查询关于节点的详细信息
-        node.setAllNodesInFlow(nodeDao.findNodeByFlowIdOrderByCreateTimeDesc(node.getFlowId()));
+        node.setAllNodesInFlow(nodeDao.findNodeByFlowIdOrderByNodeDefIdDesc(node.getFlowId()));
         node.setOutLines(lineDao.findLinesByBeginNodeId(node.getId()));
         node.setInLines(lineDao.findLinesByEndNodeId(node.getId()));
         if(node.getOutLines() != null && node.getOutLines().size() > 0){
@@ -182,13 +183,55 @@ public class DefinationService extends BaseService {
     }
 
     @Transactional("jtm")
+    public ExecResult updateNode(String nodeId,Node node){
+        if(StringUtils.isBlank(node.getName())){
+            return buildResult(false,"节点名称为空",null);
+        }
+        if(StringUtils.isBlank(node.getFlowId())){
+            return buildResult(false,"流程id为空",null);
+        }
+        node.setId(nodeId);
+        if(node.getSortNum() == null){
+            node.setSortNum(1);
+        }
+        node.genBaseVariables();
+        nodeDao.save(node);
+        refreshDetailDefination(node.getFlowId());
+        return buildResult(true,"修改成功",null);
+    }
+
+    @Transactional("jtm")
     public ExecResult delNode(Node node){
         if(node == null || StringUtils.isBlank(node.getId())){
             return buildResult(false,"id为空，删除失败",null);
         }
+        // delete all lines related to this node.
+        List<Line> inLineList = lineDao.findLinesByBeginNodeId(node.getId());
+        List<Line> outLineList = lineDao.findLinesByEndNodeId(node.getId());
+        try {
+            if(inLineList != null && inLineList.size() > 0){
+                for(Line inline : inLineList){
+                    ExecResult execResult = delLine(inline);
+                    if(!execResult.charge){
+                        throw new IllegalAccessException("");
+                    }
+                }
+            }
+            if(outLineList != null && outLineList.size() > 0){
+                for(Line outline : outLineList){
+                    ExecResult execResult = delLine(outline);
+                    if(!execResult.charge){
+                        throw new IllegalAccessException("");
+                    }
+                }
+            }
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+            return buildResult(false,"连线删除失败",null);
+        }
+
         nodeDao.delete(node.getId());
         refreshDetailDefination(node.getFlowId());
-        // TODO del all lines related to this node
         return buildResult(true,"删除成功",null);
     }
 

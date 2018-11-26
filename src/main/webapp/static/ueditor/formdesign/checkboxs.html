@@ -14,10 +14,14 @@
     <link rel="stylesheet" href="leipi.style.css">
     <script type="text/javascript" src="../dialogs/internal.js"></script>
     <script type="text/javascript" src="../../jquery/jquery-3.3.1.js"></script>
+    <script type="text/javascript" src="../formDesignPath.js"></script>
+    <link rel="stylesheet" href="../../message/message.css">
+    <script type="text/javascript" src="../../message/message.js"></script>
     <script type="text/javascript">
         $(function () {
             getCurrentflowid();
             addColumnName();
+            loadNodesPowser();
             var id=$("#id").val();
             if(id ==''){
                 $("#id").val('form_ckb_'+MathRand());
@@ -25,11 +29,7 @@
         });
         function MathRand()
         {
-            var num="";
-            for(var i=0;i<15;i++)
-            {
-                num+=Math.floor(Math.random()*10);
-            }
+            var num= guid();
             return num;
         }
         function createElement(type, name)
@@ -48,7 +48,7 @@
             var currentflowid=$("#currentflowid").val();
             $.ajax({
                 type:'post',
-                url:'http://localhost:8081/Design/defination/flows/findAllByFlowId',
+                url:adminPath+'/defination/flows/findAllByFlowId',
                 dataType:'json',
                 data:{"currentflowid":currentflowid},
                 success:function(data){
@@ -198,7 +198,6 @@
         function getCurrentflowid()
         {
             var currentflowid=getURLParameter("currentflowid");
-            alert(currentflowid);
             document.getElementById("currentflowid").value=currentflowid;
         }
     </script>
@@ -213,7 +212,7 @@
         </tr>
         <tr>
             <td><input type="text" id="fieldname" placeholder="必填项"></td>
-            <td><input type="text" id="orgname" placeholder="必填项"></td>
+            <td><input type="hidden" id="orgname" placeholder="必填项"></td>
         </tr>
         <tr>
             <th><span>流程变量</span></th>
@@ -255,10 +254,21 @@
             <th>name</th>
         </tr>
         <tr>
-            <td><input type="text" id="id" name="id"></td>
+            <td><input type="text" id="id" name="id" readonly></td>
             <td><select id="name" name="name"></select></td>
         </tr>
-
+        <tr>
+            <td colspan="2">
+                <table class="table table-hover table-condensed" id="power_options_table">
+                    <tr>
+                        <th>节点名称</th>
+                        <th>节点权限</th>
+                        <th>操作</th>
+                    </tr>
+                </table>
+                <a title="添加节点权限" class="btn btn-primary" onclick=" addPower();">添加节点权限</a>
+            </td>
+        </tr>
 
     </table>
 </div>
@@ -266,15 +276,17 @@
     var oNode = null,thePlugins = 'checkboxs';
     window.onload = function() {
         if( UE.plugins[thePlugins].editdom ){
-            debugger
+
             oNode = UE.plugins[thePlugins].editdom;
             var gTitle=oNode.getAttribute('title').replace(/&quot;/g,"\"");
             var gFlow=oNode.getAttribute('fieldflow');
-            var  id=oNode.getAttribute('id');
+          /*  var  id=oNode.getAttribute('id');*/
+            $G('fieldname').value = oNode.getAttribute('title');
+            var id=$G('fieldname').value;
             id =id == null?'':id;
             $G('id').value=id;
             $G('orgname').value = gTitle;
-            $G('fieldname').value = oNode.getAttribute('fieldname');
+
             if (gFlow == '1')
             {
                 $G('fieldflow').checked = true;
@@ -298,14 +310,41 @@
         }
     };
     dialog.onok = function (){
-        debugger
-        if($G('fieldname').value==''){
+
+       if($G('fieldname').value==''){
             alert('请输入字段名称');
             return false;
         }
-        if($G('orgname').value==''){
+   /*     if($G('orgname').value==''){
             alert('请输入控件名称');
             return false;
+        }*/
+        var array=new Array();
+        var index=document.getElementsByClassName('nodesSelect').length;
+        if(index!=0){
+            for(var i=0;i<index;i++){
+                var nodesId=document.getElementsByClassName('nodesSelect')[i].getAttribute('id');
+                array.push($("#"+nodesId).val()+":"+$("."+nodesId).val()+":"+$G('id').value+":"+$("#currentflowid").val()+":"+$("#name").val());
+            }
+            console.log(array);
+            $.ajax({
+                type:'post',
+                url:adminPath+'/taskNodePermissions/savePermissions',
+                dataType:'json',
+                data:{"array":array},
+                traditional: true,
+                success:function(data){
+                    console.log("添加权限成功");
+                },
+                error: function (XMLHttpRequest, textStatus) {
+                    // 状态码
+                    console.log(XMLHttpRequest.status);
+                    // 状态
+                    console.log(XMLHttpRequest.readyState);
+                    // 错误信息
+                    console.log(textStatus);
+                }
+            });
         }
         var gTitle=$G('orgname').value.replace(/\"/g,"&quot;"),gName=$G('fieldname').value;
         var id=$G('id').value;
@@ -325,7 +364,7 @@
                 }
                 //{|- 使用边界，防止用户删除了span标签，程序处理要把边界替换为空
 
-                var html = '{|-<span leipiplugins="checkboxs" id="'+id+'" title="'+gTitle+'" fieldname="' + gName + '" fieldflow="' + gFlow + '">';
+                var html = '{|-<span leipiplugins="checkboxs"  title="'+id+'" fieldname="' + id + '" fieldflow="' + gFlow + '">';
                 html +=options;
                 html +='</span>-|}';
                 editor.execCommand('insertHtml',html);
@@ -339,10 +378,12 @@
                 return false;
             }
         } else {
-            oNode.setAttribute('title',gTitle);
+            var id=$G('id').value;
+            oNode.setAttribute('title',id);
             oNode.setAttribute('orgchecked',gChecked);
             oNode.setAttribute('fieldname',gName);
             oNode.setAttribute('fieldflow',gFlow);
+            $("#fieldname").val(id);
             if(id!=''){
                 oNode.setAttribute('id',id);
             }else{
@@ -353,6 +394,125 @@
             return true;
         }
     };
+</script>
+
+<script type="text/javascript">
+    function  loadNodesPowser() {
+        var id=$("#id").val();
+        $.ajax({
+            type:'post',
+            url:adminPath+'/taskNodePermissions/findTaskNodePermissionsByTaskNodeId',
+            dataType:'json',
+            scriptCharset: 'utf-8',
+            data:{"taskNodeId":id},
+            contentType: "application/x-www-form-urlencoded; charset=utf-8",
+            success:function(data){
+                if(data.length<=0){
+                    return false;
+                }
+                var currentFlowId=data[0].currentFlowId;
+                $("#currentflowid").val(currentFlowId);
+                var text = data[0].columnName;
+                var select=$("#name");
+                select.empty();
+                select.append("<option>"+text+"</option>>");
+                var table=$("#power_options_table");
+                $.each(data, function (index) {
+                    var taskName = data[index].taskName;
+                    var permission=data[index].permission;
+                    var id=data[index].id;
+                    console.log(taskName+"  "+permission+"  "+id);
+                    table.append("<tr>" +
+                        "<td>"+taskName+"</td>" +
+                        "<td>"+permission+"</td>" +
+                        '<td><button type="button" class="btn btn-danger" onclick="delNodesPower(&quot;'+id+'&quot;)">删除</button></td>' +
+                        "</tr>")
+                });
+            },
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                // 状态码
+                console.log(XMLHttpRequest.status);
+                // 状态
+                console.log(XMLHttpRequest.readyState);
+                // 错误信息
+                console.log(textStatus);
+            }
+        });
+    }
+
+
+    function delNodesPower(id) {
+
+        $.ajax({
+            type:'post',
+            url:adminPath+'/taskNodePermissions/deleteTaskNodePermissionsById',
+            dataType:'json',
+            data:{"id":id},
+            success:function(data){
+                if(data.msg!="0"){
+                    $.message('删除成功');
+                }
+                $("#power_options_table  tr:not(:first)").html("");
+
+                loadNodesPowser();
+            },
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                // 状态码
+                console.log(XMLHttpRequest.status);
+                // 状态
+                console.log(XMLHttpRequest.readyState);
+                // 错误信息
+                console.log(textStatus);
+            }
+        });
+    }
+
+
+    function delThisTr(obj) {
+        $(obj).parent().parent().remove();
+    }
+
+    function addPower() {
+
+        var currentflowid=$("#currentflowid").val();
+        $.ajax({
+            type:'post',
+            url:'http://localhost:8081/Design/defination/nodes/findNodeByFlowIdOrderByCreateTimeDesc',
+            dataType:'json',
+            data:{"currentflowid":currentflowid},
+            success:function(data){
+                if(data.length==0){
+                    alert("请先配置节点!!!!!");
+                    return false;
+                }
+                var nid=MathRand();
+                var pid=MathRand();
+                var oTable = document.getElementById('power_options_table');
+                var new_tr_node= oTable.insertRow(oTable.rows.length);
+                var new_td_node0 = new_tr_node.insertCell(0),new_td_node1 = new_tr_node.insertCell(1),new_td_node2=new_tr_node.insertCell(2);
+
+                new_td_node0.innerHTML = '<td><select class="nodesSelect" id='+nid+' ></select></td>';
+                new_td_node1.innerHTML = '<td><select class="powerSelect '+nid+'" id='+pid+'></select></td>';
+                new_td_node2.innerHTML = '<td><button class="btn btn-danger" onclick="delThisTr(this)">移除</button></td>';
+                $.each(data, function (index) {
+                    var text = data[index].name;
+                    $("#"+nid).append("<option value='"+text+"'>"+text+"</option>");
+                });
+                $("#"+pid).append("<option value='可见'>可见</option>");
+                $("#"+pid).append("<option value='不可见'>不可见</option>");
+                $("#"+pid).append("<option value='可编辑'>可编辑</option>");
+                $("#"+pid).append("<option value='不可编辑'>不可编辑</option>");
+            },
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                // 状态码
+                console.log(XMLHttpRequest.status);
+                // 状态
+                console.log(XMLHttpRequest.readyState);
+                // 错误信息
+                console.log(textStatus);
+            }
+        });
+    }
 </script>
 </body>
 </html>

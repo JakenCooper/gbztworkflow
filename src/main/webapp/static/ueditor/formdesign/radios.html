@@ -14,10 +14,14 @@
     <link rel="stylesheet" href="leipi.style.css">
     <script type="text/javascript" src="../dialogs/internal.js"></script>
     <script type="text/javascript" src="../../jquery/jquery-3.3.1.js"></script>
+    <script type="text/javascript" src="../formDesignPath.js"></script>
+    <link rel="stylesheet" href="../../message/message.css">
+    <script type="text/javascript" src="../../message/message.js"></script>
     <script type="text/javascript">
         $(function () {
             getCurrentflowid();
             addColumnName();
+            loadNodesPowser();
             var id=$("#id").val();
             if(id ==''){
                 $("#id").val('form_rdio_'+MathRand());
@@ -25,10 +29,9 @@
         });
         function addColumnName() {
             var currentflowid=$("#currentflowid").val();
-            alert(currentflowid);
             $.ajax({
                 type:'post',
-                url:'http://localhost:8081/Design/defination/flows/findAllByFlowId',
+                url:adminPath+'/defination/flows/findAllByFlowId',
                 dataType:'json',
                 data:{"currentflowid":currentflowid},
                 success:function(data){
@@ -61,11 +64,7 @@
 
         function MathRand()
         {
-            var num="";
-            for(var i=0;i<15;i++)
-            {
-                num+=Math.floor(Math.random()*10);
-            }
+            var num= guid();
             return num;
         }
 
@@ -74,7 +73,7 @@
             var currentflowid=$("#currentflowid").val();
             $.ajax({
                 type:'post',
-                url:'http://localhost:8081/Design/defination/nodes/findNodeByFlowIdOrderByCreateTimeDesc',
+                url:adminPath+'/defination/nodes/findNodeByFlowIdOrderByCreateTimeDesc',
                 dataType:'json',
                 data:{"currentflowid":currentflowid},
                 success:function(data){
@@ -84,12 +83,13 @@
                     }
                     var nid=MathRand();
                     var pid=MathRand();
-                    var oTable = document.getElementById('options_table');
+                    var oTable = document.getElementById('power_options_table');
                     var new_tr_node= oTable.insertRow(oTable.rows.length);
-                    var new_td_node0 = new_tr_node.insertCell(0),new_td_node1 = new_tr_node.insertCell(1);
+                    var new_td_node0 = new_tr_node.insertCell(0),new_td_node1 = new_tr_node.insertCell(1),new_td_node2=new_tr_node.insertCell(2);
 
                     new_td_node0.innerHTML = '<td><select class="nodesSelect" id='+nid+' ></select></td>';
                     new_td_node1.innerHTML = '<td><select class="powerSelect '+nid+'" id='+pid+'></select></td>';
+                    new_td_node2.innerHTML = '<td><button class="btn btn-danger" onclick="delThisTr(this)">移除</button></td>';
                     $.each(data, function (index) {
                         var text = data[index].name;
                         $("#"+nid).append("<option value='"+text+"'>"+text+"</option>");
@@ -111,6 +111,51 @@
         }
     </script>
     <script type="text/javascript">
+        function  loadNodesPowser() {
+            var id=$("#id").val();
+            $.ajax({
+                type:'post',
+                url:adminPath+'/taskNodePermissions/findTaskNodePermissionsByTaskNodeId',
+                dataType:'json',
+                scriptCharset: 'utf-8',
+                data:{"taskNodeId":id},
+                contentType: "application/x-www-form-urlencoded; charset=utf-8",
+                success:function(data){
+                    if(data.length<=0){
+                        return false;
+                    }
+                    var currentFlowId=data[0].currentFlowId;
+                    $("#currentflowid").val(currentFlowId);
+                    var text = data[0].columnName;
+                    var select=$("#name");
+                    select.empty();
+                    select.append("<option>"+text+"</option>>");
+                    var table=$("#power_options_table");
+                    $.each(data, function (index) {
+                        var taskName = data[index].taskName;
+                        var permission=data[index].permission;
+                        var id=data[index].id;
+                        console.log(taskName+"  "+permission+"  "+id);
+                        table.append("<tr>" +
+                            "<td>"+taskName+"</td>" +
+                            "<td>"+permission+"</td>"+
+                            '<td><button type="button" class="btn btn-danger" onclick="delNodesPower(&quot;'+id+'&quot;)">删除</button></td>' +
+                            "</tr>")
+                    });
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    // 状态码
+                    console.log(XMLHttpRequest.status);
+                    // 状态
+                    console.log(XMLHttpRequest.readyState);
+                    // 错误信息
+                    console.log(textStatus);
+                }
+            });
+        }
+        function delThisTr(obj) {
+            $(obj).parent().parent().remove();
+        }
         function createElement(type, name)
         {
             var element = null;
@@ -167,6 +212,31 @@
                 obj = obj.parentNode;
             }
             oTable.deleteRow(obj.rowIndex);
+        }
+        function delNodesPower(id) {
+
+            $.ajax({
+                type:'post',
+                url:adminPath+'/taskNodePermissions/deleteTaskNodePermissionsById',
+                dataType:'json',
+                data:{"id":id},
+                success:function(data){
+                    if(data.msg!="0"){
+                        $.message('删除成功');
+                    }
+                    $("#power_options_table  tr:not(:first)").html("");
+
+                    loadNodesPowser();
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    // 状态码
+                    console.log(XMLHttpRequest.status);
+                    // 状态
+                    console.log(XMLHttpRequest.readyState);
+                    // 错误信息
+                    console.log(textStatus);
+                }
+            });
         }
         /*上移*/
         function fnMoveUp(obj)
@@ -227,7 +297,7 @@
             });
         }
         /*组合checkbox*/
-        function fnParseOptions(gName,gChecked)
+        function fnParseOptions(gName,gChecked,id)
         {
             var oTable = document.getElementById('options_table');
             var nTr = oTable.getElementsByTagName('tr'),trLength = nTr.length,html="";
@@ -240,7 +310,7 @@
                     if(!inputs[1].value) continue;
                     var sChecked = '';
                     if(inputs[0].checked) sChecked = 'checked="checked"';
-                    html += '<input name="'+gName+'" value="'+inputs[1].value+'" '+sChecked+' type="radio"/>'+inputs[1].value+'&nbsp;';
+                    html += '<input name="'+gName+'" value="'+inputs[1].value+'" '+sChecked+' type="radio" />'+inputs[1].value+'&nbsp;';
                     if(gChecked=='orgchecked1')//竖排
                         html+='<br/>';
                 }
@@ -261,7 +331,7 @@
             <th><span>字段标题</span><span class="label label-important">*</span> </th>
         </tr>
         <tr>
-            <td><input type="text" id="fieldname" placeholder="必填项"></td>
+            <td><input type="hidden" id="fieldname"></td>
             <td><input type="text" id="orgname" placeholder="必填项"></td>
         </tr>
         <tr>
@@ -281,7 +351,8 @@
         </tr>
         <tr>
             <td>
-                <input type="text" id="id">
+                <input type="text" id="id" readonly>
+                <input type="hidden" id="tranID">
             </td>
             <td>
                 <select id="name" name="name"></select>
@@ -311,7 +382,18 @@
                 <a title="添加选项" class="btn btn-primary" onclick="fnAdd();">添加选项</a>
             </td>
         </tr>
-
+        <tr>
+            <td colspan="2">
+                <table class="table table-hover table-condensed" id="power_options_table">
+                    <tr>
+                        <th>节点名称</th>
+                        <th>节点权限</th>
+                        <th>操作</th>
+                    </tr>
+                </table>
+                <a title="添加节点权限" class="btn btn-primary" onclick=" addPower();">添加节点权限</a>
+            </td>
+        </tr>
 
     </table>
 </div>
@@ -319,13 +401,14 @@
     var oNode = null,thePlugins = 'radios';
     window.onload = function() {
         if( UE.plugins[thePlugins].editdom ){
+
             oNode = UE.plugins[thePlugins].editdom;
             var gTitle=oNode.getAttribute('title').replace(/&quot;/g,"\"");
             var gName=oNode.getAttribute('name').replace(/&quot;/g,"\"");
             var gFlow=oNode.getAttribute('fieldflow');
             $G('orgname').value = gTitle;
             $G('fieldname').value = oNode.getAttribute('fieldname');
-            var  id=oNode.getAttribute('id');
+            var id=$G('fieldname').value;
             id =id == null?'':id;
             $G('id').value=id;
             if (gFlow == '1')
@@ -356,10 +439,11 @@
         }
     };
     dialog.onok = function (){
-        if($G('fieldname').value==''){
+
+    /*    if($G('fieldname').value==''){
             alert('请输入字段名称');
             return false;
-        }
+        }*/
         if( $G('orgname').value == '') {
             alert('控件名称不能为空');
             return false;
@@ -368,19 +452,47 @@
         var name=$G('name').value;
         var gChecked = 'orgchecked0';
         var gFlow = '0';
+
+        var array=new Array();
+        var index=document.getElementsByClassName('nodesSelect').length;
+        if(index!=0){
+            for(var i=0;i<index;i++){
+                var nodesId=document.getElementsByClassName('nodesSelect')[i].getAttribute('id');
+                array.push($("#"+nodesId).val()+":"+$("."+nodesId).val()+":"+$G('id').value+":"+$("#currentflowid").val()+":"+$("#name").val());
+            }
+            console.log(array);
+            $.ajax({
+                type:'post',
+                url:adminPath+'/taskNodePermissions/savePermissions',
+                dataType:'json',
+                data:{"array":array},
+                traditional: true,
+                success:function(data){
+                    console.log("添加权限成功");
+                },
+                error: function (XMLHttpRequest, textStatus) {
+                    // 状态码
+                    console.log(XMLHttpRequest.status);
+                    // 状态
+                    console.log(XMLHttpRequest.readyState);
+                    // 错误信息
+                    console.log(textStatus);
+                }
+            });
+        }
         if ($G('orgchecked1').checked) gChecked = 'orgchecked1';
         if ($G('fieldflow').checked ) gFlow = '1';
         var id=$G('id').value;
         if( !oNode ) {
             try {
-                var options = fnParseOptions(name,gChecked);
+                var options = fnParseOptions(name,gChecked,id);
                 if(!options)
                 {
                     alert('请添加选项');
                     return false;
                 }
                 //{|- 使用边界，防止用户删除了span标签
-                var html = '{|-<span leipiplugins="radios" id="'+id+'" plugins="radios" title="'+gTitle+'" name="NEWFIELD" fieldname="' + gName + '" fieldflow="' + gFlow + '">';
+                var html = '{|-<span leipiplugins="radios"  plugins="radios" title="'+gTitle+'" name="'+gName+'" fieldname="' + id + '" >';
                 html +=options;
                 html +='</span>-|}';
                 editor.execCommand('insertHtml',html);
@@ -394,12 +506,16 @@
                 return false;
             }
         } else {
+
+            var id=$G('id').value;
             var gName=oNode.getAttribute('name').replace(/&quot;/g,"\"");
             oNode.setAttribute('title',gTitle);
             oNode.setAttribute('orgchecked',gChecked);
-            oNode.setAttribute('fieldname',gName);
+            oNode.setAttribute('fieldname',id);
             oNode.setAttribute('fieldflow',gFlow);
-            if(id!=''){
+
+            $("#fieldname").val(id);
+           if(id!=''){
                 oNode.setAttribute('id',id);
             }else{
                 oNode.setAttribute('id','');

@@ -49,4 +49,11 @@ public class TaskPermissionsService {
         }
         return flag;
     }
+    public List<TaskNodePermissions> findTaskNodePermissionsByTaskNodeId(String tId){
+        return taskPermissionsDao.findTaskNodePermissionsByTaskNodeId(tId);
+    }
+
+    public Integer deleteTaskNodePermissionsById(String id){
+        return taskPermissionsDao.deleteTaskNodePermissionsById(id);
+    }
 }

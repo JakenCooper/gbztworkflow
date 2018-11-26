@@ -11,6 +11,8 @@ public interface NodeDao extends JpaRepository<Node,String>,JpaSpecificationExec
 
     public List<Node> findNodeByFlowIdOrderByCreateTimeDesc(String flowId);
 
+    public List<Node> findNodeByFlowIdOrderByNodeDefIdDesc(String flowId);
+
     public Integer countNodeByNameAndFlowId(String name,String flowId);
 
     public List<Node> findNodesByIdIn(List<String> ids);

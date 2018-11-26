@@ -14,21 +14,94 @@
     <link rel="stylesheet" href="leipi.style.css">
     <script type="text/javascript" src="../dialogs/internal.js"></script>
     <script type="text/javascript" src="../../jquery/jquery-3.3.1.js"></script>
+    <script type="text/javascript" src="../formDesignPath.js"></script>
+    <link rel="stylesheet" href="../../message/message.css">
+    <script type="text/javascript" src="../../message/message.js"></script>
     <script type="text/javascript">
         $(function () {
             getCurrentflowid();
             addColumnName();
+            loadNodesPowser();
             var id=$("#id").val();
-            if(id!=''){
+            if(id==''){
                 $("#id").val('form_selOpt_'+MathRand());
             }
         });
-        function addColumnName() {
-            var currentflowid=$("#currentflowid").val();
-            alert(currentflowid);
+
+        function  loadNodesPowser() {
+            var id=$("#id").val();
             $.ajax({
                 type:'post',
-                url:'http://localhost:8081/Design/defination/flows/findAllByFlowId',
+                url:adminPath+'/taskNodePermissions/findTaskNodePermissionsByTaskNodeId',
+                dataType:'json',
+                scriptCharset: 'utf-8',
+                data:{"taskNodeId":id},
+                contentType: "application/x-www-form-urlencoded; charset=utf-8",
+                success:function(data){
+                    if(data.length<0){
+                        return false;
+                    }
+                    var currentFlowId=data[0].currentFlowId;
+                    $("#currentflowid").val(currentFlowId);
+                    var text = data[0].columnName;
+                    var select=$("#name");
+                    select.empty();
+                    select.append("<option>"+text+"</option>>");
+                    var table=$("#options_table");
+                    $.each(data, function (index) {
+                        var taskName = data[index].taskName;
+                        var permission=data[index].permission;
+                        var id=data[index].id;
+                        console.log(taskName+"  "+permission+"  "+id);
+                        table.append("<tr>" +
+                            "<td>"+taskName+"</td>" +
+                            "<td>"+permission+"</td>" +
+                            '<td><button type="button" class="btn btn-danger" onclick="delNodesPower(&quot;'+id+'&quot;)">删除</button></td>' +
+                            "</tr>")
+                    });
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    // 状态码
+                    console.log(XMLHttpRequest.status);
+                    // 状态
+                    console.log(XMLHttpRequest.readyState);
+                    // 错误信息
+                    console.log(textStatus);
+                }
+            });
+        }
+
+
+        function delNodesPower(id) {
+
+            $.ajax({
+                type:'post',
+                url:adminPath+'/taskNodePermissions/deleteTaskNodePermissionsById',
+                dataType:'json',
+                data:{"id":id},
+                success:function(data){
+                    if(data.msg!="0"){
+                        $.message('删除成功');
+                    }
+                    $("#options_table  tr:not(:first)").html("");
+
+                    loadNodesPowser();
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    // 状态码
+                    console.log(XMLHttpRequest.status);
+                    // 状态
+                    console.log(XMLHttpRequest.readyState);
+                    // 错误信息
+                    console.log(textStatus);
+                }
+            });
+        }
+        function addColumnName() {
+            var currentflowid=$("#currentflowid").val();
+            $.ajax({
+                type:'post',
+                url:adminPath+'/defination/flows/findAllByFlowId',
                 dataType:'json',
                 data:{"currentflowid":currentflowid},
                 success:function(data){
@@ -60,20 +133,18 @@
         }
         function MathRand()
         {
-            var num="";
-            for(var i=0;i<15;i++)
-            {
-                num+=Math.floor(Math.random()*10);
-            }
+            var num= guid();
             return num;
         }
-
+        function delThisTr(obj) {
+            $(obj).parent().parent().remove();
+        }
         function addPower() {
 
             var currentflowid=$("#currentflowid").val();
             $.ajax({
                 type:'post',
-                url:'http://localhost:8081/Design/defination/nodes/findNodeByFlowIdOrderByCreateTimeDesc',
+                url:adminPath+'/defination/nodes/findNodeByFlowIdOrderByCreateTimeDesc',
                 dataType:'json',
                 data:{"currentflowid":currentflowid},
                 success:function(data){
@@ -85,10 +156,11 @@
                     var pid=MathRand();
                     var oTable = document.getElementById('options_table');
                     var new_tr_node= oTable.insertRow(oTable.rows.length);
-                    var new_td_node0 = new_tr_node.insertCell(0),new_td_node1 = new_tr_node.insertCell(1);
+                    var new_td_node0 = new_tr_node.insertCell(0),new_td_node1 = new_tr_node.insertCell(1),new_td_node2 = new_tr_node.insertCell(2);
 
                     new_td_node0.innerHTML = '<td><select class="nodesSelect" id='+nid+' ></select></td>';
                     new_td_node1.innerHTML = '<td><select class="powerSelect '+nid+'" id='+pid+'></select></td>';
+                    new_td_node2.innerHTML = '<td><button class="btn btn-danger" onclick="delThisTr(this)">移除</button></td>';
                     $.each(data, function (index) {
                         var text = data[index].name;
                         $("#"+nid).append("<option value='"+text+"'>"+text+"</option>");
@@ -256,9 +328,10 @@ function fnSetAttribute( element, attName, attValue ) {
 </head>
 <body>
 <div class="content">
+    <input type="hidden" name="currentflowid" id="currentflowid">
     <table class="table table-bordered table-striped table-hover">
      <tr>
-         <input type="hidden" name="currentflowid" id="currentflowid">
+
         <th><span>字段名称</span><span class="label label-important">*</span></th>
         <th><span>字段标题</span><span class="label label-important">*</span> </th>
     </tr>
@@ -316,7 +389,7 @@ function fnSetAttribute( element, attName, attValue ) {
         <th><span >name</span></th>
     </tr>
         <tr>
-            <td><input type="text" id="id"></td>
+            <td><input type="text" id="id" style="width: 85%;" readonly></td>
             <td><select id="name"></select></td>
         </tr>
         <tr>
@@ -335,6 +408,7 @@ function fnSetAttribute( element, attName, attValue ) {
 <script type="text/javascript">
 var oNode = null,oListText='',thePlugins = 'select';
 window.onload = function() {
+
     oListText = $G('orglist');
     
     if( UE.plugins[thePlugins].editdom ){
@@ -391,12 +465,12 @@ dialog.onok = function (){
         console.log(array);
         $.ajax({
             type:'post',
-            url:'http://localhost:8081/Design/taskNodePermissions/savePermissions',
+            url:adminPath+'/taskNodePermissions/savePermissions',
             dataType:'json',
             data:{"array":array},
             traditional: true,
             success:function(data){
-                alert(data.msg.msg);
+                console.log("添加权限成功")
             },
             error: function (XMLHttpRequest, textStatus) {
                 // 状态码
@@ -462,9 +536,11 @@ dialog.onok = function (){
             return false;
         }
     } else {
+
         oNode.setAttribute('title', $G('orgname').value); 
         oNode.setAttribute('fieldname',$G('fieldname').value);
         oNode.setAttribute('size',gSize);
+        var id=$G('id').value;
         if ( $G('fieldflow').checked ) {
             oNode.setAttribute('fieldflow',1);
         } else {
@@ -475,14 +551,14 @@ dialog.onok = function (){
 			oNode.setAttribute('orgwidth',gWidth );
 		}
         if(name!=''){
-            oNode.setAttribute('id',id);
-        }else{
-            node.setAttribute('id','');
-        }
-        if(id!=''){
             oNode.setAttribute('name',name);
         }else{
             oNode.setAttribute('name','');
+        }
+        if(id!=''){
+            oNode.setAttribute('id',id);
+        }else{
+            oNode.setAttribute('id','');
         }
         // Remove all options.
         while ( oNode.options.length > 0 ){

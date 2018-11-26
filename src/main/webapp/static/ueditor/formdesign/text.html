@@ -14,10 +14,13 @@
     <link rel="stylesheet" href="leipi.style.css">
     <script type="text/javascript" src="../dialogs/internal.js"></script>
     <script type="text/javascript" src="../../jquery/jquery-3.3.1.js"></script>
-
+    <script type="text/javascript" src="../formDesignPath.js"></script>
+    <link rel="stylesheet" href="../../message/message.css">
+    <script type="text/javascript" src="../../message/message.js"></script>
     <script type="text/javascript">
 /* Thank you by  
 http://www.alt-tag.com/blog/2006/02/ie-dom-bugs/ */
+
 function createElement(type, name)
 {
     var element = null;
@@ -38,12 +41,12 @@ function getURLParameter(name)
 function getCurrentflowid()
 {
     var currentflowid=getURLParameter("currentflowid");
-    alert(currentflowid);
     document.getElementById("currentflowid").value=currentflowid;
 }
 $(function () {
     getCurrentflowid();
     addColumnName();
+    loadNodesPowser();
     var id=$("#id").val();
     if(id ==''){
         $("#id").val('form_text_'+MathRand());
@@ -55,7 +58,7 @@ function addColumnName() {
     var currentflowid=$("#currentflowid").val();
     $.ajax({
         type:'post',
-        url:'http://localhost:8081/Design/defination/flows/findAllByFlowId',
+        url:adminPath+'/defination/flows/findAllByFlowId',
         dataType:'json',
         data:{"currentflowid":currentflowid},
         success:function(data){
@@ -78,18 +81,87 @@ function addColumnName() {
 
 function MathRand()
 {
-    var num="";
-    for(var i=0;i<15;i++)
-    {
-        num+=Math.floor(Math.random()*10);
-    }
+    var num= guid();
     return num;
+}
+
+
+function  loadNodesPowser() {
+    var id=$("#id").val();
+
+    $.ajax({
+        type:'post',
+        url:adminPath+'/taskNodePermissions/findTaskNodePermissionsByTaskNodeId',
+        dataType:'json',
+        scriptCharset: 'utf-8',
+        data:{"taskNodeId":id},
+        contentType: "application/x-www-form-urlencoded; charset=utf-8",
+    success:function(data){
+            if(data.length<=0){
+                return false;
+            }
+            var currentFlowId=data[0].currentFlowId;
+            $("#currentflowid").val(currentFlowId);
+            var text = data[0].columnName;
+            var select=$("#name");
+            select.empty();
+            select.append("<option>"+text+"</option>>");
+            var table=$("#options_table");
+            $.each(data, function (index) {
+                var taskName = data[index].taskName;
+                var permission=data[index].permission;
+                var id=data[index].id;
+                console.log(taskName+"  "+permission+"  "+id);
+                table.append("<tr>" +
+                    "<td>"+taskName+"</td>" +
+                    "<td>"+permission+"</td>"+
+                    '<td><button type="button" class="btn btn-danger" onclick="delNodesPower(&quot;'+id+'&quot;)">删除</button></td>' +
+                    "</tr>")
+            });
+        },
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+            // 状态码
+            console.log(XMLHttpRequest.status);
+            // 状态
+            console.log(XMLHttpRequest.readyState);
+            // 错误信息
+            console.log(textStatus);
+        }
+    });
+}
+function delNodesPower(id) {
+
+    $.ajax({
+        type:'post',
+        url:adminPath+'/taskNodePermissions/deleteTaskNodePermissionsById',
+        dataType:'json',
+        data:{"id":id},
+        success:function(data){
+            if(data.msg!="0"){
+                $.message('删除成功');
+            }
+            $("#options_table  tr:not(:first)").html("");
+
+            loadNodesPowser();
+        },
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+            // 状态码
+            console.log(XMLHttpRequest.status);
+            // 状态
+            console.log(XMLHttpRequest.readyState);
+            // 错误信息
+            console.log(textStatus);
+        }
+    });
+}
+function delThisTr(obj) {
+    $(obj).parent().parent().remove();
 }
 function addPower() {
     var currentflowid=$("#currentflowid").val();
     $.ajax({
         type:'post',
-        url:'http://localhost:8081/Design/defination/nodes/findNodeByFlowIdOrderByCreateTimeDesc',
+        url:adminPath+'/defination/nodes/findNodeByFlowIdOrderByCreateTimeDesc',
         dataType:'json',
         data:{"currentflowid":currentflowid},
         success:function(data){
@@ -101,10 +173,11 @@ function addPower() {
             var pid=MathRand();
             var oTable = document.getElementById('options_table');
             var new_tr_node= oTable.insertRow(oTable.rows.length);
-            var new_td_node0 = new_tr_node.insertCell(0),new_td_node1 = new_tr_node.insertCell(1);
+            var new_td_node0 = new_tr_node.insertCell(0),new_td_node1 = new_tr_node.insertCell(1),new_td_node2 = new_tr_node.insertCell(2);
 
             new_td_node0.innerHTML = '<td><select class="nodesSelect" id='+nid+' ></select></td>';
             new_td_node1.innerHTML = '<td><select class="powerSelect '+nid+'" id='+pid+'></select></td>';
+            new_td_node2.innerHTML = '<td><button class="btn btn-danger" onclick="delThisTr(this)">移除</button></td>';
             $.each(data, function (index) {
                 var text = data[index].name;
                 $("#"+nid).append("<option value='"+text+"'>"+text+"</option>");
@@ -203,6 +276,7 @@ function addPower() {
                     <tr>
                         <th>节点名称</th>
                         <th>节点权限</th>
+                        <th>操作</th>
                     </tr>
                 </table>
                 <a title="添加节点权限" class="btn btn-primary" onclick=" addPower();">添加节点权限</a>
@@ -215,6 +289,7 @@ function addPower() {
 var oNode = null,thePlugins = 'text';
 window.onload = function() {
     if( UE.plugins[thePlugins].editdom ){
+
         oNode = UE.plugins[thePlugins].editdom;
 		var gValue = oNode.getAttribute('value').replace(/&quot;/g,"\""),gName=oNode.getAttribute('fieldname'),gFlow=oNode.getAttribute('fieldflow'),gTitle=oNode.getAttribute('title').replace(/&quot;/g,"\""),gHidden=oNode.getAttribute('orghide'),gFontSize=oNode.getAttribute('orgfontsize'),gAlign=oNode.getAttribute('orgalign'),gWidth=oNode.getAttribute('orgwidth'),gHeight=oNode.getAttribute('orgheight'),gType=oNode.getAttribute('orgtype'),id=oNode.getAttribute('id'),name=oNode.getAttribute('name');
 		gValue = gValue==null ? '' : gValue;
@@ -275,12 +350,12 @@ dialog.onok = function (){
         console.log(array);
         $.ajax({
             type:'post',
-            url:'http://localhost:8081/Design/taskNodePermissions/savePermissions',
+            url:adminPath+'/taskNodePermissions/savePermissions',
             dataType:'json',
             data:{"array":array},
             traditional: true,
             success:function(data){
-                alert(data.msg.msg);
+                console.log("数据访问成功");
             },
             error: function (XMLHttpRequest, textStatus) {
                 // 状态码

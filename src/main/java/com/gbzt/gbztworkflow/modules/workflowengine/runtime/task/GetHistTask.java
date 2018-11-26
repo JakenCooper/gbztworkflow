@@ -31,6 +31,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ *  hist-task : history infos for user,hist-proc : history infos for proc (in order to retreat or withdraw)
+ * */
 public class GetHistTask extends EngineBaseExecutor {
     private static final String TASK_TYPE = AppConst.TASK_TEMPLATE_GETHISTTASK_SYNC;
 
@@ -117,7 +120,11 @@ public class GetHistTask extends EngineBaseExecutor {
             resultMap.put("assignUser",resultTask.getAssignUser());
             resultMap.put("procInstId",resultTask.getProcInstId());
             resultMap.put("nodeId",resultTask.getNodeId());
-            resultMap.put("nodeName",flowInst.getNodeIdMap().get(lastTask.getNodeId()).getName());
+            try {
+                resultMap.put("nodeName",flowInst.getNodeIdMap().get(lastTask.getNodeId()).getName());
+            } catch (Exception e) {
+                resultMap.put("nodeName","空");
+            }
             resultMap.put("nodeDefId",resultTask.getNodeDefId());
             resultMap.put("bussId",resultTask.getBussId());
             resultMap.put("bussTable",resultTask.getBussTable());

@@ -34,9 +34,18 @@ public class NodeController extends BaseController {
     }
 
 
-    @RequestMapping(value="",method=RequestMethod.DELETE)
+    @RequestMapping(value="/{nodeid}",method=RequestMethod.DELETE,produces = "application/json;charset=UTF-8")
     public ResponseEntity delNode(Node node){
         ExecResult execResult = definationService.delNode(node);
         return buildResp(execResult.charge == true?204:400,execResult.message);
+    }
+
+    @RequestMapping(value="/{nodeid}",method = RequestMethod.POST,produces = "application/json;charset=UTF-8")
+    public ResponseEntity updateNode(@PathVariable("nodeid") String nodeId,@RequestBody Node node){
+        ExecResult execResult = definationService.updateNode(nodeId,node);
+        if(!execResult.charge){
+            buildResp(400,execResult.message);
+        }
+        return buildResp(execResult.charge? 204:500,execResult.result == null?"":"");
     }
 }

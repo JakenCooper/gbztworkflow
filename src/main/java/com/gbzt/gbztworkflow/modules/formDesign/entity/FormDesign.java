@@ -40,6 +40,16 @@ public class FormDesign implements Serializable {
     private String jspCode;
     @Column(name="currentFlowId")
     private String currentFlowId;
+    @Column(name="jsp_code_view")
+    private String jspCodeView;
+
+    public String getJspCodeView() {
+        return jspCodeView;
+    }
+
+    public void setJspCodeView(String jspCodeView) {
+        this.jspCodeView = jspCodeView;
+    }
 
     public String getCurrentFlowId() {
         return currentFlowId;
@@ -116,5 +126,5 @@ public class FormDesign implements Serializable {
 	public void setDelflag(String delflag) {
 		this.delflag = delflag;
 	}
-	
+
 }

@@ -42,9 +42,10 @@ public class Task extends BaseEntity {
     private List<Task> subTasks;
 
     @Column(name="finish_type")
-    private String finishType; // af,due to pass & [model]
+    private String finishType; // af,due to pass & [model] already-finish single/multi
+    // (single+assginUser = normal task ; single+assignList = argument model ; multi+assignList = songyue/huiqian)
     @Column(name="assign_user")
-    private String assignUser; // nf (atten:diff from assignuser in tasks and execs: user in next step or current step)
+    private String assignUser; // nf (atten:diff from assignuser in tasks and execs: user in next step or current step) not-finish
     @Column(name="claim_tag")
     @org.hibernate.annotations.Type(type="yes_no")
     private boolean claimTag; // nf(sub) and af due to claim

@@ -15,6 +15,9 @@ import org.apache.log4j.Logger;
 
 import java.util.*;
 
+/**
+ *  proc-history: 流转信息，该接口与histproc表没有任何关系！该接口查询的是task表
+ * */
 public class GetProcHistoric extends EngineBaseExecutor {
 
     private static final String TASK_TYPE = AppConst.TASK_TEMPLATE_GETPROCHISTORIC_SYNC;

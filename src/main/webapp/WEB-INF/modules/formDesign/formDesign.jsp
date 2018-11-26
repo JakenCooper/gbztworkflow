@@ -22,48 +22,13 @@
             src="${pageContext.request.contextPath}/static/ueditor/lang/zh-cn/zh-cn.js"></script>
     <script type="text/javascript" charset="utf-8"
             src="${pageContext.request.contextPath}/static/ueditor/formdesign/leipi.formdesign.v4.js"></script>
-
-
-
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/static/message/message.css">
+    <script type="text/javascript" src="${pageContext.request.contextPath}/static/message/message.js"></script>
 </head>
 <body>
 <style type="text/css">
 
-    <style>
-    label { /*flex布局让子元素水平垂直居中*/
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
 
-    input[type=checkbox],input[type=radio] {
-        -webkit-appearance: none;
-        appearance: none;
-        outline: none;
-        width: 12px;
-        height: 12px;
-        cursor: pointer;
-        vertical-align: center;
-        background: #fff;
-        border: 1px solid #ccc;
-        position: relative;
-    }
-
-    input[type=checkbox]:checked::after {
-        content: "\2713";
-        display: block;
-        position: absolute;
-        top: -1px;
-        left: -1px;
-        right: 0;
-        bottom: 0;
-        width: 10px;
-        height: 10px;
-        line-height: 10px;
-        border: 1px solid #ddd;
-        color: #3afff7;
-        font-size: 12px;
-    }
     input[type=radio]:checked::after {
         content: "";
         display: block;
@@ -88,10 +53,10 @@
         <button type="button" onclick="leipiFormDesign.exec('select',GetRequest());" class="btn btn-info btn-small">下拉菜单</button>
         <button type="button" onclick="leipiFormDesign.exec('radios',GetRequest());" class="btn btn-info btn-small">单选框</button>
         <button type="button" onclick="leipiFormDesign.exec('checkboxs',GetRequest());" class="btn btn-info btn-small">复选框</button>
-        <button type="button" onclick="leipiFormDesign.exec('macros',GetRequest());" class="btn btn-info btn-small">宏控件</button>
+        <%--<button type="button" onclick="leipiFormDesign.exec('macros',GetRequest());" class="btn btn-info btn-small">宏控件</button>--%>
         <button type="button" onclick="leipiFormDesign.exec('file',GetRequest());" class="btn btn-info btn-small">文件选择</button>
         <label><input type="radio" name="mode" value="0"/>紧凑模式</label>
-        <label><input type="radio" name="mode" value="1"/>非紧凑模式</label>
+        <label><input type="radio" name="mode" value="1" checked="checked"/>非紧凑模式</label>
        <%-- <button type="button" onclick="leipiFormDesign.exec('progressbar');" class="btn btn-info btn-small">进度条</button>--%>
        <%-- <button type="button" onclick="leipiFormDesign.exec('qrcode');" class="btn btn-info btn-small">二维码</button>--%>
         <div class="alert alert-warning">
@@ -404,7 +369,7 @@
                    data : {'type' : type_value,'formid':formid,'parse_form':parse_form,'currentFlowId':GetRequest(),'mode':mode},
                    success : function(data){
                      if(data.success==1){
-                         alert('保存成功');
+                         $.message('保存成功');
                          $('#submitbtn').button('reset');
                      }else{
                          alert('保存失败！');

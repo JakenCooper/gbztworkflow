@@ -47,9 +47,11 @@ public class FormDesignController {
         String type_value=request.getParameter("type_value");
         String parse_form=request.getParameter("parse_form");
         String currentFlowId=request.getParameter("currentFlowId");
+        String mode=request.getParameter("mode");
         formDesign.setId(uuid);
         formDesign.setFormHtml(parse_form);
         formDesign.setCurrentFlowId(currentFlowId);
+        formDesign.setRemark(mode);
         //解析html
         Map<String,Object> map=new HashMap<>();
        // Map<String,Object> map=formDesignService.analysisHtml(formDesign.getFormHtml());
@@ -58,9 +60,14 @@ public class FormDesignController {
         //为每一个input元素添加label
         Document doc=formDesignService.addLabel(parse_form);
         //添加c:if标签 生成jsp 文件
-        String jspCode=formDesignService.createJsp(parse_form,currentFlowId,request,response,session);
+        String jspCode=formDesignService.createJsp(parse_form,currentFlowId,request,response,session,false,mode);
+        //存放 view 页面代码
+        String jspCodeView=formDesignService.createJsp(parse_form,currentFlowId,request,response,session,true,mode);
         if(StringUtils.isNotBlank(jspCode)){
             formDesign.setJspCode(jspCode);
+        }
+        if(StringUtils.isNotBlank(jspCodeView)){
+            formDesign.setJspCodeView(jspCodeView);
         }
         if(doc!=null){
             parse_form=doc.body().html();

@@ -43,6 +43,7 @@ public class CreateTask extends EngineBaseExecutor {
         private String flowId;
         private String nodeDefId;
         private ProcInst procInst;
+        private boolean updateToFinishTaskTag = false;
     }
 
     @Override
@@ -62,8 +63,13 @@ public class CreateTask extends EngineBaseExecutor {
         if(isBlank(execution.nodeDefId) && isBlank(execution.nodeId)){
             throw new EngineAccessException("no node arguments.");
         }
-        if(isBlank(execution.assignUser) && isBlank(execution.assignUserList)){
+        if(isBlank(execution.assignUser) && isBlank(execution.assignUserList) && isBlank(execution.passUser)){
             throw new EngineAccessException("no assign user.");
+        }
+        // 兼容结束的情况
+        if(isBlank(execution.assignUser) && isBlank(execution.assignUserList) && isNotBlank(execution.passUser)){
+            execution.setAssignUser(execution.passUser);
+            arg.updateToFinishTaskTag = true;
         }
     }
 
@@ -116,6 +122,12 @@ public class CreateTask extends EngineBaseExecutor {
             taskObj.setAssignUser(execution.assignUser);
             taskObj.setAssignTime(new Date());
             taskObj.setOwner(execution.assignUser);
+        }
+        if(arg.updateToFinishTaskTag){
+            taskObj.setFinishTag(true);
+            taskObj.setFinishUser(execution.assignUser);
+            taskObj.setFinishTime(new Date());
+            taskObj.setDuration(0l);
         }
         if(isNotBlank(execution.assignUserList)) {
             for (String subUser : execution.assignUserList) {
