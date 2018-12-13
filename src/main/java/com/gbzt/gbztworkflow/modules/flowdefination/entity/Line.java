@@ -2,6 +2,7 @@ package com.gbzt.gbztworkflow.modules.flowdefination.entity;
 
 import com.gbzt.gbztworkflow.modules.base.BaseEntity;
 import com.sun.xml.internal.rngom.parse.host.Base;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -143,4 +144,5 @@ public class Line extends BaseEntity {
     public void setSysTaskName(String sysTaskName) {
         this.sysTaskName = sysTaskName;
     }
+
 }

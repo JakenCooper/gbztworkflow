@@ -3,9 +3,12 @@ package com.gbzt.gbztworkflow.modules.flowdefination.controller;
 import com.gbzt.gbztworkflow.consts.ExecResult;
 import com.gbzt.gbztworkflow.modules.base.BaseController;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
+import com.gbzt.gbztworkflow.modules.flowdefination.entity.FlowBuss;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
 import com.gbzt.gbztworkflow.modules.flowdefination.model.FlowMetadata;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationService;
+import com.gbzt.gbztworkflow.modules.flowdefination.service.FlowBussService;
+import com.google.gson.Gson;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -22,6 +25,8 @@ public class FlowController extends BaseController {
     @Autowired
     private DefinationService definationService;
 
+    @Autowired
+    private FlowBussService flowBussService;
 
 
     @RequestMapping(value="/{flowid}",method = RequestMethod.GET,produces = "application/json;charset=utf-8")
@@ -57,8 +62,10 @@ public class FlowController extends BaseController {
         return buildResp(execResult.charge == true ? 201:400,execResult.message);
     }
 
-    @RequestMapping(value="",method=RequestMethod.DELETE)
-    public ResponseEntity delFlow(Flow flow){
+    @RequestMapping(value="/{flowid}",method=RequestMethod.DELETE,produces = "application/json;charset=utf-8")
+    public ResponseEntity delFlow(@PathVariable("flowid") String flowId){
+        Flow flow = new Flow();
+        flow.setId(flowId);
         ExecResult execResult = definationService.delFlow(flow);
         return buildResp(execResult.charge == true?204:400,execResult.message);
     }
@@ -78,4 +85,11 @@ public class FlowController extends BaseController {
         return null;
     }
 
+    @RequestMapping(value="/findAllByFlowId",method = RequestMethod.POST,produces = "application/json;charset=utf-8")
+    @ResponseBody
+    public String findAllByFlowId(@RequestParam(value="currentflowid", required=true) String currentflowid){
+        List<FlowBuss> nameList=flowBussService.findAllByFlowId(currentflowid);
+
+        return new Gson().toJson(nameList);
+    }
 }

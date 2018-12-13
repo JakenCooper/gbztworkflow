@@ -8,10 +8,9 @@
 	<%@ include file="/WEB-INF/views/include/treeview.jsp" %>
     <%@ include file="/WEB-INF/views/include/selectNext.jsp" %>
     <%@include file="/WEB-INF/views/include/head.jsp" %>
+    <script src="${ctxStatic}/My97DatePicker/WdatePicker.js" type="text/javascript"></script>
 	<script type="text/javascript">
-		$(document).ready(function() {
-			//$("#name").focus();
-			
+        $(function () {
             // 根据流程加载tree数据
             selectNextPersonAudit();
 
@@ -56,7 +55,7 @@
 
             var procInsId = "";
             var office_id="";
-            selectAudit(procDefKey,taskKey,labelName,procInsId,office_id);
+            selectAudit(procdefid,procDefKey,taskdefkey,taskkey,labelName,procInsId,office_id);
         }
 	</script>
 </head>

@@ -30,6 +30,19 @@ public class UserNodePrivController extends BaseController {
         return buildResp(200,nodeUserPrivService.getAllUserInfo(node).result);
     }
 
+    /**
+     * add by ym  tree渲染
+     */
+    @RequestMapping(value="tree/{flowId}/{nodeId}",method = RequestMethod.GET,produces = "application/json;charset=UTF-8")
+    public ResponseEntity getTreeDatabynodeid(@PathVariable("flowId") String flowId,@PathVariable("nodeId") String nodeId){
+        Node node = new Node();
+        node.setFlowId(flowId);
+        node.setId(nodeId);
+        return buildResp(200,nodeUserPrivService.getAllUserInfobynodeid(node.getId()).result);
+    }
+    
+    
+    
     @RequestMapping(value="",method=RequestMethod.POST,produces = "application/json;charset=UTF-8")
     public ResponseEntity saveUserNodePriv(@RequestBody UserNodePriv userNodePriv){
         ExecResult execResult = nodeUserPrivService.saveUserNodePriv(userNodePriv);

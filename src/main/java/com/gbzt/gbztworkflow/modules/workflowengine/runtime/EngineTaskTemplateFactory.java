@@ -80,6 +80,13 @@ public class EngineTaskTemplateFactory {
                 RetreatTask.class,RetreatTask.class);
         templateMap.put(retreatTaskTemplate.getTemplateName(),retreatTaskTemplate);
 
+        EngineTaskTemplate  getBussTableTemplate= new EngineTaskTemplate(AppConst.TASK_TEMPLATE_GETBUSSTABLE_SYNC);
+        getBussTableTemplate.fullfillTemplateInfo("[ 查询业务表]",
+                AppConst.TASK_EXECUTION_TYPE_SYNC,
+                AppConst.TASK_EXECUTION_THREAD_TYPE_SINGLE,
+                GetBussTable.class,GetBussTable.class);
+        templateMap.put(getBussTableTemplate.getTemplateName(),getBussTableTemplate);
+
 
     }
 

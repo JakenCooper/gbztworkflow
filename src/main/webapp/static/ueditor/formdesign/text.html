@@ -20,9 +20,10 @@
     <script type="text/javascript">
 /* Thank you by  
 http://www.alt-tag.com/blog/2006/02/ie-dom-bugs/ */
-
+var oNode = null,thePlugins = 'text';
 function createElement(type, name)
 {
+   
     var element = null;
     try {        
         element = document.createElement('<'+type+' name="'+name+'">');
@@ -43,16 +44,8 @@ function getCurrentflowid()
     var currentflowid=getURLParameter("currentflowid");
     document.getElementById("currentflowid").value=currentflowid;
 }
-$(function () {
-    getCurrentflowid();
-    addColumnName();
-    loadNodesPowser();
-    var id=$("#id").val();
-    if(id ==''){
-        $("#id").val('form_text_'+MathRand());
-    }
 
-});
+
 
 function addColumnName() {
     var currentflowid=$("#currentflowid").val();
@@ -63,9 +56,20 @@ function addColumnName() {
         data:{"currentflowid":currentflowid},
         success:function(data){
             $.each(data, function (index) {
+                /* if(oNode == null) {*/
                 var text = data[index].columnName;
                 $("#name").append("<option value='"+text+"'>"+text+"</option>");
+                /*  }else{
+                      var namereal = oNode.getAttribute('name');
+                      
+                      $("#name").append("<option value='"+namereal+"'>"+namereal+"</option>");
+                  }*/
             });
+            if(oNode == null) {
+            }else {
+                var namereal = oNode.getAttribute('name');
+                $("#name").find("option[value = '" + namereal + "']").attr("selected", "selected");
+            }
 
         },
         error: function (XMLHttpRequest, textStatus, errorThrown) {
@@ -88,7 +92,6 @@ function MathRand()
 
 function  loadNodesPowser() {
     var id=$("#id").val();
-
     $.ajax({
         type:'post',
         url:adminPath+'/taskNodePermissions/findTaskNodePermissionsByTaskNodeId',
@@ -158,10 +161,12 @@ function delThisTr(obj) {
     $(obj).parent().parent().remove();
 }
 function addPower() {
+    
     var currentflowid=$("#currentflowid").val();
     $.ajax({
-        type:'post',
-        url:adminPath+'/defination/nodes/findNodeByFlowIdOrderByCreateTimeDesc',
+        type:'get',
+        //url:adminPath+'/defination/nodes/findNodeByFlowIdOrderByCreateTimeDesc',
+        url:adminPath+'/defination/flows/'+currentflowid+'/nodes',
         dataType:'json',
         data:{"currentflowid":currentflowid},
         success:function(data){
@@ -197,107 +202,18 @@ function addPower() {
         }
     });
 }
-    </script>
-</head>
-<body>
-<div class="content">
-    <table class="table table-bordered table-striped table-hover">
-     <tr>
-         <input type="hidden" name="currentflowid" id="currentflowid">
-        <th><span>字段名称</span><span class="label label-important">*</span></th>
-        <th><span>字段标题</span><span class="label label-important">*</span> </th>
-    </tr>
-    <tr>
-        <td><input type="text" id="fieldname" placeholder="必填项"></td>
-        <td><input type="text" id="orgname" placeholder="必填项"></td>
-    </tr>
-     <tr>
-        <th><span>默认值</span> </th>
-        <th><span>流程变量</span> </th>
-    </tr>
-    <tr>
-        <td><input type="text" id="orgvalue" placeholder="无则不填"></td>
-        <td><label class="checkbox inline"><input id="fieldflow" type="checkbox"/> 流程变量</label></td>
-    </tr>
-    <tr>
-        <th><span>数据类型</span> </th>
-        <th><span>对齐方式</span> </th>
-    </tr>
-    <tr>
-        <td>
-             <select id="orgtype">
-                <option value="text">普通文本</option>
-                <option value="email">邮箱地址</option>
-                <option value="int">整数</option>
-                <option value="float">小数</option>
-                <option value="idcard">身份证号码</option>
-            </select>   
-        </td>
-        <td>
-            <select id="orgalign">
-                <option value="left" >左对齐</option>
-                <option value="center">居中对齐</option>
-                <option value="right">右对齐</option>
-            </select>
-        </td>
-    </tr>
-    <tr>
-        <th><span>&nbsp;&nbsp;&nbsp;&nbsp;长&nbsp;&nbsp;X&nbsp;&nbsp;宽&nbsp;&nbsp;&nbsp;&&nbsp;&nbsp;&nbsp;字体大小</span> </th>
-        <th><span>可见性</span> </th>
-    </tr>
-    <tr>
-        <td>
-            <input id="orgwidth" type="text" value="150" class="input-small span1" placeholder="auto"/>
-            X
-            <input id="orgheight" type="text" value="" class="input-small span1" placeholder="auto"/>
-            &
-            <input id="orgfontsize" type="text"  value="" class="input-small span1" placeholder="auto"/> px
 
-        </td>
-        <td>
-            <label class="checkbox inline"><input id="orghide" type="checkbox"/> 隐藏 </label>
-        </td>
-    </tr>
-    <tr>
-        <th><span>id</span> </th>
-        <th><span>name</span></th>
-    </tr>
-    <tr>
-        <td>
-            <input type="text" id="id" style="width: 200px;">
-        </td>
-        <td>
-           <select id="name"></select>
-        </td>
-    </tr>
-        <tr>
-            <td colspan="2">
-                <table class="table table-hover table-condensed" id="options_table">
-                    <tr>
-                        <th>节点名称</th>
-                        <th>节点权限</th>
-                        <th>操作</th>
-                    </tr>
-                </table>
-                <a title="添加节点权限" class="btn btn-primary" onclick=" addPower();">添加节点权限</a>
-            </td>
-        </tr>
-    </table>
-</div>
-
-<script type="text/javascript">
-var oNode = null,thePlugins = 'text';
 window.onload = function() {
     if( UE.plugins[thePlugins].editdom ){
 
         oNode = UE.plugins[thePlugins].editdom;
-		var gValue = oNode.getAttribute('value').replace(/&quot;/g,"\""),gName=oNode.getAttribute('fieldname'),gFlow=oNode.getAttribute('fieldflow'),gTitle=oNode.getAttribute('title').replace(/&quot;/g,"\""),gHidden=oNode.getAttribute('orghide'),gFontSize=oNode.getAttribute('orgfontsize'),gAlign=oNode.getAttribute('orgalign'),gWidth=oNode.getAttribute('orgwidth'),gHeight=oNode.getAttribute('orgheight'),gType=oNode.getAttribute('orgtype'),id=oNode.getAttribute('id'),name=oNode.getAttribute('name');
-		gValue = gValue==null ? '' : gValue;
+        var gValue = oNode.getAttribute('value').replace(/&quot;/g,"\""),gName=oNode.getAttribute('fieldname'),gFlow=oNode.getAttribute('fieldflow'),gTitle=oNode.getAttribute('title').replace(/&quot;/g,"\""),gHidden=oNode.getAttribute('orghide'),gFontSize=oNode.getAttribute('orgfontsize'),gAlign=oNode.getAttribute('orgalign'),gWidth=oNode.getAttribute('orgwidth'),gHeight=oNode.getAttribute('orgheight'),gType=oNode.getAttribute('orgtype'),id=oNode.getAttribute('id'),name=oNode.getAttribute('name');
+        gValue = gValue==null ? '' : gValue;
         gTitle = gTitle==null ? '' : gTitle;
         gName = gName==null ? '' : gName;
         id =id == null?'':id;
         name=name== null?'':name;
-		$G('orgvalue').value = gValue;
+        $G('orgvalue').value = gValue;
         $G('orgname').value = gTitle;
         $G('fieldname').value = gName;
         $G('id').value=id;
@@ -315,7 +231,19 @@ window.onload = function() {
         $G('orgheight').value = gHeight;
         $G('orgalign').value = gAlign;
         $G('orgtype').value = gType;
+
+
+
+
+
     }
+    var idValue=$("#id").val();
+    if(idValue ==''){
+        $("#id").val('form_text_'+MathRand());
+    }
+    loadNodesPowser();
+    getCurrentflowid();
+    addColumnName();
 };
 dialog.oncancel = function () {
     if( UE.plugins[thePlugins].editdom ) {
@@ -339,10 +267,15 @@ dialog.onok = function (){
         return false;
     }
 
+  /*  if($G('name').value!=''){
+        alert($G('name').value);
+
+    }*/
 
     var array=new Array();
     var index=document.getElementsByClassName('nodesSelect').length;
     if(index!=0){
+       
         for(var i=0;i<index;i++){
             var nodesId=document.getElementsByClassName('nodesSelect')[i].getAttribute('id');
             array.push($("#"+nodesId).val()+":"+$("."+nodesId).val()+":"+$G('id').value+":"+$("#currentflowid").val()+":"+$("#name").val());
@@ -354,10 +287,12 @@ dialog.onok = function (){
             dataType:'json',
             data:{"array":array},
             traditional: true,
+            async:false,
             success:function(data){
                 console.log("数据访问成功");
             },
             error: function (XMLHttpRequest, textStatus) {
+                alert(1);
                 // 状态码
                 console.log(XMLHttpRequest.status);
                 // 状态
@@ -368,9 +303,12 @@ dialog.onok = function (){
         });
     }
     var gValue=$G('orgvalue').value.replace(/\"/g,"&quot;"),gTitle=$G('orgname').value.replace(/\"/g,"&quot;"),gName=$G('fieldname').value,gFontSize=$G('orgfontsize').value,gAlign=$G('orgalign').value,gWidth=$G('orgwidth').value,gHeight=$G('orgheight').value,gType=$G('orgtype').value,id=$G('id').value, name=$("#name").val();
-    
+
     if( !oNode ) {
+
+
         try {
+           
             oNode = createElement('input','NEWFIELD');
             oNode.setAttribute('type','text');
             oNode.setAttribute('title',gTitle);
@@ -424,7 +362,7 @@ dialog.onok = function (){
             return false;
         }
     } else {
-        
+
         oNode.setAttribute('title', gTitle);
         oNode.setAttribute('value', $G('orgvalue').value);
         oNode.setAttribute('fieldname',gName);
@@ -483,6 +421,97 @@ dialog.onok = function (){
         delete UE.plugins[thePlugins].editdom;
     }
 };
+    </script>
+</head>
+<body>
+<div class="content">
+    <table class="table table-bordered table-striped table-hover">
+     <tr>
+         <input type="hidden" name="currentflowid" id="currentflowid">
+        <th><span>字段名称</span><span class="label label-important">*</span></th>
+        <th><span>字段标题</span><span class="label label-important">*</span> </th>
+    </tr>
+    <tr>
+        <td><input type="text" id="fieldname" placeholder="必填项"></td>
+        <td><input type="text" id="orgname" placeholder="必填项"></td>
+    </tr>
+     <tr>
+        <th><span>默认值</span> </th>
+        <th><span style="display: none">流程变量</span> </th>
+    </tr>
+    <tr>
+        <td><input type="text" id="orgvalue" placeholder="无则不填"></td>
+        <td ><label class="checkbox inline" style="display: none"><input id="fieldflow" type="checkbox"/> 流程变量</label></td>
+    </tr>
+    <tr>
+        <th><span>数据类型</span> </th>
+        <th><span>对齐方式</span> </th>
+    </tr>
+    <tr>
+        <td>
+             <select id="orgtype">
+                <option value="text">普通文本</option>
+                <option value="email">邮箱地址</option>
+                <option value="int">整数</option>
+                <option value="float">小数</option>
+                <option value="idcard">身份证号码</option>
+            </select>   
+        </td>
+        <td>
+            <select id="orgalign">
+                <option value="left" >左对齐</option>
+                <option value="center">居中对齐</option>
+                <option value="right">右对齐</option>
+            </select>
+        </td>
+    </tr>
+
+   <tr style="display: none">
+        <th><span>&nbsp;&nbsp;&nbsp;&nbsp;长&nbsp;&nbsp;X&nbsp;&nbsp;宽&nbsp;&nbsp;&nbsp;&&nbsp;&nbsp;&nbsp;字体大小</span> </th>
+        <th><span>可见性</span> </th>
+    </tr>
+    <tr style="display: none">
+        <td>
+            <input id="orgwidth" type="text" value="150" class="input-small span1" placeholder="auto"/>
+            X
+            <input id="orgheight" type="text" value="" class="input-small span1" placeholder="auto"/>
+            &
+            <input id="orgfontsize" type="text"  value="" class="input-small span1" placeholder="auto"/> px
+
+        </td>
+        <td>
+            <label class="checkbox inline"><input id="orghide" type="checkbox"/> 隐藏 </label>
+        </td>
+    </tr>
+    <tr>
+        <th><span>id</span> </th>
+        <th><span>name</span></th>
+    </tr>
+    <tr>
+        <td>
+            <input type="text" id="id" style="width: 200px;" readonly="readonly">
+        </td>
+        <td>
+           <select id="name"></select>
+        </td>
+    </tr>
+        <tr>
+            <td colspan="2">
+                <table class="table table-hover table-condensed" id="options_table">
+                    <tr>
+                        <th>节点名称</th>
+                        <th>节点权限</th>
+                        <th>操作</th>
+                    </tr>
+                </table>
+                <a title="添加节点权限" class="btn btn-primary" onclick=" addPower();">添加节点权限</a>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<script type="text/javascript">
+
 </script>
 </body>
 </html>

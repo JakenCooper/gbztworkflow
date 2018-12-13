@@ -1,4 +1,5 @@
-var adminPath = 'http://localhost:8081/Design';
+//var adminPath = 'http://10.6.97.10:8666/gw';
+var adminPath = 'http://192.168.1.4:8666/gw';
 
 
 

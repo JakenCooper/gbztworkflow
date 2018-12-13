@@ -34,6 +34,7 @@ public class MetadataController extends BaseController {
         metadata.setBussDbName(AppConst.METADATA_DEFAULT_DBNAME);
         metadata.setBussDbUserName(AppConst.METADATA_DEFAULT_USERNAME);
         metadata.setBussDbUserPwd(AppConst.METADATA_DEFAULT_USERPWD);
+        metadata.setBussModelPath(AppConst.METADATA_DEFAULT_MODULEPATH);
         return buildResp(200,metadata);
     }
 
@@ -63,5 +64,11 @@ public class MetadataController extends BaseController {
         ExecResult<FlowMetadata> execResult = metadataService.getColumnsByTable(metadata);
         return buildResp(execResult.charge == true ?200:400,execResult.result == null ? metadataService.buildTree(bussTableName,emptyColumns)
                 :metadataService.buildTree(bussTableName,execResult.result.getDbTableColumns()));
+    }
+
+    @RequestMapping(value="/create",method = RequestMethod.POST,produces = "application/json;charset=UTF-8")
+    public ResponseEntity createBussTable(@RequestBody FlowMetadata metadata){
+        ExecResult<String> execResult = metadataService.createBussTable(metadata);
+        return buildResp(200,execResult);
     }
 }

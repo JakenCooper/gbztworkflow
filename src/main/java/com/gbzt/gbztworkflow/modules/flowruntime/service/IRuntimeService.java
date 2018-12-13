@@ -1,7 +1,11 @@
 package com.gbzt.gbztworkflow.modules.flowruntime.service;
 
+import com.gbzt.gbztworkflow.modules.affairConfiguer.entity.AffairConfiguer;
+import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.TaskModel;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 public interface IRuntimeService {
     /*
@@ -50,4 +54,16 @@ public interface IRuntimeService {
      *  rtn : String
      * */
     public TaskModel retreatSubmit(TaskModel model);
+
+    /*
+     *  rtn : List<Map<String,String>> ensensial attrs of flows
+     * */
+    public TaskModel getBussTable(TaskModel model);
+
+    /*
+    * 获取事务查询配置
+    * */
+    public List<TaskModel> getAffairConfiguerList(TaskModel taskModel);
+
+    public TaskModel findFlowByFlowName(TaskModel taskModel);
 }

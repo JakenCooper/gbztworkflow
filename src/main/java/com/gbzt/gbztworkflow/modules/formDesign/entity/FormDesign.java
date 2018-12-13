@@ -26,8 +26,6 @@ public class FormDesign implements Serializable {
 	private String id;
 	@Column(name = "form_name")
 	private String formName;
-	@Column(name = "form_desc")
-	private String formDesc;
 	@Column(name = "remark")
 	private String remark;
 	@Column(name = "delflag")
@@ -99,15 +97,7 @@ public class FormDesign implements Serializable {
 	public void setFormName(String formName) {
 		this.formName = formName;
 	}
-	
-	@Length(min=0, max=255, message="表单描述长度必须介于 0 和 255 之间")
-	public String getFormDesc() {
-		return formDesc;
-	}
 
-	public void setFormDesc(String formDesc) {
-		this.formDesc = formDesc;
-	}
 	
 	@Length(min=0, max=255, message="备注长度必须介于 0 和 255 之间")
 	public String getRemark() {

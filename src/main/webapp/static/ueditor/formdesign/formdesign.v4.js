@@ -53,7 +53,7 @@ UE.plugins['text'] = function () {
 		content: '',
 		className: 'edui-bubble',
 		_edittext: function () {
-		      debugger
+
 			  baidu.editor.plugins[thePlugins].editdom = popup.anchorEl;
 			  me.execCommand(thePlugins);
 			  this.hide();

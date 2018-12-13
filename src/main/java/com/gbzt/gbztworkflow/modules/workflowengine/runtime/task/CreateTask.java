@@ -14,6 +14,7 @@ import com.gbzt.gbztworkflow.modules.workflowengine.pojo.HistProc;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.ProcInst;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.Task;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.TaskExecution;
+import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.EngineBaseArg;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.EngineBaseExecutor;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.IEngineArg;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.entity.EngineTask;
@@ -31,7 +32,7 @@ public class CreateTask extends EngineBaseExecutor {
     private Logger logger = Logger.getLogger(CreateTask.class);
     private static String LOGGER_TYPE_PREFIX = "CreateTask,";
 
-    public static class CreateTaskArg implements IEngineArg {
+    public static class CreateTaskArg extends EngineBaseArg implements IEngineArg {
         private String[] requiredArg = new String[]{"flowId","procInstId","nodeDefId","assignUser","passUser"};
         public DefinationService definationService;
         public TaskDao taskDao;
@@ -66,7 +67,7 @@ public class CreateTask extends EngineBaseExecutor {
         if(isBlank(execution.assignUser) && isBlank(execution.assignUserList) && isBlank(execution.passUser)){
             throw new EngineAccessException("no assign user.");
         }
-        // 兼容结束的情况
+        // [logic] 主任务直接结束的情况，没有选择指派人，所以此处要特殊处理
         if(isBlank(execution.assignUser) && isBlank(execution.assignUserList) && isNotBlank(execution.passUser)){
             execution.setAssignUser(execution.passUser);
             arg.updateToFinishTaskTag = true;
@@ -166,17 +167,19 @@ public class CreateTask extends EngineBaseExecutor {
         if(subTasks.size() > 0){
             arg.taskDao.save(subTasks);
         }
-        // handle histproc data...
-        HistProc histProc = new HistProc();
-        histProc.setId(CommonUtils.genUUid());
-        histProc.genBaseVariables();
-        histProc.setNodeId(taskObj.getNodeId());
-        histProc.setNodeName(taskObj.getNodeName());
-        histProc.setProcInstId(taskObj.getProcInstId());
-        histProc.setTaskId(taskObj.getId());
-        histProc.setUserId(taskObj.getAssignUser());
-        histProc.setCreateTimeMills(System.currentTimeMillis());
-        arg.histProcDao.save(histProc);
+        // [logic] 只有标记字段为true时才需要创建histtask（目前只有收回退回时无需创建）
+        if(execution.needHistProc) {
+            HistProc histProc = new HistProc();
+            histProc.setId(CommonUtils.genUUid());
+            histProc.genBaseVariables();
+            histProc.setNodeId(taskObj.getNodeId());
+            histProc.setNodeName(taskObj.getNodeName());
+            histProc.setProcInstId(taskObj.getProcInstId());
+            histProc.setTaskId(taskObj.getId());
+            histProc.setUserId(taskObj.getAssignUser());
+            histProc.setCreateTimeMills(System.currentTimeMillis());
+            arg.histProcDao.save(histProc);
+        }
 
         task.setExecutedResult(taskObj.getId());
         return null;

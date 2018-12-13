@@ -157,7 +157,7 @@ drop table if exists gw_def_user_node_priv;
 create table gw_def_user_node_priv(
   id varchar(36) primary key,
   node_id varchar(36),
-  login_name varchar(100),
+  login_name longtext,
   flow_id varchar(36),
   node_type varchar(30),
   create_user varchar(40),
@@ -277,3 +277,6 @@ alter table gw_run_task add buss_table varchar(200);
 /**20181101*/
 alter table gw_run_task add create_time_mills long;
 alter table gw_run_histproc add create_time_mills long;
+
+/**20181127*/
+alter table gw_def_user_node_priv change login_name login_name longtext;

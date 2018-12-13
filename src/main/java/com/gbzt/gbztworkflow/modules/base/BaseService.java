@@ -4,7 +4,11 @@ import com.gbzt.gbztworkflow.consts.ExecResult;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.BaseModel;
 import com.gbzt.gbztworkflow.utils.CommonUtils;
 import com.gbzt.gbztworkflow.utils.LogUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+
+import java.util.Collection;
+import java.util.Map;
 
 public class BaseService {
 
@@ -33,5 +37,47 @@ public class BaseService {
     protected final BaseModel buildResult(BaseModel model,boolean charge,String rtnmessage,Object result){
         model.setExecResult(buildResult(charge,rtnmessage,result));
         return model;
+    }
+
+    protected final boolean isBlank(String target){
+        return StringUtils.isBlank(target);
+    }
+
+    protected final boolean isBlank(Collection target){
+        if(target == null){
+            return true;
+        }
+        if(target.size() == 0){
+            return true;
+        }
+        return false;
+    }
+
+    protected final boolean isBlank(Map target){
+        if(target == null){
+            return true;
+        }
+        if(target.keySet().size() == 0){
+            return true;
+        }
+        return false;
+    }
+
+    protected final boolean isNotBlank(String target){
+        return StringUtils.isNotBlank(target);
+    }
+
+    protected final boolean isNotBlank(Collection target){
+        if(target != null && target.size() != 0){
+            return true;
+        }
+        return false;
+    }
+
+    protected final boolean isNotBlank(Map target){
+        if(target != null && target.keySet().size() != 0){
+            return true;
+        }
+        return false;
     }
 }

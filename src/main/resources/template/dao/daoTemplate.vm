@@ -1,6 +1,8 @@
 package com.thinkgem.jeesite.modules.${package}.dao;
 
+import com.thinkgem.jeesite.common.persistence.CrudDao;
 import com.thinkgem.jeesite.common.persistence.annotation.MyBatisDao;
+import com.thinkgem.jeesite.modules.act.entity.Act;
 import com.thinkgem.jeesite.modules.${package}.entity.${EntityName};
 
 /**
@@ -8,17 +10,19 @@ import com.thinkgem.jeesite.modules.${package}.entity.${EntityName};
 * @version ${date}
 */
 @MyBatisDao
-public interface ${EntityName}Dao {
+public interface ${EntityName}Dao  extends CrudDao<${EntityName}>{
 
-    int deleteByPrimaryKey(String ${entityName}Id);
-    
-    int insert(${EntityName} record);
-    
-    int insertSelective(${EntityName} record);
+//${EntityName} get${EntityName}ByProcInsId(String procInsId);
 
-    ${EntityName} selectByPrimaryKey(String ${entityName}Id);
-    
-    int updateByPrimaryKeySelective(${EntityName} record);
-    
-    int updateByPrimaryKey(${EntityName} record);
+int deleteByPrimaryKey(String ${entityName}Id);
+
+int insert(${EntityName} record);
+
+int insertSelective(${EntityName} record);
+
+${EntityName} selectByPrimaryKey(String ${entityName}Id);
+
+int updateByPrimaryKeySelective(${EntityName} record);
+
+int updateByPrimaryKey(${EntityName} record);
 }

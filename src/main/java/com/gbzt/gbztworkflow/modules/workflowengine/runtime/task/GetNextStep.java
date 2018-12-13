@@ -3,12 +3,11 @@ package com.gbzt.gbztworkflow.modules.workflowengine.runtime.task;
 import com.gbzt.gbztworkflow.consts.AppConst;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
-import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationService;
-import com.gbzt.gbztworkflow.modules.workflowengine.dao.TaskDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineAccessException;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineRuntimeException;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.Task;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.TaskExecution;
+import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.EngineBaseArg;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.EngineBaseExecutor;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.IEngineArg;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.entity.EngineTask;
@@ -27,11 +26,9 @@ public class GetNextStep extends EngineBaseExecutor {
     private Logger logger = Logger.getLogger(GetNextStep.class);
     private static String LOGGER_TYPE_PREFIX = "GetNextStep,";
 
-    public static class GetNextStepArg implements IEngineArg {
+    public static class GetNextStepArg extends EngineBaseArg implements IEngineArg {
         private String[] requiredArg = new String[]{"flowName","taskId"};
-        public DefinationService definationService;
         public TaskExecution execution;
-        public TaskDao taskDao;
 
         private Flow flowInst;
     }

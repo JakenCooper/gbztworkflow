@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import javax.ws.rs.Path;
+
 @Controller
 @RequestMapping("/defination/nodes")
 public class NodeController extends BaseController {
@@ -35,7 +37,9 @@ public class NodeController extends BaseController {
 
 
     @RequestMapping(value="/{nodeid}",method=RequestMethod.DELETE,produces = "application/json;charset=UTF-8")
-    public ResponseEntity delNode(Node node){
+    public ResponseEntity delNode(@PathVariable("nodeid") String nodeId){
+        Node node = new Node();
+        node.setId(nodeId);
         ExecResult execResult = definationService.delNode(node);
         return buildResp(execResult.charge == true?204:400,execResult.message);
     }

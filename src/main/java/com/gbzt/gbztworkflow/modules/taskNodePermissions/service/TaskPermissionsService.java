@@ -1,6 +1,8 @@
 package com.gbzt.gbztworkflow.modules.taskNodePermissions.service;
 
+import com.gbzt.gbztworkflow.modules.taskNodePermissions.dao.TaskFormIdNameDao;
 import com.gbzt.gbztworkflow.modules.taskNodePermissions.dao.TaskPermissionsDao;
+import com.gbzt.gbztworkflow.modules.taskNodePermissions.entity.TaskFormIdName;
 import com.gbzt.gbztworkflow.modules.taskNodePermissions.entity.TaskNodePermissions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,6 +19,8 @@ import java.util.UUID;
 public class TaskPermissionsService {
     @Autowired
     private TaskPermissionsDao taskPermissionsDao;
+    @Autowired
+    private TaskFormIdNameDao taskFormIdNameDao;
 
     public Integer savePermissions(String[] array){
         int flag=0;
@@ -49,11 +53,41 @@ public class TaskPermissionsService {
         }
         return flag;
     }
+
+    public Integer saveFormIdAndName(String[] array){
+        int flag=0;
+        try {
+            List<TaskNodePermissions> permissionList=new ArrayList<>();
+            String form_Id = array[0];
+            String form_Name = array[1];
+            String uuid = UUID.randomUUID().toString().replaceAll("-","");
+            TaskFormIdName taskFormIdName = new TaskFormIdName();
+            taskFormIdName.setFormId(form_Id);
+            taskFormIdName.setFormName(form_Name);
+            Date date = new Date();
+            taskFormIdName.setCreateDate(date);
+            taskFormIdName.setDeltag("N");
+            taskFormIdName.setRemark("");
+            taskFormIdName.setId(uuid);
+            taskFormIdNameDao.save(taskFormIdName);
+            flag=1;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return flag;
+    }
+    
     public List<TaskNodePermissions> findTaskNodePermissionsByTaskNodeId(String tId){
         return taskPermissionsDao.findTaskNodePermissionsByTaskNodeId(tId);
     }
+    public List<TaskFormIdName> findTaskFormNamebyformid(String tId){
+        return taskFormIdNameDao.findTaskFormIdNamesByFormId(tId);
+    }
+    
 
     public Integer deleteTaskNodePermissionsById(String id){
         return taskPermissionsDao.deleteTaskNodePermissionsById(id);
     }
+    
+    
 }

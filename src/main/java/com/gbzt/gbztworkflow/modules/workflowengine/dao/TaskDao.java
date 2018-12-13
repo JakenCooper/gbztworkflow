@@ -28,13 +28,14 @@ public interface TaskDao extends JpaRepository<Task,String>,JpaSpecificationExec
 
     @Modifying
     @Query("update com.gbzt.gbztworkflow.modules.workflowengine.pojo.Task a set a.finishTag=true,a.finishUser=:operUser," +
-            "a.withdrawTag=true,a.withdrawDescription='收回',a.finishTime=:finishTime where a.procInstId=:procInstId")
-    public void withdrawAllUnfinishedTaskByProcInstId(@Param("procInstId") String procInstId,@Param("finishTime") Date finishTime,
-                                                      @Param("operUser") String operUser);
+            "a.withdrawTag=true,a.withdrawDescription='收回',a.finishTime=:finishTime where a.procInstId=:procInstId and a.id=:taskId")
+    public void withdrawAllfinishedTaskByProcInstIdAndTaskId(@Param("procInstId") String procInstId,@Param("finishTime") Date finishTime,
+                                                      @Param("operUser") String operUser,@Param("taskId") String taskId);
 
     @Modifying
     @Query("update com.gbzt.gbztworkflow.modules.workflowengine.pojo.Task a set a.finishTag=true,a.finishUser=:operUser," +
-            "a.retreatTag=true,a.retreatDescription='退回',a.finishTime=:finishTime where a.procInstId=:procInstId")
-    public void retreatAllUnfinishedTaskByProcInstId(@Param("procInstId") String procInstId,@Param("finishTime") Date finishTime,
-                                                      @Param("operUser") String operUser);
+            "a.retreatTag=true,a.retreatDescription='退回',a.finishTime=:finishTime where a.procInstId=:procInstId and a.id=:taskId")
+    public void retreatUnFinishTaskByProcInstIdAndTaskId(@Param("procInstId") String procInstId,@Param("finishTime") Date finishTime,
+                                                      @Param("operUser") String operUser,@Param("taskId") String taskId);
+
 }

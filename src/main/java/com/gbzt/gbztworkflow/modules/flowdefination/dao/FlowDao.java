@@ -13,6 +13,8 @@ import java.util.List;
 
 public interface FlowDao extends JpaRepository<Flow,String>,JpaSpecificationExecutor<Flow> {
 
+    public List<Flow> findFlowsByDelTag(boolean delTag);
+
     public Integer countFlowByFlowName(String name);
 
     public Flow findFlowByFlowName(String name);

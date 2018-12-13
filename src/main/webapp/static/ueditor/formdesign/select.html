@@ -18,14 +18,10 @@
     <link rel="stylesheet" href="../../message/message.css">
     <script type="text/javascript" src="../../message/message.js"></script>
     <script type="text/javascript">
+        var oNode = null;
         $(function () {
             getCurrentflowid();
             addColumnName();
-            loadNodesPowser();
-            var id=$("#id").val();
-            if(id==''){
-                $("#id").val('form_selOpt_'+MathRand());
-            }
         });
 
         function  loadNodesPowser() {
@@ -38,14 +34,15 @@
                 data:{"taskNodeId":id},
                 contentType: "application/x-www-form-urlencoded; charset=utf-8",
                 success:function(data){
-                    if(data.length<0){
+                    if(data.length<=0){
                         return false;
                     }
                     var currentFlowId=data[0].currentFlowId;
                     $("#currentflowid").val(currentFlowId);
+                   
                     var text = data[0].columnName;
                     var select=$("#name");
-                    select.empty();
+                    //select.empty();
                     select.append("<option>"+text+"</option>>");
                     var table=$("#options_table");
                     $.each(data, function (index) {
@@ -105,11 +102,17 @@
                 dataType:'json',
                 data:{"currentflowid":currentflowid},
                 success:function(data){
+                    
                     $.each(data, function (index) {
-                        var text = data[index].columnName;
-                        $("#name").append("<option value='"+text+"'>"+text+"</option>");
+                            var text = data[index].columnName;
+                            $("#name").append("<option value='"+text+"'>"+text+"</option>");
                     });
-
+                    if(oNode == null) {
+                    }else {
+                        var namereal = oNode.getAttribute('name');
+                        $("#name").find("option[value = '" + namereal + "']").attr("selected", "selected");
+                    }
+                    
                 },
                 error: function (XMLHttpRequest, textStatus, errorThrown) {
                     // 状态码
@@ -141,10 +144,13 @@
         }
         function addPower() {
 
+            
             var currentflowid=$("#currentflowid").val();
+          
             $.ajax({
-                type:'post',
-                url:adminPath+'/defination/nodes/findNodeByFlowIdOrderByCreateTimeDesc',
+                type:'get',
+                //url:adminPath+'/defination/nodes/findNodeByFlowIdOrderByCreateTimeDesc',
+                url:adminPath+'/defination/flows/'+currentflowid+'/nodes',
                 dataType:'json',
                 data:{"currentflowid":currentflowid},
                 success:function(data){
@@ -180,8 +186,8 @@
                 }
             });
         }
-    </script>
-    <script type="text/javascript">
+ 
+    
 function createElement(type, name)
 {     
     var element = null;     
@@ -324,6 +330,186 @@ function fnSetAttribute( element, attName, attValue ) {
         element.setAttribute( attName, attValue, 0 ) ;    
     }
 }
+var oListText='',thePlugins = 'select';
+window.onload = function() {
+
+    oListText = $G('orglist');
+
+    if( UE.plugins[thePlugins].editdom ){
+        debugger
+        oNode = UE.plugins[thePlugins].editdom;
+        var gTitle=oNode.getAttribute('title').replace(/&quot;/g,"\""),gName=oNode.getAttribute('fieldname'),gFlow=oNode.getAttribute('fieldflow'),gWidth=oNode.getAttribute('orgwidth'),gSize=oNode.getAttribute('size'),id=oNode.getAttribute('id'),name=oNode.getAttribute('name');
+        gTitle = gTitle==null ? '' : gTitle;
+        gName = gName==null ? '' : gName;
+        id=id==null?'':id;
+        name=name==null?'':name;
+        $G('orgvalue').innerHTML = oNode.value;
+        $G('orgname').value = gTitle;
+        $G('orgsize').value = gSize;
+        $G('orgwidth').value = gWidth;
+        $G('fieldname').value = gName;
+        $G('id').value=id;
+        $G('name').value=name;
+        if (gFlow == '1')
+        {
+            $G('fieldflow').checked = true;
+        }
+
+        for ( var i = 0 ; i < oNode.options.length ; i++ ) {
+            var sText    = oNode.options[i].value ;
+            fnAddComboOption( oListText, sText, sText ) ;
+        }
+    }
+    var idValue=$("#id").val();
+    if(idValue==''){
+        $("#id").val('form_selOpt_'+MathRand());
+    }
+    loadNodesPowser();
+    /*$('#showTips').popover();*/
+}
+dialog.oncancel = function () {
+    if( UE.plugins[thePlugins].editdom ) {
+        delete UE.plugins[thePlugins].editdom;
+    }
+};
+dialog.onok = function (){
+    if($G('fieldname').value==''){
+        alert('请输入字段名称');
+        return false;
+    }
+    if($G('orgname').value==''){
+        alert('请输入控件名称');
+        return false;
+    }
+    if( oListText.options.length == 0 ) {
+        alert('请添加下拉菜单选项！');
+        return false;
+    }
+
+    var array=new Array();
+    var index=document.getElementsByClassName('nodesSelect').length;
+    if(index!=0){
+        for(var i=0;i<index;i++){
+            var nodesId=document.getElementsByClassName('nodesSelect')[i].getAttribute('id');
+            array.push($("#"+nodesId).val()+":"+$("."+nodesId).val()+":"+$G('id').value+":"+$("#currentflowid").val()+":"+$("#name").val());
+        }
+        console.log(array);
+        $.ajax({
+            type:'post',
+            url:adminPath+'/taskNodePermissions/savePermissions',
+            dataType:'json',
+            data:{"array":array},
+            traditional: true,
+            success:function(data){
+                console.log("添加权限成功")
+            },
+            error: function (XMLHttpRequest, textStatus) {
+                // 状态码
+                console.log(XMLHttpRequest.status);
+                // 状态
+                console.log(XMLHttpRequest.readyState);
+                // 错误信息
+                console.log(textStatus);
+            }
+        });
+    }
+    var gSize = $G('orgsize').value ;
+    if ( gSize == null || isNaN( gSize ) || gSize < 1 ) {
+        gSize = '' ;
+    }
+    var gWidth=$G('orgwidth').value;
+
+    if( !oNode ) {
+        try {
+            //oNode = document.createElement("select");
+            oNode = createElement('select','NEWFIELD');
+            oNode.setAttribute('title',$G('orgname').value);
+            oNode.setAttribute('leipiplugins',thePlugins );
+            oNode.setAttribute('size',gSize);
+            oNode.setAttribute('fieldname',$G('fieldname').value);
+            oNode.setAttribute('id',$G('id').value);
+            oNode.setAttribute('name',$G('name').value);
+            if ( $G('fieldflow').checked ) {
+                oNode.setAttribute('fieldflow',1);
+            } else {
+                oNode.setAttribute('fieldflow',0);
+            }
+            if ( $G('orgwidth').value!= '' ) {
+                oNode.style.width =  $G('orgwidth').value+ 'px';
+                //oNode.setAttribute('style','width:'+ $G('orgwidth').value + 'px;');
+            }
+            if( gWidth != '' ) {
+                oNode.style.width = gWidth + 'px';
+                oNode.setAttribute('orgwidth',gWidth );
+            }
+
+            // Add all available options.
+            for ( var i = 0 ; i < oListText.options.length ; i++ ) {
+                var sText    = oListText.options[i].value ;
+                if ( sText.length == 0 ) {
+                    sText = sText ;
+                }
+                var oOption = fnAddComboOption( oNode, sText, sText ) ;
+                if ( sText == $G('orgvalue').innerHTML ) {
+                    fnSetAttribute( oOption, 'selected', 'selected' ) ;
+                    oOption.selected = true ;
+                }
+            }
+            //firefox要利用span
+            editor.execCommand('insertHtml','{|-<span plugins="select">'+oNode.outerHTML+'&nbsp;&nbsp;</span>-|}');
+            return true ;
+        } catch ( e ) {
+            try {
+                editor.execCommand('error');
+            } catch ( e ) {
+                alert('控件异常，请联系技术支持');
+            }
+            return false;
+        }
+    } else {
+
+        oNode.setAttribute('title', $G('orgname').value);
+        oNode.setAttribute('fieldname',$G('fieldname').value);
+        oNode.setAttribute('size',gSize);
+        var id=$G('id').value;
+        var name=$G('name').value;
+        if ( $G('fieldflow').checked ) {
+            oNode.setAttribute('fieldflow',1);
+        } else {
+            oNode.setAttribute('fieldflow',0);
+        }
+        if( gWidth != '' ) {
+            oNode.style.width = gWidth + 'px';
+            oNode.setAttribute('orgwidth',gWidth );
+        }
+        if(name!=''){
+            oNode.setAttribute('name',name);
+        }else{
+            oNode.setAttribute('name','');
+        }
+        if(id!=''){
+            oNode.setAttribute('id',id);
+        }else{
+            oNode.setAttribute('id','');
+        }
+        // Remove all options.
+        while ( oNode.options.length > 0 ){
+            oNode.remove(0) ;
+        }
+        for ( var i = 0 ; i < $G('orglist').options.length ; i++ ) {
+            var sText    = $G('orglist').options[i].value ;
+            if ( sText.length == 0 ) {
+                sText = sText ;
+            }
+            var oOption = fnAddComboOption( oNode, sText, sText ) ;
+            if ( sText == $G('orgvalue').innerHTML ) {
+                fnSetAttribute( oOption, 'selected', 'selected' ) ;
+                oOption.selected = true ;
+            }
+        }
+        delete UE.plugins[thePlugins].editdom;
+    }
+};
     </script>
 </head>
 <body>
@@ -339,11 +525,11 @@ function fnSetAttribute( element, attName, attValue ) {
         <td><input type="text" id="fieldname" placeholder="必填项"></td>
         <td><input type="text" id="orgname" placeholder="必填项"></td>
     </tr>
-     <tr>
+     <tr style="display: none">
         <th><span>流程变量</span></th>
         <th><span>控件样式</span> </th>
     </tr>
-    <tr>
+    <tr style="display: none">
         <td><label class="checkbox inline"><input id="fieldflow" type="checkbox"/> 流程变量</label></td>
         <td> 宽：<input id="orgwidth" type="text" value="150" class="input-small span1"/> px&nbsp;&nbsp;&nbsp;&nbsp;高：<input id="orgsize" type="text" class="input-small span1" value="1"/> 行</td>
     </tr>
@@ -406,178 +592,7 @@ function fnSetAttribute( element, attName, attValue ) {
     </table>
 </div>
 <script type="text/javascript">
-var oNode = null,oListText='',thePlugins = 'select';
-window.onload = function() {
 
-    oListText = $G('orglist');
-    
-    if( UE.plugins[thePlugins].editdom ){
-        oNode = UE.plugins[thePlugins].editdom;
-        var gTitle=oNode.getAttribute('title').replace(/&quot;/g,"\""),gName=oNode.getAttribute('fieldname'),gFlow=oNode.getAttribute('fieldflow'),gWidth=oNode.getAttribute('orgwidth'),gSize=oNode.getAttribute('size'),id=oNode.getAttribute('id'),name=oNode.getAttribute('name');
-        gTitle = gTitle==null ? '' : gTitle;
-        gName = gName==null ? '' : gName;
-        id=id==null?'':id;
-        name=name==null?'':name;
-        $G('orgvalue').innerHTML = oNode.value;
-        $G('orgname').value = gTitle;
-        $G('orgsize').value = gSize;
-        $G('orgwidth').value = gWidth;
-        $G('fieldname').value = gName;
-        $G('id').value=id;
-        $G('name').value=name;
-        if (gFlow == '1')
-        {
-            $G('fieldflow').checked = true;
-        }
-        for ( var i = 0 ; i < oNode.options.length ; i++ ) {
-            var sText    = oNode.options[i].value ;
-            fnAddComboOption( oListText, sText, sText ) ;
-        }
-    }
-    /*$('#showTips').popover();*/
-}
-dialog.oncancel = function () {
-    if( UE.plugins[thePlugins].editdom ) {
-        delete UE.plugins[thePlugins].editdom;
-    }
-};
-dialog.onok = function (){
-    if($G('fieldname').value==''){
-        alert('请输入字段名称');
-        return false;
-    }
-    if($G('orgname').value==''){
-        alert('请输入控件名称');
-        return false;
-    }
-    if( oListText.options.length == 0 ) {
-        alert('请添加下拉菜单选项！');
-        return false;
-    }
-
-    var array=new Array();
-    var index=document.getElementsByClassName('nodesSelect').length;
-    if(index!=0){
-        for(var i=0;i<index;i++){
-            var nodesId=document.getElementsByClassName('nodesSelect')[i].getAttribute('id');
-            array.push($("#"+nodesId).val()+":"+$("."+nodesId).val()+":"+$G('id').value+":"+$("#currentflowid").val()+":"+$("#name").val());
-        }
-        console.log(array);
-        $.ajax({
-            type:'post',
-            url:adminPath+'/taskNodePermissions/savePermissions',
-            dataType:'json',
-            data:{"array":array},
-            traditional: true,
-            success:function(data){
-                console.log("添加权限成功")
-            },
-            error: function (XMLHttpRequest, textStatus) {
-                // 状态码
-                console.log(XMLHttpRequest.status);
-                // 状态
-                console.log(XMLHttpRequest.readyState);
-                // 错误信息
-                console.log(textStatus);
-            }
-        });
-    }
-    var gSize = $G('orgsize').value ;
-    if ( gSize == null || isNaN( gSize ) || gSize < 1 ) {
-        gSize = '' ;
-    }
-     var gWidth=$G('orgwidth').value;
-     
-    if( !oNode ) {
-        try {
-            //oNode = document.createElement("select");
-            oNode = createElement('select','NEWFIELD');
-            oNode.setAttribute('title',$G('orgname').value);
-            oNode.setAttribute('leipiplugins',thePlugins );
-            oNode.setAttribute('size',gSize);
-            oNode.setAttribute('fieldname',$G('fieldname').value);
-            oNode.setAttribute('id',$G('id').value);
-            oNode.setAttribute('name',$G('name').value);
-            if ( $G('fieldflow').checked ) {
-                oNode.setAttribute('fieldflow',1);
-            } else {
-                oNode.setAttribute('fieldflow',0);
-            }
-            if ( $G('orgwidth').value!= '' ) {
-                oNode.style.width =  $G('orgwidth').value+ 'px';
-                //oNode.setAttribute('style','width:'+ $G('orgwidth').value + 'px;');
-            }
-            if( gWidth != '' ) {
-                oNode.style.width = gWidth + 'px';
-                oNode.setAttribute('orgwidth',gWidth );
-            }
-            
-            // Add all available options.
-            for ( var i = 0 ; i < oListText.options.length ; i++ ) {
-                var sText    = oListText.options[i].value ;
-                if ( sText.length == 0 ) {
-                    sText = sText ;
-                }
-                var oOption = fnAddComboOption( oNode, sText, sText ) ;
-                if ( sText == $G('orgvalue').innerHTML ) {
-                    fnSetAttribute( oOption, 'selected', 'selected' ) ;
-                    oOption.selected = true ;
-                }
-            }
-            //firefox要利用span
-            editor.execCommand('insertHtml','{|-<span plugins="select">'+oNode.outerHTML+'&nbsp;&nbsp;</span>-|}');
-            return true ;
-        } catch ( e ) {
-            try {
-                editor.execCommand('error');
-            } catch ( e ) {
-                alert('控件异常，请联系技术支持');
-            }
-            return false;
-        }
-    } else {
-
-        oNode.setAttribute('title', $G('orgname').value); 
-        oNode.setAttribute('fieldname',$G('fieldname').value);
-        oNode.setAttribute('size',gSize);
-        var id=$G('id').value;
-        if ( $G('fieldflow').checked ) {
-            oNode.setAttribute('fieldflow',1);
-        } else {
-            oNode.setAttribute('fieldflow',0);
-        }
-        if( gWidth != '' ) {
-			oNode.style.width = gWidth + 'px';
-			oNode.setAttribute('orgwidth',gWidth );
-		}
-        if(name!=''){
-            oNode.setAttribute('name',name);
-        }else{
-            oNode.setAttribute('name','');
-        }
-        if(id!=''){
-            oNode.setAttribute('id',id);
-        }else{
-            oNode.setAttribute('id','');
-        }
-        // Remove all options.
-        while ( oNode.options.length > 0 ){
-            oNode.remove(0) ;
-        }
-        for ( var i = 0 ; i < $G('orglist').options.length ; i++ ) {
-            var sText    = $G('orglist').options[i].value ;
-            if ( sText.length == 0 ) {
-                sText = sText ;
-            }
-            var oOption = fnAddComboOption( oNode, sText, sText ) ;
-            if ( sText == $G('orgvalue').innerHTML ) {
-                fnSetAttribute( oOption, 'selected', 'selected' ) ;
-                oOption.selected = true ;
-            }
-        }
-        delete UE.plugins[thePlugins].editdom; 
-    }
-};
 </script>
 </body>
 </html>

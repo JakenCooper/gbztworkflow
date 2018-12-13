@@ -22,7 +22,7 @@
             <property name="forceBigDecimals" value="false" />
         </javaTypeResolver>
 
-        <!-- targetProject:生成PO类的位置 -->
+        <!-- targetProject:生成POJO类的位置 -->
         <javaModelGenerator targetPackage="com.thinkgem.jeesite.modules.${package}.entity"
                             targetProject="${AbsolutePath}src/main/java">
             <!-- enableSubPackages:是否让schema作为包的后缀 -->
@@ -48,7 +48,11 @@
                enableSelectByExample="false" selectByExampleQueryId="false">
             <!-- 如果设置为true，生成的model类会直接使用column本身的名字，而不会再使用驼峰命名方法，比如BORN_DATE，生成的属性名字就是BORN_DATE,而不会是bornDate -->
             <property name="useActualColumnNames" value="false"/>
+
+        ##            <!-- 业务需求,特殊处理两个基础字段的映射关系,表中没有该字段则报错. -->
             
+            <columnOverride column="create_by" property="createBy.id" />
+            <columnOverride column="update_by" property="updateBy.id" />
         </table>
         <!--<table schema="" tableName="orders"></table>-->
 
@@ -56,7 +60,14 @@
          <table schema="" tableName="">
             <columnOverride column="" javaType="" />
         </table> -->
-        
+
+        <!-- ignoreColumn设置一个MGB忽略的列，如果设置了改列，那么在生成的domain中，生成的SQL中，都不会有该列出现
+           column:指定要忽略的列的名字；
+           delimitedColumnName：参考table元素的delimitAllColumns配置，默认为false
+
+           注意，一个table元素中可以有多个ignoreColumn元素
+        <ignoreColumn column="deptId" delimitedColumnName=""/>
+        -->
         
         
     </context>

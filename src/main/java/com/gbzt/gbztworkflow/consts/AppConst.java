@@ -25,6 +25,10 @@ public class AppConst {
     public static final String METADATA_DEFAULT_USERNAME;
     public static final String METADATA_DEFAULT_USERPWD;
     public static final String METADATA_DEFAULT_DBTYPE;
+    public static final String METADATA_DEFAULT_MODULEPATH;
+
+    public static final String REDIS_SERVER_HOST;
+    public static final String REDIS_SERVER_PORT;
 
 
     public static final Integer TASK_EXECUTION_POOL_THREAD_INIT_COUNT = 200;
@@ -70,6 +74,10 @@ public class AppConst {
         METADATA_DEFAULT_USERNAME = prop.getProperty("jdbc.buss.default.userName");
         METADATA_DEFAULT_USERPWD = prop.getProperty("jdbc.buss.default.userPwd");
         METADATA_DEFAULT_DBTYPE= prop.getProperty("jdbc.buss.default.dbType");
+        METADATA_DEFAULT_MODULEPATH = prop.getProperty("jdbc.buss.default.modelpath");
+
+        REDIS_SERVER_HOST = prop.getProperty("redis.server.host");
+        REDIS_SERVER_PORT = prop.getProperty("redis.server.port");
     }
 
 
@@ -83,6 +91,9 @@ public class AppConst {
     public static final String TASK_TEMPLATE_GETHISTTASK_SYNC = "TASK_TEMPLATE_GETHISTTASK_SYNC";
     public static final String TASK_TEMPLATE_GETPROCHISTORIC_SYNC = "TASK_TEMPLATE_GETPROCHISTORIC_SYNC";
     public static final String TASK_TEMPLATE_RETREATTASK_SYNC = "TASK_TEMPLATE_RETREATTASK_SYNC";
+
+    public static final String TASK_TEMPLATE_GETBUSSTABLE_SYNC = "TASK_TEMPLATE_GETBUSSTABLE_SYNC";
+
 
 
 

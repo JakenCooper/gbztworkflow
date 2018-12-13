@@ -39,6 +39,36 @@ public class TaskModel extends BaseModel implements Serializable {
     public boolean retreatSubmitTag;
     public boolean retreatOperPermission;
 
+    /*事务查询属性*/
+    private String chColName;//label名称
+    private String colName;//字段名称
+    private String searchType;//查询类型
+    /*end*/
+
+    public String getChColName() {
+        return chColName;
+    }
+
+    public void setChColName(String chColName) {
+        this.chColName = chColName;
+    }
+
+    public String getColName() {
+        return colName;
+    }
+
+    public void setColName(String colName) {
+        this.colName = colName;
+    }
+
+    public String getSearchType() {
+        return searchType;
+    }
+
+    public void setSearchType(String searchType) {
+        this.searchType = searchType;
+    }
+
     public String getRetreatOperType() {
         return retreatOperType;
     }

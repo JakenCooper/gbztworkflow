@@ -14,6 +14,8 @@ public class HtmlConstant {
     public static final String NEW_FILE_TAG;
     public static final String MODEL_COMPACT;
     public static final String MODEL_NOT_COMPACT;
+    public static final String DEFULT_USER_TAG;
+    public static final String DEFULT_TIME_TAG;
    static {
        INPUT_TAG="input";
 
@@ -37,6 +39,10 @@ public class HtmlConstant {
        TIME_SELECT_TAG="<input name=\"timeset\" type=\"text\" readonly=\"readonly\" maxlength=\"20\" class=\"input-medium Wdate \"\n" +
                "value=\"<fmt:formatDate value=\"${testData.inDate}\" pattern=\"yyyy-MM-dd HH:mm:ss\"/>\"\n" +
                "onclick=\"WdatePicker({dateFmt:'yyyy-MM-dd HH:mm:ss',isShowClear:false});\"/>";
+
+       DEFULT_USER_TAG="<input name=\"name\" type=\"text\" readonly=\"readonly\" value=\"${fns:getUser().name}\"/>";
+       
+       DEFULT_TIME_TAG="<c:set var=\"now\" value=\"<%=new java.util.Date()%> \"/> <fmt:formatDate type=\"both\" value=\"${now}\" /> ";
 
        NEW_FILE_TAG="<a href=\"javascript:;\" class=\"a-upload\">\n" +
                "    <input type=\"file\" name=\"\" >请选择文件\n" +

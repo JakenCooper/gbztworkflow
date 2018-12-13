@@ -1,29 +1,21 @@
 package com.gbzt.gbztworkflow.modules.workflowengine.runtime.task;
 
 import com.gbzt.gbztworkflow.consts.AppConst;
-import com.gbzt.gbztworkflow.modules.flowdefination.dao.LineDao;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Line;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
-import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationService;
-import com.gbzt.gbztworkflow.modules.workflowengine.dao.HistProcDao;
-import com.gbzt.gbztworkflow.modules.workflowengine.dao.HistTaskDao;
-import com.gbzt.gbztworkflow.modules.workflowengine.dao.ProcInstDao;
-import com.gbzt.gbztworkflow.modules.workflowengine.dao.TaskDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineAccessException;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineRuntimeException;
-import com.gbzt.gbztworkflow.modules.workflowengine.pojo.HistProc;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.ProcInst;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.TaskExecution;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.EngineManager;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.EngineTaskTemplateFactory;
+import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.EngineBaseArg;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.EngineBaseExecutor;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.IEngineArg;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.entity.EngineTask;
 import com.gbzt.gbztworkflow.utils.CommonUtils;
 import org.apache.log4j.Logger;
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.BeansException;
 
 import java.util.List;
 
@@ -34,16 +26,10 @@ public class StartProc extends EngineBaseExecutor {
     private Logger logger = Logger.getLogger(StartProc.class);
     private static String LOGGER_TYPE_PREFIX = "StartProc,";
 
-    public static class StartProcArg implements IEngineArg {
+    public static class StartProcArg extends EngineBaseArg implements IEngineArg {
         private String[] requiredArg = new String[]{"flowId","bussId","passUser","formKey"};
         private String[] additionArg = new String[]{"passStr"};
-        public DefinationService definationService;
-        public TaskDao taskDao;
-        public LineDao lineDao;
-        public ProcInstDao procInstDao;
         public TaskExecution execution;
-        public HistTaskDao histTaskDao;
-        public HistProcDao histProcDao;
 
         private Flow flowInst;
         private Line targetLine;
@@ -86,6 +72,7 @@ public class StartProc extends EngineBaseExecutor {
     }
 
     @Override
+    // [logic] 流程起草步骤：先创建任务，然后直接完成任务，最后再创建任务（再创建任务在FinishTask中进行调用）
     public String executeEngineTask(EngineTask task) throws EngineRuntimeException {
         StartProc.StartProcArg arg = (StartProc.StartProcArg)task.getArgs();
         TaskExecution execution = arg.execution;
@@ -110,14 +97,12 @@ public class StartProc extends EngineBaseExecutor {
 
             nextExcution.procInstId = procInst.getId();
             nextExcution.nodeDefId = flowInst.getStartNode().getNodeDefId();
+            // [logic] 对于流程的第一个任务，一定是单人任务，所以无需指定assignUserList
             nextExcution.assignUser = execution.passUser;
 
             CreateTask.CreateTaskArg nextArg = new CreateTask.CreateTaskArg();
             nextArg.execution = nextExcution;
-            nextArg.definationService = arg.definationService;
-            nextArg.taskDao = arg.taskDao;
-            nextArg.procInstDao = arg.procInstDao;
-            nextArg.histProcDao = arg.histProcDao;
+            nextArg.copyFrom(arg);
 
             String taskId = null;
             EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(CreateTask.class,nextArg,null);
@@ -127,6 +112,11 @@ public class StartProc extends EngineBaseExecutor {
                 throw e;
             }
 
+            // 测试事务是否能够正确回滚，结果可行
+//            if(execution.passUser.equals("admin")){
+//                throw new RuntimeException("test!....");
+//            }
+
             nextExcution.passStr = execution.passStr;
             nextExcution.taskId = taskId;
             nextExcution.assignUser = execution.assignUser;
@@ -134,11 +124,7 @@ public class StartProc extends EngineBaseExecutor {
 
             FinishTask.FinishTaskArg finishTaskArg = new FinishTask.FinishTaskArg();
             finishTaskArg.execution = nextExcution;
-            finishTaskArg.definationService = arg.definationService;
-            finishTaskArg.taskDao = arg.taskDao;
-            finishTaskArg.procInstDao = arg.procInstDao;
-            finishTaskArg.histTaskDao = arg.histTaskDao;
-            finishTaskArg.histProcDao = arg.histProcDao;
+            finishTaskArg.copyFrom(arg);
 
             EngineTask  finishTask = EngineTaskTemplateFactory.buildEngineTask(FinishTask.class,finishTaskArg,null);
             try {

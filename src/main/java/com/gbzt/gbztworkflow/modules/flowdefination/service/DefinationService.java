@@ -1,6 +1,7 @@
 package com.gbzt.gbztworkflow.modules.flowdefination.service;
 
 import com.gbzt.gbztworkflow.consts.ExecResult;
+import com.gbzt.gbztworkflow.modules.affairConfiguer.service.AffairConfiguerService;
 import com.gbzt.gbztworkflow.modules.base.BaseService;
 import com.gbzt.gbztworkflow.modules.flowdefination.dao.FlowBussDao;
 import com.gbzt.gbztworkflow.modules.flowdefination.dao.FlowDao;
@@ -10,7 +11,9 @@ import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.FlowBuss;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Line;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
+import com.gbzt.gbztworkflow.modules.redis.service.JedisService;
 import com.gbzt.gbztworkflow.modules.test.TestController;
+import com.gbzt.gbztworkflow.modules.workflowengine.dao.ProcInstDao;
 import com.gbzt.gbztworkflow.utils.CommonUtils;
 import com.gbzt.gbztworkflow.utils.LogUtils;
 import com.gbzt.gbztworkflow.utils.SimpleCache;
@@ -20,10 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class DefinationService extends BaseService {
@@ -39,6 +39,13 @@ public class DefinationService extends BaseService {
     private LineDao lineDao;
     @Autowired
     private FlowBussDao flowBussDao;
+    @Autowired
+    private ProcInstDao procInstDao;
+    @Autowired
+    private AffairConfiguerService affairConfiguerService;
+
+    @Autowired
+    private JedisService jedisService;
 
 
 
@@ -56,19 +63,28 @@ public class DefinationService extends BaseService {
         if(flow.getBussColumns() == null || flow.getBussColumns().size() == 0){
             return buildResult(false,"没有选择业务字段",null);
         }
-        if(flowDao.countFlowByFlowName(flow.getFlowName()) > 0){
-            return buildResult(false,"流程名称重复",null);
-        }
+        boolean isnew = false;
         if(StringUtils.isBlank(flow.getId())){
             flow.setId(CommonUtils.genUUid());
+            isnew = true;
         }
+        if(isnew) {
+            if (jedisService.countFlowByFlowName(flow.getFlowName()) > 0) {
+                return buildResult(false, "流程名称重复", null);
+            }
+        }
+
         if(StringUtils.isBlank(flow.getFormKey())){
             StringBuffer formBuffer = new StringBuffer("/");
             formBuffer.append(flow.getModuleName()).append("/").append(CommonUtils.convertTableName(flow.getBussTableName()))
                         .append("/").append("form");
             flow.setFormKey(formBuffer.toString());
         }
-        flow.genBaseVariables();
+        if(isnew) {
+            flow.genBaseVariables();
+        }else{
+            flow.setUpdateTime(new Date());
+        }
         flowDao.save(flow);
         List<FlowBuss> flowBusses = new ArrayList<FlowBuss>();
         for(String column : flow.getBussColumns()){
@@ -80,6 +96,8 @@ public class DefinationService extends BaseService {
             flowBusses.add(flowBuss);
         }
         flowBussDao.save(flowBusses);
+        String[] bussarr = new String[flow.getBussColumns().size()];
+        affairConfiguerService.save(flow.getId(),flow.getBussColumns().toArray(bussarr));
         return buildResult(true,"保存成功",null);
     }
 
@@ -100,8 +118,37 @@ public class DefinationService extends BaseService {
         return flowDao.findFlowByFlowName(flowName);
     }
 
+    public List<Map<String,String>> getAllFlowsForOA(String procInstId){
+        List<Flow> flows = flowDao.findFlowsByDelTag(false);
+        List<Map<String,String>> flowList = new ArrayList<Map<String,String>>();
+        Flow targetFlow = null;
+        if(StringUtils.isNotBlank(procInstId)){
+            targetFlow = flowDao.findOne(procInstDao.findOne(procInstId).getFlowId());
+        }
+        for(Flow flow:flows){
+            if(StringUtils.isBlank(procInstId)){
+                Map<String,String> flowMap = new HashMap<String,String>();
+                flowMap.put("id",flow.getId());
+                flowMap.put("name",flow.getFlowName());
+                flowMap.put("bussTable",flow.getBussTableName());
+                flowMap.put("formkey",flow.getFormKey());
+                flowList.add(flowMap);
+            }else{
+                if(targetFlow.getId().equals(flow.getId())){
+                    Map<String,String> flowMap = new HashMap<String,String>();
+                    flowMap.put("id",flow.getId());
+                    flowMap.put("name",flow.getFlowName());
+                    flowMap.put("bussTable",flow.getBussTableName());
+                    flowMap.put("formkey",flow.getFormKey());
+                    flowList.add(flowMap);
+                }
+            }
+        }
+        return flowList;
+    }
+
     public ExecResult<List<Flow>> getAllFlows(){
-        return buildResult(true,"",flowDao.findAll());
+        return buildResult(true,"",flowDao.findFlowsByDelTag(false));
     }
 
     @Transactional("jtm")
@@ -109,8 +156,12 @@ public class DefinationService extends BaseService {
         if(flow == null || StringUtils.isBlank(flow.getId())){
             return buildResult(false,"id为空，删除失败",null);
         }
-
+        List<Node> nodes = nodeDao.findNodeByFlowIdOrderByCreateTimeDesc(flow.getId());
+        for(Node node : nodes){
+            delNode(node);
+        }
         flowDao.delete(flow.getId());
+        refreshDetailDefination(flow.getId());
         return buildResult(true,"删除成功",null);
     }
 
@@ -202,6 +253,7 @@ public class DefinationService extends BaseService {
 
     @Transactional("jtm")
     public ExecResult delNode(Node node){
+        node = nodeDao.findOne(node.getId());
         if(node == null || StringUtils.isBlank(node.getId())){
             return buildResult(false,"id为空，删除失败",null);
         }
@@ -253,6 +305,8 @@ public class DefinationService extends BaseService {
         List<Line> currentLines = lineDao.findLinesByBeginNodeIdAndEndNodeId(line.getBeginNodeId(),line.getEndNodeId());
         if(currentLines !=null && currentLines.size()>0){
             for(Line currentLine : currentLines){
+//                currentLine.setDelTag(true);
+//                lineDao.save(currentLine);
                 lineDao.delete(currentLine);
             }
         }

@@ -3,22 +3,27 @@ package com.thinkgem.jeesite.modules.${package}.web;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.gbzt.gbztworkflow.modules.flowruntime.model.TaskData;
 import com.thinkgem.jeesite.common.config.Global;
-import org.apache.shiro.authz.annotation.RequiresPermissions;
+import com.thinkgem.jeesite.common.utils.IdGen;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.thinkgem.jeesite.common.persistence.Page;
 import com.thinkgem.jeesite.common.web.BaseController;
 import com.thinkgem.jeesite.common.utils.StringUtils;
-import com.thinkgem.jeesite.modules.sys.entity.User;
 import com.thinkgem.jeesite.modules.sys.utils.UserUtils;
+import com.thinkgem.jeesite.modules.act.entity.Act;
+import com.thinkgem.jeesite.modules.act.service.ActTaskService;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.util.*;
 import com.thinkgem.jeesite.modules.${package}.entity.${EntityName};
 import com.thinkgem.jeesite.modules.${package}.service.${EntityName}Service;
 
@@ -27,11 +32,13 @@ import com.thinkgem.jeesite.modules.${package}.service.${EntityName}Service;
 * @version ${date}
 */
 @Controller
-@RequestMapping(value = "/${adminPath}/${package}/${entityName}")
+@RequestMapping(value = "${adminPath}/${package}/${entityName}")
 public class ${EntityName}Controller extends BaseController {
     
     @Autowired
     private ${EntityName}Service ${entityName}Service;
+    @Autowired
+    private ActTaskService actTaskService;
     
     @ModelAttribute
     public ${EntityName} get(@RequestParam(required=false) String id) {
@@ -40,51 +47,159 @@ public class ${EntityName}Controller extends BaseController {
             entity = ${entityName}Service.get(id);
         }
         if (entity == null){
-        entity = new ${EntityName}();
+            entity = new ${EntityName}();
         }
-            return entity;
+        return entity;
     }
 
-    @RequiresPermissions("${package}:${entityName}:view")
     @RequestMapping(value = {"list", ""})
     public String list(${EntityName} ${entityName}, HttpServletRequest request, HttpServletResponse response, Model model) {
 //    Page<${EntityName}> page = ${entityName}Service.findPage(new Page<${EntityName}>(request, response), ${entityName});
 //        model.addAttribute("page", page);
         return null;//"modules/${package}/${entityName}List";
     }
-    
-    @RequiresPermissions("${package}:${entityName}:view")
-    @RequestMapping(value = "form")
-    public String form(${EntityName} ${entityName}, Model model) {
-        model.addAttribute("${entityName}", ${entityName});
-        return "modules/${package}/${entityName}Form";
+
+
+    @RequestMapping("form")
+    public String form(${EntityName} ${entityName},Model model,HttpServletRequest request, HttpServletResponse response){
+        String office_id=UserUtils.getUser().getOffice().getId();
+        if(StringUtils.isBlank(${entityName}.getAct().getProcDefKey())||StringUtils.isBlank(${entityName}.getAct().getTaskDefKey())){
+            ${entityName}.getAct().setProcDefKey("${map.flowName}");// 流程名,从数据库查
+            ${entityName}.getAct().setTaskDefKey("audit-1");
+        }
+        model.addAttribute("uuid", IdGen.uuid());
+        String view = null;
+        if(StringUtils.isBlank(${entityName}.getId())){
+            List<Act> list = actTaskService.nextTaskDefinition(${entityName}.getAct());
+            model.addAttribute("officeId",office_id);
+            model.addAttribute("stepList", list);
+            if(StringUtils.isBlank(${entityName}.getAct().getProcDefId()) && list.size()>0){
+                ${entityName}.getAct().setProcDefId(list.get(0).getProcDefId());
+                model.addAttribute("taskName",list.get(0).getStartNodeName());
+            }
+            if("1".equals(request.getParameter("messagetag"))){
+                model.addAttribute("message", "流程处理成功！");
+            }
+            view = "modules/${package}/${entityName}Form";
+        }else{
+            String procDefKey = ${entityName}.getAct().getProcDefKey();
+            if(StringUtils.isNotBlank(procDefKey)){
+                try {
+                    ${entityName}.getAct().setProcDefKey(URLDecoder.decode(procDefKey, "UTF-8"));
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
+            }
+            List<Act> list = actTaskService.nextTaskDefinition(${entityName}.getAct());
+            model.addAttribute("stepList", list);
+            if(StringUtils.isBlank(${entityName}.getAct().getProcDefId()) && list.size()>0){
+                ${entityName}.getAct().setProcDefId(list.get(0).getProcDefId());
+            }
+            model.addAttribute("filepathlist", "nofile");
+            model.addAttribute("filenamelist", "nofile");
+            model.addAttribute("dowmloadfile", "nofile");
+            if(StringUtils.isBlank(${entityName}.getAct().getTaskId())){
+                return "modules/${package}/${entityName}Form";
+            }
+            if("done".equals(${entityName}.getAct().getStatus())){
+                return "modules/${package}/${entityName}View";
+            }
+            List<TaskData> datas = actTaskService.getAllCurrentTask(${entityName}.getProcInsId(),UserUtils.getUser().getLoginName(),null, null);
+            TaskData targetData = null;
+            for(TaskData tmpTaskData : datas){
+                if(tmpTaskData.getTaskId().equals(${entityName}.getAct().getTaskId())){
+                    targetData = tmpTaskData;
+                    break;
+                }
+            }
+            if(targetData != null){
+                request.setAttribute("taskName", targetData.getNodeName());
+                if(targetData.getEndTime() == null){
+                    return "modules/${package}/${entityName}Audit";
+                }else{
+                    return "modules/${package}/${entityName}View";
+                }
+            }
+            // 预想中的不可能，所以直接跳转到一个明显的错误页面
+            return "modules/${package}/${entityName}Form";
+        }
+        return view;
     }
 
-    @RequiresPermissions("${package}:${entityName}:edit")
+
+    @RequestMapping("save")
+    public String save(@RequestParam("file") MultipartFile[] files,${EntityName} ${entityName}, Model model, HttpServletRequest request, HttpServletResponse response,RedirectAttributes redirectAttributes){
+        ${EntityName} ${entityName}Clone = null;
+        try {
+            ${entityName}Clone = (${EntityName}) ${entityName}.clone();
+        } catch (CloneNotSupportedException e1) {
+            e1.printStackTrace();
+        }
+
+        if (!beanValidator(model, ${entityName}Clone)){
+            return form(${entityName}Clone, model,request,response);
+        }
+        String resultDate=null;
+        resultDate="?procDefKey="+request.getParameter("procDefKey_s")
+        +"&serects="+request.getParameter("secretType_s")
+        +"&beginDate="+request.getParameter("beginDate_s")
+        +"&endDate="+request.getParameter("endDate_s")
+        +"&pageNo="+request.getParameter("pageNo_s")
+        +"&pageSize="+request.getParameter("pageSize_s");
+        redirectAttributes.addFlashAttribute("resultDate",resultDate);
+        try{
+            //如果是起草流程，则跳转之后不带任何表单数据
+            boolean isNewRecord = false;
+            if(StringUtils.isBlank(${entityName}.getId())){
+                isNewRecord = true;
+            }
+            switch (${entityName}Clone.getAct().getFlagTrans()) {
+                case "yes":
+                    ${entityName}Service.saveNew(${entityName}Clone,"yes");
+                    model.addAttribute("message", "流程处理成功！");
+                    if(isNewRecord){
+                        return "redirect:"+Global.getAdminPath()+"/act/task/todo?messagetag=1";
+                        // return "redirect:"+Global.getAdminPath()+"/${package}/${entityName}/form?messagetag=1";
+                    }
+                        return "redirect:"+Global.getAdminPath()+"/act/task/todo?messagetag=1";
+                        // return form(${entityName}Clone, model,request,response);
+            default:
+                ${entityName}Service.saveNew(${entityName}Clone,"no");
+                model.addAttribute("message", "流程处理成功");
+                return "success";
+            }
+        }catch(Exception e){
+            model.addAttribute("workFlowObject", ${entityName}Clone);
+            model.addAttribute("message", "流程处理失败");
+            ${entityName}Clone.setId(null);
+            return form(${entityName}Clone, model,request,response);
+        }
+    }
+
+
+
     @RequestMapping(value = "insert")
-    public String insert(${EntityName} ${entityName}, Model model, RedirectAttributes redirectAttributes) {
+    public String insert(${EntityName} ${entityName}, Model model,HttpServletRequest request, HttpServletResponse response, RedirectAttributes redirectAttributes) {
         if (!beanValidator(model, ${entityName})){
-            return form(${entityName}, model);
+            return form(${entityName}, model,request,response);
         }
         ${entityName}Service.insert(${entityName});
         addMessage(redirectAttributes, "保存单表成功");
         return "redirect:"+Global.getAdminPath()+"/${package}/${entityName}/?repage";
     }
 
-    @RequiresPermissions("${package}:${entityName}:edit")
     @RequestMapping(value = "update")
-    public String update(${EntityName} ${entityName}, Model model, RedirectAttributes redirectAttributes) {
+    public String update(${EntityName} ${entityName}, Model model,HttpServletRequest request, HttpServletResponse response, RedirectAttributes redirectAttributes) {
         if (!beanValidator(model, ${entityName})){
-            return form(${entityName}, model);
+            return form(${entityName}, model,request,response);
         }
         ${entityName}Service.update(${entityName});
         addMessage(redirectAttributes, "修改单表成功");
         return "redirect:"+Global.getAdminPath()+"/${package}/${entityName}/?repage";
     }
 
-    @RequiresPermissions("${package}:${entityName}:edit")
     @RequestMapping(value = "delete")
-    public String delete(${EntityName} ${entityName}, RedirectAttributes redirectAttributes) {
+    public String delete(${EntityName} ${entityName}, RedirectAttributes redirectAttributes,HttpServletRequest request, HttpServletResponse response) {
         ${entityName}Service.delete(${entityName});
         addMessage(redirectAttributes, "删除单表成功");
         return "redirect:"+Global.getAdminPath()+"/${package}/${entityName}/?repage";

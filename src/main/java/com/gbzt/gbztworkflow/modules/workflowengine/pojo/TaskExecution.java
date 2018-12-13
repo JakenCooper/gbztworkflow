@@ -23,6 +23,7 @@ public class TaskExecution {
     public String assignUser;
     public List<String> assignUserList;
     public String taskType;
+    public boolean needHistProc = true;
 
 
     //[finishtask]

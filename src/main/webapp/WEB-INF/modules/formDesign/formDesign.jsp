@@ -27,7 +27,7 @@
 </head>
 <body>
 <style type="text/css">
-
+ 
 
     input[type=radio]:checked::after {
         content: "";
@@ -61,7 +61,10 @@
        <%-- <button type="button" onclick="leipiFormDesign.exec('qrcode');" class="btn btn-info btn-small">二维码</button>--%>
         <div class="alert alert-warning">
             <button type="button" class="close" data-dismiss="alert">×</button>
-            <strong>提醒：</strong>单选框和复选框，如：<code>{|-</code>选项<code>-|}</code>两边边界是防止误删除控件，程序会把它们替换为空，请不要手动删除！     树结构人员选择控件请复制: <code>"\${selectTree}"粘贴至相应位置</code> || 时间选择控件请复制: <code>"\${timeSelect}"粘贴至相应位置</code>
+            <strong>提醒：</strong>单选框和复选框，如：<code>{|-</code>选项<code>-|}</code>两边边界是防止误删除控件，程序会把它们替换为空，请不要手动删除！ 树结构人员选择控件请复制: <code>"\${selectTree}"粘贴至相应位置</code> || 时间选择控件请复制: <code>"\${timeSelect}"粘贴至相应位置</code>||默认当前登录用户<code> "\${defultUser}"粘贴至相应位置</code>||默认当前时间<code>"\${dafultTime}"粘贴至相应位置</code>
+            <div>
+                <input type="hidden" id="currentiddi"/>
+            </div>
         </div>
         <textarea style="width:100%;height:100%" name="html" id="container"></textarea></form>
 
@@ -81,6 +84,7 @@
                 </div>
 
             </div>
+           
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span>关闭</button>
                 <button type="button" id="btn_submit" class="btn btn-primary" data-dismiss="modal"><span class="glyphicon glyphicon-floppy-disk" aria-hidden="true"></span>保存</button>
@@ -106,6 +110,9 @@
         var json=JSON.stringify(theRequest);
         var currentflowid=JSON.parse(json).id;
         /*document.cookie = "currentflowid="+currentflowid;*/
+         //设置currentflowid
+        $("#currentiddi").val(currentflowid);
+      //  $("#input").val("填写值");
         return currentflowid;
     }
 
@@ -158,6 +165,7 @@
         /*执行控件*/
         exec: function (method,currentflowid) {
             leipiEditor.execCommand(method,currentflowid);
+            flowid=currentflowid;
         },
         /*
             Javascript 解析表单

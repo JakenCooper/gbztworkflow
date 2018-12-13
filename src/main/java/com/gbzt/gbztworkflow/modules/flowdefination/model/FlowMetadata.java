@@ -11,10 +11,13 @@ public class FlowMetadata {
     private String bussDbName;
     private String bussDbUserName;
     private String bussDbUserPwd;
+    private String bussModelPath;
     //user selected table.
     private String bussTableName;
     //user selected columns.
     private List<String> bussColumns;
+    //user selected coumns type.
+    private List<String> bussColumnsType;
 
     private List<String> dbTables;
     private List<String> dbTableColumns;
@@ -29,6 +32,14 @@ public class FlowMetadata {
         return sb.toString();
     }
 
+
+    public String getBussModelPath() {
+        return bussModelPath;
+    }
+
+    public void setBussModelPath(String bussModelPath) {
+        this.bussModelPath = bussModelPath;
+    }
 
     public String getBussDbType() {
         return bussDbType;
@@ -116,5 +127,13 @@ public class FlowMetadata {
 
     public void setBussColumns(List<String> bussColumns) {
         this.bussColumns = bussColumns;
+    }
+
+    public List<String> getBussColumnsType() {
+        return bussColumnsType;
+    }
+
+    public void setBussColumnsType(List<String> bussColumnsType) {
+        this.bussColumnsType = bussColumnsType;
     }
 }

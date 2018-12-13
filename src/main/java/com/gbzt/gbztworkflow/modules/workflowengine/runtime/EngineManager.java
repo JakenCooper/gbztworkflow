@@ -104,6 +104,7 @@ public class EngineManager {
             }
         } catch (Exception e) {
             logger.error(new EngineRuntimeException(loggerType, "任务执行失败！",e).getMessage(), e);
+            throw new EngineRuntimeException(e.getMessage());
         }
         return null;
     }

@@ -4,10 +4,7 @@ import com.gbzt.gbztworkflow.modules.flowruntime.service.IRuntimeService;
 import com.gbzt.gbztworkflow.modules.flowruntime.service.RuntimeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.*;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.remoting.httpinvoker.HttpInvokerServiceExporter;
@@ -21,6 +18,7 @@ import javax.sql.DataSource;
 @ComponentScan({"com.gbzt.gbztworkflow.modules",
         "com.gbzt.gbztworkflow.consts"})
 @EnableTransactionManagement(proxyTargetClass = true)
+@EnableAspectJAutoProxy(proxyTargetClass = true)
 public class RootConfig {
 
     @Bean(name="transactionManager")

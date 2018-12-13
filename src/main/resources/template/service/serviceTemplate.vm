@@ -1,8 +1,19 @@
 package com.thinkgem.jeesite.modules.${package}.service;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Date;
 
-
+import com.gbzt.gbztworkflow.modules.flowruntime.model.TaskData;
+import com.google.common.collect.Maps;
+import com.thinkgem.jeesite.common.service.CrudService;
+import com.thinkgem.jeesite.common.utils.MessageUtils;
+import com.thinkgem.jeesite.common.utils.StringUtils;
+import com.thinkgem.jeesite.modules.act.service.ActTaskService;
+import com.thinkgem.jeesite.modules.sys.entity.User;
+import com.thinkgem.jeesite.modules.sys.utils.UserUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,10 +27,17 @@ import com.thinkgem.jeesite.modules.${package}.dao.${EntityName}Dao;
 */
 @Service
 @Transactional(readOnly = true)
-public class ${EntityName}Service {
+public class ${EntityName}Service  extends CrudService<${EntityName}Dao, ${EntityName}>{
 
     @Autowired
     private ${EntityName}Dao dao;
+    @Autowired
+    private ActTaskService actTaskService;
+    
+    //@Transactional(readOnly = false)
+    //public ${EntityName} get${EntityName}ByProcInsId(String procInsId) {
+    //    return dao.get${EntityName}ByProcInsId(procInsId);
+    //}
 
     public ${EntityName} get(String id) {
         return dao.selectByPrimaryKey(id);
@@ -48,4 +66,84 @@ public class ${EntityName}Service {
         dao.deleteByPrimaryKey(${entityName}.getId());// 这里需要传入id
     }
 
+    @Transactional(readOnly = false)
+    public void saveNew(${EntityName} ${entityName},String transFlag) {
+        try {
+            //参数
+            Map<String,String> argMap = new HashMap<String,String>();
+            //初始化content为variable使用
+            String content = String.format(MessageUtils.CONTENT_FORMAT_STR,
+            StringUtils.isBlank(${entityName}.getTitle()) ? "" : ${entityName}.getTitle(),
+            StringUtils.isBlank(${entityName}.getArticleSize()) ? "" : ${entityName}.getArticleSize(),"");// 拼接流程变量
+            
+            //变量存储map
+            Map<String,Object> vars = Maps.newHashMap();
+            //自由跳设置下一步
+            String passStr = ${entityName}.getAct().getFlag();
+            vars.put("pass", passStr);
+            
+            if(${entityName}.getAct().getAssignee().indexOf(",") != -1){
+                String[] assignees = ${entityName}.getAct().getAssignee().split(",");
+                List<String> assigneeList = Arrays.asList(assignees);
+                vars.put("assigneeList", assigneeList);
+            }else{
+                vars.put("assignee", ${entityName}.getAct().getAssignee());
+            }
+            
+            if(StringUtils.isBlank(${entityName}.getId())){
+                ${entityName}.preInsert();
+                User user = UserUtils.getUser();
+                if (StringUtils.isNotBlank(user.getId())){
+                    ${entityName}.setUpdateBy(user);
+                    ${entityName}.setCreateBy(user);
+                }
+                Date date = new Date();
+                ${entityName}.setUpdateDate(date);
+                ${entityName}.setCreateDate(date);
+                insert(${entityName});
+                ${entityName}.getAct().setBusinessId(${entityName}.getId());
+                // finalstep: 设置转换map
+                ${entityName}.getAct().setVarsMap(vars);
+                argMap.put(TaskData.VARS_TYPE_PREFIX_PROC+"content", content);
+                ${entityName}.getAct().setArgMap(argMap);
+            
+                String procInsId = null;
+                try {
+                    procInsId = actTaskService.startProcess(${entityName}.getAct());
+                } catch (Exception e1) {
+                    e1.printStackTrace();
+                    delete(${entityName});
+                }
+                ${entityName}.setProcInsId(procInsId);
+                ${entityName}.getAct().setProcInsId(procInsId);
+                update(${entityName});
+                //任务间隔时间精确到秒，延迟1S，避免流转信息顺序混乱
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }else{
+                @SuppressWarnings("unused")
+                // unused only in template,should be the reference during updating.
+                ${EntityName} ${entityName}Original = get(${entityName}.getId());
+                ${entityName}.preUpdate();
+                update(${entityName});
+            
+                @SuppressWarnings("unused")
+                //unused only in template,should be handled correctly during actual business.
+                TaskData taskData = actTaskService.getAllCurrentTask(${entityName}.getProcInsId(),  UserUtils.getUser().getLoginName(),null,null).get(0);
+            
+                ${entityName}.getAct().setVarsMap(vars);
+                try {
+                    actTaskService.finishTask(${entityName}.getAct());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
 }

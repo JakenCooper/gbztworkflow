@@ -1,5 +1,7 @@
 package com.gbzt.gbztworkflow.modules.base;
 
+import com.gbzt.gbztworkflow.modules.redis.RedisMapper;
+
 import javax.persistence.*;
 import java.util.Date;
 
@@ -7,12 +9,16 @@ import java.util.Date;
 public class BaseEntity {
 
     @Column(name="create_time")
+    @RedisMapper
     private Date createTime;
     @Column(name="create_user")
+    @RedisMapper
     private String createUser;
     @Column(name="update_time")
+    @RedisMapper
     private Date updateTime;
     @Column(name="update_user")
+    @RedisMapper
     private String updateUser;
     @Column(name="del_tag")
     @org.hibernate.annotations.Type(type="yes_no")

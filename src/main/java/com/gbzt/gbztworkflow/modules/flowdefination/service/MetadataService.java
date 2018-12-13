@@ -33,8 +33,7 @@ public class MetadataService extends BaseService {
             Class.forName(driver);
             return DriverManager.getConnection(url,userName,password);
         } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+            throw new RuntimeException(e.getMessage());
         }
     }
 
@@ -197,5 +196,82 @@ public class MetadataService extends BaseService {
     }
 
 
+
+    public ExecResult<String> createBussTable(FlowMetadata metadata){
+        String loggerType = LOGGER_TYPE_PREFIX+"createTable";
+
+        if(metadata.getBussColumns().size() != metadata.getBussColumnsType().size()){
+            return buildResult(false,"字段数量和类型数量不匹配",null);
+        }
+
+        String driver,prefix,suffix = "";
+        StringBuffer speBuffer = new StringBuffer();
+        speBuffer.append("metadata_tables:");
+        if("mysql".equals(metadata.getBussDbType())){
+            speBuffer.append("mysql").append(",");
+            driver = env.getProperty("jdbc.mysql.buss.driver");
+            prefix = env.getProperty("jdbc.mysql.buss.url.prefix");
+            suffix = env.getProperty("jdbc.mysql.buss.url.suffix");
+        }else{
+            speBuffer.append("oscar").append(",");
+            driver = env.getProperty("jdbc.oscar.buss.driver");
+            prefix = env.getProperty("jdbc.oscar.buss.url.prefix");
+            suffix = env.getProperty("jdbc.oscar.buss.url.suffix");
+        }
+        speBuffer.append(metadata.getBussDbHost()).append(",").append(metadata.getBussDbPort()).append(",")
+                .append(metadata.getBussDbName());
+        String url = prefix+metadata.getBussDbHost()+":"+metadata.getBussDbPort()+"/"+metadata.getBussDbName()
+                +suffix;
+
+        Connection connection = null;
+        try {
+            connection = getConnection(driver,url,metadata.getBussDbUserName(),metadata.getBussDbUserPwd());
+            if(connection == null){
+                logger.warn(LogUtils.getMessage(loggerType,"jdb连接失败 "+metadata.toString()));
+                return buildResult(false,"jdbc连接为空，请检查参数",null);
+            }
+
+            boolean tableExists = false;
+            DatabaseMetaData dmd = connection.getMetaData();
+            ResultSet resultSet = dmd.getTables(null, null, null, new String[] { "TABLE" });
+            while (resultSet.next()) {
+                String table = resultSet.getString("TABLE_NAME");
+                if(table.equals(metadata.getBussTableName())){
+                    return buildResult(false,"表名儿重复，需要重新选择",null);
+                }
+            }
+
+            //对于神通数据库必须将所有表名和列名转换成大写
+            if(!"mysql".equals(metadata.getBussDbType())){
+                metadata.setBussTableName(metadata.getBussTableName().toUpperCase());
+                List<String> upperCaseColumns = new ArrayList<String>();
+                for(String column : metadata.getBussColumns()){
+                    upperCaseColumns.add(column.toUpperCase());
+                }
+                metadata.setBussColumns(upperCaseColumns);
+            }
+
+            StringBuffer sqlBuffer = new StringBuffer();
+            sqlBuffer.append("create table ").append(metadata.getBussTableName()).append(" (");
+            for(int i = 0 ; i<metadata.getBussColumns().size() ; i ++){
+                String column = metadata.getBussColumns().get(i);
+                String columnType = metadata.getBussColumnsType().get(i);
+                sqlBuffer.append(column).append(" ").append(columnType).append(",");
+            }
+            sqlBuffer = new StringBuffer(sqlBuffer.substring(0,sqlBuffer.length()-1));
+            sqlBuffer.append(" );");
+
+            PreparedStatement ps = connection.prepareStatement(sqlBuffer.toString());
+            ps.executeUpdate();
+
+            return buildResult(true,"","success");
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error(LogUtils.getMessage(loggerType,"业务表创建失败 "+e.getMessage()));
+            return buildResult(false,"业务表创建失败，请检查日志",null);
+        } finally{
+            closeConnection(connection);
+        }
+    }
 
  }

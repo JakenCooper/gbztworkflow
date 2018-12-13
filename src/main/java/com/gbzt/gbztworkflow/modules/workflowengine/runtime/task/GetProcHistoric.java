@@ -2,12 +2,11 @@ package com.gbzt.gbztworkflow.modules.workflowengine.runtime.task;
 
 import com.gbzt.gbztworkflow.consts.AppConst;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
-import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationService;
-import com.gbzt.gbztworkflow.modules.workflowengine.dao.TaskDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineAccessException;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineRuntimeException;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.Task;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.TaskExecution;
+import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.EngineBaseArg;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.EngineBaseExecutor;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.IEngineArg;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.entity.EngineTask;
@@ -25,9 +24,7 @@ public class GetProcHistoric extends EngineBaseExecutor {
     private Logger logger = Logger.getLogger(GetProcHistoric.class);
     private static String LOGGER_TYPE_PREFIX = "GetProcHistoric,";
 
-    public static class GetProcHistoricArg implements IEngineArg{
-        public DefinationService definationService;
-        public TaskDao taskDao;
+    public static class GetProcHistoricArg  extends EngineBaseArg implements IEngineArg{
         public TaskExecution execution;
     }
     @Override
@@ -50,6 +47,7 @@ public class GetProcHistoric extends EngineBaseExecutor {
         GetProcHistoric.GetProcHistoricArg arg = (GetProcHistoric.GetProcHistoricArg)task.getArgs();
         TaskExecution execution = arg.execution;
         List<Task> finalTasks = new ArrayList<>();
+        // [logic] 默认情况走上面的if条件
         if(!execution.childTaskTag){
             // historic runtime infos for proc.
             finalTasks  = arg.taskDao.findTasksByProcInstIdAndChildTaskTagOrderByCreateTimeMillsDesc(execution.procInstId,false);
@@ -87,6 +85,8 @@ public class GetProcHistoric extends EngineBaseExecutor {
             resultMap.put("description",resultTask.getDescription());
             resultMap.put("startTime",resultTask.getCreateTime());
             resultMap.put("endTime",resultTask.getFinishTime());
+            resultMap.put("retreatTag",resultTask.isRetreatTag());
+            resultMap.put("withdrawTag",resultTask.isWithdrawTag());
             resultList.add(resultMap);
         }
         task.setExecutedResult(resultList);

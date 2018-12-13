@@ -4,50 +4,87 @@
 <html>
 <head>
 	<title>${map.title}</title>
-	<meta name="decorator" content="default"/>
-	<%@ include file="/WEB-INF/views/include/treeview.jsp" %>
+    <meta name="decorator" content="default"/>
+    <%@ include file="/WEB-INF/views/include/treeview.jsp" %>
+    <%@ include file="/WEB-INF/views/include/fileupload.jsp"%>
     <%@ include file="/WEB-INF/views/include/selectNext.jsp" %>
-    <%@include file="/WEB-INF/views/include/head.jsp" %>
+    <%--<%@ include file="/WEB-INF/velocitystyle/JSstyle.jsp" %>--%>
+    <%@ include file="/static/velocitystyle/JSstyle.jsp" %>
+    <script src="${pageContext.request.contextPath}/static/custom/textEditor.js" type="text/javascript"></script>
+    <script src="${pageContext.request.contextPath}/static/commonUtils.js" type="text/javascript"></script>
+    <link href="${pageContext.request.contextPath}/static/velocitystyle/style.css" type="text/css" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/static/css/commonstyle.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/static/bootstraptimecss/bootstrap-datetimepicker.css" media="all">
     <script src="${pageContext.request.contextPath}/static/bootstraptime/bootstrap-datetimepicker.js"></script>
-    <script src="${pageContext.request.contextPath}/static/bootstraptime/bootstrap-datetimepicker.zh-CN.js"></script>
-	<script type="text/javascript">
-		$(document).ready(function() {
-			//$("#name").focus();
-			
+    <script src="${ctxStatic}/My97DatePicker/WdatePicker.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        $(function () {
+
+            // 设置mainView高度
+            // setMainViewH();
+            
+            // 加载页面样式
+            var modeRemark = "${map.modeRemark}";
+            style(modeRemark);// 0:紧凑模式 ; 1: 非紧凑模式
+            
             // 根据流程加载tree数据
             selectNextPersonAudit();
-
             // 设置选择下一步流程窗口的高度
-            setTreeH();
-            
-			$("#inputForm").validate({
-				submitHandler: function(form){
-					loading('正在提交，请稍等...');
-					form.submit();
-				},
-				errorContainer: "#messageBox",
-				errorPlacement: function(error, element) {
-					$("#messageBox").text("输入有误，请先更正。");
-					if (element.is(":checkbox")||element.is(":radio")||element.parent().is(".input-append")){
-						error.appendTo(element.parent().parent());
-					} else {
-						error.insertAfter(element);
-					}
-				}
-			});
+            // setTreeH();
 
-            $('.form_datetime').datetimepicker({
-                format: 'yyyy-mm',
-                autoclose: true,
-                todayBtn: true,
-                startView: 'year',
-                minView:'year',
-                maxView:'decade',
-                language: 'zh-CN',
+            $(".a-upload").on("change","input[type='file']",function(){
+                var filePath=$(this).val();
+                var arr=filePath.split('\\');
+                var fileName=arr[arr.length-1];
+                $(".showFileName").html(fileName);
             });
-		});
-        //提交表单方式
+
+            /***start*************************初始化附件上传插件**************************start***/
+            initWebUploader();
+            /***end***************************初始化附件上传插件****************************end***/
+            setTitleWidth("fileTitle", "mainView");
+            $(window).resize(function(){
+                setTitleWidth("fileTitle", "mainView");
+            });
+            $("#checkAllTrue").bind("click", { type: "checkAllTrue" }, checkNode);
+            $("#checkAllFalse").bind("click", { type: "checkAllFalse" }, checkNode);
+
+            $.ajax({
+                url:'${ctx}/act/task/canWithdrawOrRetreat',
+                type:'post',
+                data:'taskId=${${entityName}.act.taskId}&procInstId=${${entityName}.act.procInsId}&retreatOperType=withdraw',
+                dataType:'text',
+                success:function(data){
+                    if(data == 'can'){
+                        $('#btn-withdraw').show('1000');
+                    }
+                },
+                error:function(){
+                    alert('error');
+                }
+            });
+        });
+
+
+        function wClose(){
+            window.close();
+        }
+
+        // 根据流程加载tree数据
+        function selectNextPersonAudit(){
+            var procDefKey = "${${entityName}.act.procDefKey}";
+            var procInsId = "${${entityName}.act.procInsId}";
+            var procdefid = "${${entityName}.act.procDefId}";
+            var taskRelatedOption = $('#userfulWord').val().split('_');
+            var taskdefkey = taskRelatedOption[0];
+            var taskkey = taskRelatedOption[1];
+
+            var labelName = '';
+            var office_id="";
+            selectAudit(procdefid,procDefKey,taskdefkey,taskkey,labelName,procInsId,office_id);
+        }
+
+        // 1.提交表单
         function submitForm(flagTrans) {
             /***start***********************check是否有正在上传的附件**********************start***/
             if(attsUploading()){
@@ -56,22 +93,238 @@
             /***end*************************check是否有正在上传的附件************************end***/
             if(flagTrans=="yes"){
                 cheackForm(flagTrans);
-            }else if(flagTrans=="saveData"){
-                submitSaveData(flagTrans);
             }
         }
 
-        // 根据流程加载tree数据
-        function selectNextPersonAudit(){
-            var procDefKey = "unit_send_file";
-            var taskKey = "2";
-            var labelName = '处室发文';
+        // 2.check参数
+        function cheackForm(flagTrans) {
+            var title = $("[name='title']").val();
+            if(title.length ==0){
+                alertx("请输入发文标题");
+                return false;
+            }
+            var f= $("#inputForm").valid();
+            if(!f){
+                return;
+            }
 
-            var procInsId = "";
-            var office_id="";
-            selectAudit(procDefKey,taskKey,labelName,procInsId,office_id);
+            $('#flagTrans').val(flagTrans);
+            var action="${ctx}/${package}/${entityName}/save";
+            // in textEditor.js ，保存正文
+            submitType(flagTrans, 'cacheAddr', 'textContent', 'textType', action);
         }
-	</script>
+
+        // 3.选择下一步
+        function submit(flagTrans,action){
+            var taskRelatedOption = $('#userfulWord').val().split('_');
+            var nextStep = (taskRelatedOption[0].split('-'))[1];
+
+            //不进行指派人员是否选择的校验
+            if(flagTrans == "draft" || flagTrans == "update"){
+                submitReal(flagTrans,action);
+            }else{
+                var nextName = $("#userfulWord option:selected").text();
+                selectNextOption(flagTrans,action,nextStep,nextName);
+            }
+        }
+
+        //4.selectNext.js中回调赋值
+        function setNextStep(nextStep, assignee){
+            $("#assignee").val(assignee);
+            $("#nextStep").val(nextStep);
+        }
+
+        // 5.真正提交form 
+        function submitReal(flagTrans,action){
+            document.getElementById("inputForm").action=action;
+            $("#inputForm").submit();
+            return;
+        }
+
+
+
+    </script>
+
+    <script type="text/javascript">
+        /**
+         * ----------------------------------------    weboffice 相关方法 【start】------------------------------------------
+         */
+        //对文件地址进行更新
+        function updateFilePath(path, fileTypes, realPath, wordsCount) {
+            //如果是word
+            if(fileTypes=="0"){
+                if(path!=''){
+                    $("#cacheAddrDoc").val(path);
+                    $("#cacheRealAddrDoc").val(realPath);
+                    $("#cacheTypeDoc").val(fileTypes);
+                    $("#cacheCountDoc").val(wordsCount);
+                }else{
+                    if($("#cacheAddrDoc").val() != ''){
+                        $("#textAddr").val($("#cacheAddrDoc").val());
+                    }
+                    $("#textType").val("0");
+                    if($("#cacheRealAddrDoc").val() != ''){
+                        $("#textRealurl").val($("#cacheRealAddrDoc").val());
+                    }
+                    $("#wordsCount").val(wordsCount);
+                }
+                //如果是Excel
+            }else if(fileTypes=="1"){
+                //如果地址为空则为更新文件
+                if(path!=''){
+                    $("#cacheAddrExcel").val(path);
+                    $("#cacheRealAddrExcel").val(realPath);
+                    $("#cacheTypeExcel").val(fileTypes);
+                    //更新保存数据库的input
+                }else{
+                    if($("#cacheAddrExcel").val() != ''){
+                        $("#textAddr").val($("#cacheAddrExcel").val());
+                    }
+                    $("#textType").val("1");
+                    if($("#cacheRealAddrExcel").val() != ''){
+                        $("#textRealurl").val($("#cacheRealAddrExcel").val());
+                    }
+
+                    $("#wordsCount").val(wordsCount);
+                }
+            }
+            if(path!=''){
+                $("#textAddr").val(path);
+                var cacheAddr=$("#cacheAddr").val();
+                if(cacheAddr!=""){
+                    $("#cacheAddr").val(cacheAddr+","+path);
+                }else{
+                    $("#cacheAddr").val(path);
+                }
+                $("#textType").val(fileTypes);
+                $("#textRealurl").val(realPath);
+                $("#wordsCount").val(wordsCount);
+            }
+        }
+        function updateFileContent(content, fileTypes) {
+            $("#textContent").val(content);
+            $("#textType").val(fileTypes);
+        }
+        //打印
+        function download(){
+            /***start***********************check是否有正在上传的附件**********************start***/
+            if(attsUploading()){
+                return;
+            }
+            /***end*************************check是否有正在上传的附件************************end***/
+            $("#fileTitle").removeClass("required");
+            $("#secrets").removeClass("required");
+            $("#referenceNum").removeClass("required");
+            $("#fileType").removeClass("required");
+            document.getElementById("inputForm").action="${ctx}/commonly_text_all/commonlyText/downLoad?type=1";
+            $("#inputForm").submit();
+            $("#fileTitle").addClass("required");
+            $("#secrets").addClass("required");
+            $("#referenceNum").addClass("required");
+            $("#fileType").addClass("required");
+
+        }
+
+        function withdrawOrRetreatOper(oper){
+            if(!confirm('是否确认要进行收回操作？')){
+                return false;
+            }
+            $.ajax({
+                url:'${ctx}/act/task/withdrawOrRetreatOper',
+                type:'post',
+                data:'taskId=${${entityName}.act.taskId}&procInstId=${${entityName}.act.procInsId}&retreatOperType='+oper,
+                dataType:'text',
+                success:function(data){
+                    alert(data);
+                },
+                error:function(){
+                    alert('error');
+                }
+            });
+        }
+        
+        function history(){
+            var proc_Ins_Id = arguments[0];
+            $.get('${ctx}/act/task/histoicFlowSimple',{procInsId:proc_Ins_Id},function(data){
+                $('#historybody').html(data);
+            });
+            $("#myModal").modal({backdrop: 'static', keyboard: false});
+            $('#myModal').modal('show');
+        }
+        function refreshList(){
+            window.location = '${ctx}/act/task/todo';
+        }
+
+        var lastFileName = '';// 用作储存文件标题
+        function showFileNames(){
+            // 用作显示添加附件名
+            var obj = document.getElementById("f");
+            var len = obj.files.length;
+            var fileName="";
+            if (len<1){
+                $("#fileNames").text('');
+            } else {
+                for (var i = 0; i < len; i++) {
+                    var temp = obj.files[i].name;
+                    fileName+=temp+";        ";
+                    $("#fileNames").text(fileName);
+                }
+            }
+            // 根据上传附件,为文件标题赋值
+            var title = $('#title').val();
+            if (title == '' || title == null || title == lastFileName){
+                if (len != 0){
+                    var fileName = obj.files[0].name.split(".");
+                    var newTitle = "";
+                    for (var i = 0; i < fileName.length-1; i++) {
+                        newTitle += fileName[i];
+                    }
+                    $('#title').val(newTitle);
+                    lastFileName = newTitle;
+                }else {
+                    $('#title').val('');
+                }
+            }
+        }
+
+        /**
+         * ----------------------------------------    weboffice 相关方法 【end】------------------------------------------
+         */
+    </script>
+    <style type="text/css">
+        .a-upload {
+            padding: 4px 10px;
+            height: 25px;
+            line-height: 20px;
+            position: relative;
+            cursor: pointer;
+            color: #888;
+            background: #fafafa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+            display: inline-block;
+            *display: inline;
+            *zoom: 1
+        }
+
+        .a-upload  input {
+            position: absolute;
+            font-size: 100px;
+            right: 0;
+            top: 0;
+            opacity: 0;
+            filter: alpha(opacity=0);
+            cursor: pointer
+        }
+
+        .a-upload:hover {
+            color: #444;
+            background: #eee;
+            border-color: #ccc;
+            text-decoration: none
+        }
+    </style>
 </head>
 <body>
 <ul id="headView" class="nav nav-tabs">
@@ -82,15 +335,100 @@
 				</span>
 		</a>
 	</li>
-	<div id="buttonDiv" style="float: right;margin-right: 30%;margin-top: 10px">
+    <div id="buttonDiv" style="float: right;margin-right: 3%;margin-top: 10px">
+        <!--<button class="btn btn-warning" id="btn-withdraw" onclick="withdrawOrRetreatOper('withdraw')">收      回</button> &nbsp;&nbsp;-->
+        <button class="btn btn-danger" id="btn-retreat" onclick="withdrawOrRetreatOper('retreat')">退      回</button> &nbsp;&nbsp;
+        <button class="btn btn-primary" onclick="history('${${entityName}.act.procInsId}');">流转历史</button> &nbsp;&nbsp;&nbsp;&nbsp;
+        <button class="btn btn-warning" onclick="refreshList()">返  回</button>
 	</div>
+    <script type="text/javascript">
+        (function(){
+            $('#btn-withdraw').hide();
+            $('#btn-retreat').hide();
+        })();
+    </script>
 </ul>
 <div id="mainView" style="overflow-y: auto;height:0px;float: left;width: 75%;">
 	<form:form id="inputForm" modelAttribute="${map.entityName}" name="form"
 			   action="${ctx}/${map.package}/${map.entityName}/" method="post"
 			   class="form-horizontal" enctype="multipart/form-data">
-		<div style="width: 75%">${map.form}</div>
+        <form:hidden path="id" />
+        <form:hidden path="act.taskId" />
+        <form:hidden path="act.taskName" />
+        <form:hidden path="act.taskDefKey" />
+        <form:hidden path="act.procInsId" />
+        <form:hidden path="act.procDefId" />
+        <form:hidden path="act.procDefKey" />
+        <form:hidden id="flagTrans" path="act.flagTrans" />
+        <sys:message content="${message}" />
+
+        <input type="hidden" id="cacheAddr"/><!-- 历史缓存地址 -->
+        <input type="hidden" id="cacheAddrDoc"/><!-- word历史缓存地址 -->
+        <input type="hidden" id="cacheAddrExcel"/><!-- Excel历史缓存地址 -->
+        <input type="hidden" id="cacheRealAddrDoc"/><!-- word历史缓存实际地址 -->
+        <input type="hidden" id="cacheRealAddrExcel"/><!-- Excel历史缓存实际地址 -->
+        <input type="hidden" id="cacheTypeDoc"/><!-- word历史缓存文件类型 -->
+        <input type="hidden" id="cacheTypeExcel"/><!-- Excel历史缓存文件类型 -->
+        <input type="hidden" id="cacheCountDoc"/><!-- doc历史缓存字数 -->
+
+        <!-- 查询条件 -->
+        <input name="procDefKey_s" type="hidden" value="${procDefKey_s}"/>
+        <input name="secretType_s" type="hidden" value="${secretType_s}"/>
+        <input name="beginDate_s" type="hidden" value="${beginDate_s}"/>
+        <input name="endDate_s" type="hidden" value="${endDate_s}"/>
+        <input name="pageNo_s" type="hidden" value="${pageNo_s}"/>
+        <input name="pageSize_s" type="hidden" value="${pageSize_s}"/>
+        <input name="title_s" type="hidden" value="${title_s}"/>
+        <input name="referenceNum_s" type="hidden" value="${referenceNum_s}"/>
+        <input name="isDoData_s" type="hidden" value="${isDoData_s}"/>
+        <input name="uuid" id="uuid" type="hidden" value="${uuid}"/>
+        <!-- 下一步骤 -->
+        <form:input type="hidden" id="nextStep" path="act.flag" value=""/>
+        <!-- 下一步负责人 -->
+        <form:input type="hidden" id="assignee" path="act.assignee" value=""/>
+
+        <div style="width: 75%">${map.form}</div>
 	</form:form>
 </div>
+
+<!--右侧发送区域  -->
+<div id="fasongPanel" style="float: left;margin-top: 10px;width: 25%;">
+    <table class="table table-bordered table-condensed">
+        <tr>
+            <td style="text-align: center;">
+                <input id="btnSubmit" style="width:80px;background: #25669A; color: white" class="btn" type="button" value="发  送" onclick="submitForm('yes')"/>&nbsp;
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: center; vertical-align: middle;">
+                <select id="userfulWord" style="width: 90%;" class="input-xlarge " onchange="selectNextPersonAudit()" >
+                    <c:forEach items="${stepList}" var="act">
+                        <option value="${act.taskDefKey}_${act.taskKey}">${act.taskName}</option>
+                    </c:forEach>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div id="tree" class="ztree" style="overflow: auto;"></div>
+            </td>
+        </tr>
+    </table>
+</div>
+<div class="modal fade" id="myModal" style="top:10%;display:none;width:700px;position:fixed;left:40%;" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="myModalLabel">流转历史</h4>
+            </div>
+            <div class="modal-body" style="max-height:300px;" id="historybody">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>

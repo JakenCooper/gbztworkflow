@@ -2,15 +2,13 @@ package com.gbzt.gbztworkflow.modules.workflowengine.runtime.task;
 
 import com.gbzt.gbztworkflow.consts.AppConst;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
-import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationService;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.TaskModel;
-import com.gbzt.gbztworkflow.modules.workflowengine.dao.HistTaskDao;
-import com.gbzt.gbztworkflow.modules.workflowengine.dao.TaskDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineAccessException;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineRuntimeException;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.HistTask;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.Task;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.TaskExecution;
+import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.EngineBaseArg;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.EngineBaseExecutor;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.IEngineArg;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.entity.EngineTask;
@@ -40,13 +38,10 @@ public class GetHistTask extends EngineBaseExecutor {
     private Logger logger = Logger.getLogger(GetHistTask.class);
     private static String LOGGER_TYPE_PREFIX = "GetHistTask,";
 
-    public static class GetHistTaskArg implements IEngineArg {
+    public static class GetHistTaskArg extends EngineBaseArg implements IEngineArg {
         private String[] requiredarg = new String[]{"passUser","pageNum","pageSize","totalPage"};
-        public DefinationService definationService;
         public TaskExecution execution;
-        public TaskDao taskDao;
         public TaskModel taskModel;
-        public HistTaskDao histTaskDao;
     }
 
     @Override

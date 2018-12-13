@@ -18,14 +18,12 @@
     <link rel="stylesheet" href="../../message/message.css">
     <script type="text/javascript" src="../../message/message.js"></script>
     <script type="text/javascript">
+        var oNode = null,thePlugins = 'radios';
+        
+        
         $(function () {
             getCurrentflowid();
             addColumnName();
-            loadNodesPowser();
-            var id=$("#id").val();
-            if(id ==''){
-                $("#id").val('form_rdio_'+MathRand());
-            }
         });
         function addColumnName() {
             var currentflowid=$("#currentflowid").val();
@@ -35,12 +33,46 @@
                 dataType:'json',
                 data:{"currentflowid":currentflowid},
                 success:function(data){
+                  
                     $.each(data, function (index) {
+                        /* if(oNode == null) {*/
                         var text = data[index].columnName;
+                       
                         $("#name").append("<option value='"+text+"'>"+text+"</option>");
+
                     });
+                    if(oNode == null) {
+                    }else {
+                        var id=$G('id').value;
+                    
+                        $.ajax({
+                            type:'post',
+                            url:adminPath+'/taskNodePermissions/findrealnameforhtml',
+
+                            dataType:'json',
+                            data:{"id":id},
+                            traditional: true,
+                            success:function(data){
+                                var namereal = data.msg;
+
+                                console.log(namereal);
+                                //  var namereal = oNode.getAttribute('name');
+                                $("#name").find("option[value = '" + namereal + "']").attr("selected", "selected");
+                            },
+                            error: function (XMLHttpRequest, textStatus) {
+                                // 状态码
+                                console.log(XMLHttpRequest.status);
+                                // 状态
+                                console.log(XMLHttpRequest.readyState);
+                                // 错误信息
+                                console.log(textStatus);
+                            }
+                        });
+                    }
 
                 },
+                
+                
                 error: function (XMLHttpRequest, textStatus, errorThrown) {
                     // 状态码
                     console.log(XMLHttpRequest.status);
@@ -72,8 +104,9 @@
 
             var currentflowid=$("#currentflowid").val();
             $.ajax({
-                type:'post',
-                url:adminPath+'/defination/nodes/findNodeByFlowIdOrderByCreateTimeDesc',
+                type:'get',
+                //url:adminPath+'/defination/nodes/findNodeByFlowIdOrderByCreateTimeDesc',
+                url:adminPath+'/defination/flows/'+currentflowid+'/nodes',
                 dataType:'json',
                 data:{"currentflowid":currentflowid},
                 success:function(data){
@@ -109,8 +142,8 @@
                 }
             });
         }
-    </script>
-    <script type="text/javascript">
+  
+      
         function  loadNodesPowser() {
             var id=$("#id").val();
             $.ajax({
@@ -185,6 +218,7 @@
                 return nowTR;
             }
             if (typeof Element != 'undefined') {
+                
                 Element.prototype.moveRow = function(sourceRowIndex, targetRowIndex) //执行扩展操作
                 {
                     if (!/^(table|tbody|tfoot|thead)$/i.test(this.tagName) || sourceRowIndex === targetRowIndex) return false;
@@ -319,6 +353,185 @@
             return html;
 
         }
+     
+        window.onload = function() {
+            if( UE.plugins[thePlugins].editdom ){
+
+                
+                oNode = UE.plugins[thePlugins].editdom;
+                var gTitle=oNode.getAttribute('title').replace(/&quot;/g,"\"");
+                var gName=oNode.getAttribute('name').replace(/&quot;/g,"\"");
+              
+                var gFlow=oNode.getAttribute('fieldflow');
+                $G('orgname').value = gTitle;
+                $G('fieldname').value = oNode.getAttribute('fieldname');
+              
+             
+                var id=$G('fieldname').value;
+                id =id == null?'':id;
+                $G('id').value=id;
+                if (gFlow == '1')
+                {
+                    $G('fieldflow').checked = true;
+                }
+                $G('hidname').value = gName;
+                var checked = oNode.getAttribute('orgchecked');
+                checked=='orgchecked1' ? $G('orgchecked1').checked = true : $G('orgchecked0').checked = true;
+
+                var inputTags = oNode.getElementsByTagName('input');
+                var length = inputTags.length;
+                var aInputs = [];
+                for(var i=0;i<length;i++)
+                {
+                    //testEle.setAttribute("test","aaa"); // 自定义属性 设置
+                    //testEle.attributes["test"].nodeValue; // 获得
+                    if(inputTags[i].type =='radio')
+                        fnAddComboTr(gName,inputTags[i]);
+                }
+
+
+
+            }
+
+            var idValue=$("#id").val();
+            if(idValue ==''){
+              
+                $("#id").val('form_rdio_'+MathRand());
+            }
+            loadNodesPowser();
+
+        }
+        dialog.oncancel = function () {
+            if( UE.plugins[thePlugins].editdom ) {
+                delete UE.plugins[thePlugins].editdom;
+            }
+        };
+        dialog.onok = function (){
+
+            /*    if($G('fieldname').value==''){
+                    alert('请输入字段名称');
+                    return false;
+                }*/
+            if( $G('orgname').value == '') {
+                alert('控件名称不能为空');
+                return false;
+            }
+          
+
+            var formidnamearray =new Array();
+            var formid = $G('id').value;
+            var formname = $G('name').value;
+
+            formidnamearray.push(formid);
+            formidnamearray.push(formname);
+            $.ajax({
+                type:'post',
+                url:adminPath+'/taskNodePermissions/saveFormIdAndName',
+                dataType:'json',
+                data:{"array":formidnamearray},
+                traditional: true,
+                success:function(data){
+
+                },
+                error: function (XMLHttpRequest, textStatus) {
+                    // 状态码
+                    console.log(XMLHttpRequest.status);
+                    // 状态
+                    console.log(XMLHttpRequest.readyState);
+                    // 错误信息
+                    console.log(textStatus);
+                }
+            });
+            var gTitle=$G('orgname').value.replace(/\"/g,"&quot;"),gName=$G('fieldname').value;
+            var name=$G('name').value;
+            
+           
+            var gChecked = 'orgchecked0';
+            var gFlow = '0';
+
+            var array=new Array();
+            var index=document.getElementsByClassName('nodesSelect').length;
+            if(index!=0){
+                for(var i=0;i<index;i++){
+                    var nodesId=document.getElementsByClassName('nodesSelect')[i].getAttribute('id');
+                    array.push($("#"+nodesId).val()+":"+$("."+nodesId).val()+":"+$G('id').value+":"+$("#currentflowid").val()+":"+$("#name").val());
+                }
+                console.log(array);
+                $.ajax({
+                    type:'post',
+                    url:adminPath+'/taskNodePermissions/savePermissions',
+                    dataType:'json',
+                    data:{"array":array},
+                    traditional: true,
+                    success:function(data){
+                        console.log("添加权限成功");
+                    },
+                    error: function (XMLHttpRequest, textStatus) {
+                        // 状态码
+                        console.log(XMLHttpRequest.status);
+                        // 状态
+                        console.log(XMLHttpRequest.readyState);
+                        // 错误信息
+                        console.log(textStatus);
+                    }
+                });
+            }
+            if ($G('orgchecked1').checked) gChecked = 'orgchecked1';
+            if ($G('fieldflow').checked ) gFlow = '1';
+            var id=$G('id').value;
+            var name =$G('name').value;
+          
+            
+          
+            if( !oNode ) {
+                
+                try {
+                 
+                 
+                    var options = fnParseOptions(name,gChecked,id);
+                    if(!options)
+                    {
+                        alert('请添加选项');
+                        return false;
+                    }
+                    
+                    //{|- 使用边界，防止用户删除了span标签
+                    var html = '{|-<span leipiplugins="radios"  plugins="radios" title="'+gTitle+'" name="'+gName+'" fieldname="' + id + '" >';
+                    html +=options;
+                    html +='</span>-|}';
+                    editor.execCommand('insertHtml',html);
+                    return true ;
+                } catch ( e ) {
+                    try {
+                        editor.execCommand('error');
+                    } catch ( e ) {
+                        alert('控件异常，请联系技术支持');
+                    }
+                    return false;
+                }
+            } else {
+               
+                var id=$G('id').value;
+                var name =$G('name').value;
+                var gName=oNode.getAttribute('name').replace(/&quot;/g,"\"");
+                
+                oNode.setAttribute('title',gTitle);
+                oNode.setAttribute('orgchecked',gChecked);
+                oNode.setAttribute('fieldname',id);
+                oNode.setAttribute('fieldflow',gFlow);
+                oNode.setAttribute('name',name);
+
+                $("#fieldname").val(id);
+                if(id!=''){
+                    oNode.setAttribute('id',id);
+                }else{
+                    oNode.setAttribute('id','');
+                }
+                oNode.innerHTML = fnParseOptions(gName,gChecked);
+                delete UE.plugins[thePlugins].editdom;
+                return true;
+            }
+        };
     </script>
 </head>
 <body>
@@ -327,18 +540,18 @@
     <table class="table table-bordered table-striped">
         <tr>
             <input type="hidden" id="currentflowid" name="currentflowid">
-            <th><span>字段名称</span><span class="label label-important">*</span></th>
             <th><span>字段标题</span><span class="label label-important">*</span> </th>
+            <th><span>字段名称</span><span class="label label-important">*</span></th>
         </tr>
-        <tr>
-            <td><input type="hidden" id="fieldname"></td>
+        <tr >
             <td><input type="text" id="orgname" placeholder="必填项"></td>
+            <td><input type="hidden" id="fieldname"></td>
         </tr>
-        <tr>
+        <tr style="display: none">
             <th><span>流程变量</span> </th>
             <th><span>排列方式</span></th>
         </tr>
-        <tr>
+        <tr style="display: none">
             <td><label class="checkbox inline"><input id="fieldflow" type="checkbox"/> 流程变量</label></td>
             <td>
                 <label class="radio" title="选项一 选项二"><input id="orgchecked0" checked="checked" name="checked" type="radio"> 横排 </label>
@@ -353,6 +566,7 @@
             <td>
                 <input type="text" id="id" readonly>
                 <input type="hidden" id="tranID">
+                
             </td>
             <td>
                 <select id="name" name="name"></select>
@@ -398,133 +612,7 @@
     </table>
 </div>
 <script type="text/javascript">
-    var oNode = null,thePlugins = 'radios';
-    window.onload = function() {
-        if( UE.plugins[thePlugins].editdom ){
-
-            oNode = UE.plugins[thePlugins].editdom;
-            var gTitle=oNode.getAttribute('title').replace(/&quot;/g,"\"");
-            var gName=oNode.getAttribute('name').replace(/&quot;/g,"\"");
-            var gFlow=oNode.getAttribute('fieldflow');
-            $G('orgname').value = gTitle;
-            $G('fieldname').value = oNode.getAttribute('fieldname');
-            var id=$G('fieldname').value;
-            id =id == null?'':id;
-            $G('id').value=id;
-            if (gFlow == '1')
-            {
-                $G('fieldflow').checked = true;
-            }
-            $G('hidname').value = gName;
-            var checked = oNode.getAttribute('orgchecked');
-            checked=='orgchecked1' ? $G('orgchecked1').checked = true : $G('orgchecked0').checked = true;
-
-            var inputTags = oNode.getElementsByTagName('input');
-            var length = inputTags.length;
-            var aInputs = [];
-            for(var i=0;i<length;i++)
-            {
-                //testEle.setAttribute("test","aaa"); // 自定义属性 设置
-                //testEle.attributes["test"].nodeValue; // 获得
-                if(inputTags[i].type =='radio')
-                    fnAddComboTr(gName,inputTags[i]);
-            }
-
-
-        }
-    }
-    dialog.oncancel = function () {
-        if( UE.plugins[thePlugins].editdom ) {
-            delete UE.plugins[thePlugins].editdom;
-        }
-    };
-    dialog.onok = function (){
-
-    /*    if($G('fieldname').value==''){
-            alert('请输入字段名称');
-            return false;
-        }*/
-        if( $G('orgname').value == '') {
-            alert('控件名称不能为空');
-            return false;
-        }
-        var gTitle=$G('orgname').value.replace(/\"/g,"&quot;"),gName=$G('fieldname').value;
-        var name=$G('name').value;
-        var gChecked = 'orgchecked0';
-        var gFlow = '0';
-
-        var array=new Array();
-        var index=document.getElementsByClassName('nodesSelect').length;
-        if(index!=0){
-            for(var i=0;i<index;i++){
-                var nodesId=document.getElementsByClassName('nodesSelect')[i].getAttribute('id');
-                array.push($("#"+nodesId).val()+":"+$("."+nodesId).val()+":"+$G('id').value+":"+$("#currentflowid").val()+":"+$("#name").val());
-            }
-            console.log(array);
-            $.ajax({
-                type:'post',
-                url:adminPath+'/taskNodePermissions/savePermissions',
-                dataType:'json',
-                data:{"array":array},
-                traditional: true,
-                success:function(data){
-                    console.log("添加权限成功");
-                },
-                error: function (XMLHttpRequest, textStatus) {
-                    // 状态码
-                    console.log(XMLHttpRequest.status);
-                    // 状态
-                    console.log(XMLHttpRequest.readyState);
-                    // 错误信息
-                    console.log(textStatus);
-                }
-            });
-        }
-        if ($G('orgchecked1').checked) gChecked = 'orgchecked1';
-        if ($G('fieldflow').checked ) gFlow = '1';
-        var id=$G('id').value;
-        if( !oNode ) {
-            try {
-                var options = fnParseOptions(name,gChecked,id);
-                if(!options)
-                {
-                    alert('请添加选项');
-                    return false;
-                }
-                //{|- 使用边界，防止用户删除了span标签
-                var html = '{|-<span leipiplugins="radios"  plugins="radios" title="'+gTitle+'" name="'+gName+'" fieldname="' + id + '" >';
-                html +=options;
-                html +='</span>-|}';
-                editor.execCommand('insertHtml',html);
-                return true ;
-            } catch ( e ) {
-                try {
-                    editor.execCommand('error');
-                } catch ( e ) {
-                    alert('控件异常，请联系技术支持');
-                }
-                return false;
-            }
-        } else {
-
-            var id=$G('id').value;
-            var gName=oNode.getAttribute('name').replace(/&quot;/g,"\"");
-            oNode.setAttribute('title',gTitle);
-            oNode.setAttribute('orgchecked',gChecked);
-            oNode.setAttribute('fieldname',id);
-            oNode.setAttribute('fieldflow',gFlow);
-
-            $("#fieldname").val(id);
-           if(id!=''){
-                oNode.setAttribute('id',id);
-            }else{
-                oNode.setAttribute('id','');
-            }
-            oNode.innerHTML = fnParseOptions(gName,gChecked);
-            delete UE.plugins[thePlugins].editdom;
-            return true;
-        }
-    };
+   
 </script>
 </body>
 </html>

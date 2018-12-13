@@ -8,6 +8,7 @@
 *          toolleipi:true,//是否显示，设计器的清单 tool
 */
 UE.leipiFormDesignUrl = 'formdesign';
+var flowid ;
 /**
  * 文本框
  * @command textfield
@@ -20,8 +21,11 @@ UE.leipiFormDesignUrl = 'formdesign';
  */
 UE.plugins['text'] = function () {
 	var me = this,thePlugins = 'text';
+	
 	me.commands[thePlugins] = {
 		execCommand:function (method,currentflowid) {
+		   // alert(currentflowid);
+		    flowid=currentflowid;
 			var dialog = new UE.ui.Dialog({
 				iframeUrl:this.options.UEDITOR_HOME_URL + UE.leipiFormDesignUrl+'/text.html?currentflowid='+currentflowid,
 				name:thePlugins,
@@ -52,9 +56,10 @@ UE.plugins['text'] = function () {
 		editor:this,
 		content: '',
 		className: 'edui-bubble',
-		_edittext: function () {
+		_edittext: function (id) {
+             id=$("#currentiddi").val();
 			  baidu.editor.plugins[thePlugins].editdom = popup.anchorEl;
-			  me.execCommand(thePlugins);
+			  me.execCommand(thePlugins,id);
 			  this.hide();
 		},
 		_delete:function(){
@@ -67,11 +72,12 @@ UE.plugins['text'] = function () {
 	popup.render();
 	me.addListener( 'mouseover', function( t, evt ) {
 		evt = evt || window.event;
+
 		var el = evt.target || evt.srcElement;
         var leipiPlugins = el.getAttribute('leipiplugins');
 		if ( /input/ig.test( el.tagName ) && leipiPlugins==thePlugins) {
 			var html = popup.formatHtml(
-				'<nobr>文本框: <span onclick=$$._edittext() class="edui-clickable">编辑</span>&nbsp;&nbsp;<span onclick=$$._delete() class="edui-clickable">删除</span></nobr>' );
+				'<nobr>文本框: <span onclick=$$._edittext(flowid) class="edui-clickable">编辑</span>&nbsp;&nbsp;<span onclick=$$._delete() class="edui-clickable">删除</span></nobr>' );
 			if ( html ) {
 				popup.getDom( 'content' ).innerHTML = html;
 				popup.anchorEl = el;
@@ -398,12 +404,13 @@ UE.plugins['radios'] = function () {
     var me = this,thePlugins = 'radios';
     me.commands[thePlugins] = {
         execCommand:function (method,currentflowid) {
+            flowid=currentflowid;
             var dialog = new UE.ui.Dialog({
                 iframeUrl:this.options.UEDITOR_HOME_URL + UE.leipiFormDesignUrl+'/radios.html?currentflowid='+currentflowid,
                 name:thePlugins,
                 editor:this,
                 title: '单选框组',
-                cssRules:"width:900px;height:480px;",
+                cssRules:"width:730px;height:420px;",
                 buttons:[
                 {
                     className:'edui-okbutton',
@@ -428,10 +435,11 @@ UE.plugins['radios'] = function () {
         editor:this,
         content: '',
         className: 'edui-bubble',
-        _edittext: function () {
-              baidu.editor.plugins[thePlugins].editdom = popup.anchorEl;
-              me.execCommand(thePlugins);
-              this.hide();
+        _edittext: function (id) {
+            id=$("#currentiddi").val();
+            baidu.editor.plugins[thePlugins].editdom = popup.anchorEl;
+            me.execCommand(thePlugins,id);
+            this.hide();
         },
         _delete:function(){
             if( window.confirm('确认删除该控件吗？') ) {
@@ -447,7 +455,7 @@ UE.plugins['radios'] = function () {
         var leipiPlugins = el.getAttribute('leipiplugins');
         if ( /span/ig.test( el.tagName ) && leipiPlugins==thePlugins) {
             var html = popup.formatHtml(
-                '<nobr>单选框组: <span onclick=$$._edittext() class="edui-clickable">编辑</span>&nbsp;&nbsp;<span onclick=$$._delete() class="edui-clickable">删除</span></nobr>' );
+                '<nobr>单选框组: <span onclick=$$._edittext(flowid) class="edui-clickable">编辑</span>&nbsp;&nbsp;<span onclick=$$._delete() class="edui-clickable">删除</span></nobr>' );
             if ( html ) {
                 var elInput = el.getElementsByTagName("input");
                 var rEl = elInput.length>0 ? elInput[0] : el;
@@ -474,12 +482,13 @@ UE.plugins['checkboxs'] = function () {
     var me = this,thePlugins = 'checkboxs';
     me.commands[thePlugins] = {
         execCommand:function (method,currentflowid) {
+            flowid = currentflowid;
             var dialog = new UE.ui.Dialog({
                 iframeUrl:this.options.UEDITOR_HOME_URL + UE.leipiFormDesignUrl+'/checkboxs.html?currentflowid='+currentflowid,
                 name:thePlugins,
                 editor:this,
                 title: '复选框组',
-                cssRules:"width:600px;height:400px;",
+                cssRules:"width:730px;height:420px;",
                 buttons:[
                 {
                     className:'edui-okbutton',
@@ -504,10 +513,12 @@ UE.plugins['checkboxs'] = function () {
         editor:this,
         content: '',
         className: 'edui-bubble',
-        _edittext: function () {
-              baidu.editor.plugins[thePlugins].editdom = popup.anchorEl;
-              me.execCommand(thePlugins);
-              this.hide();
+        _edittext: function (id) {
+           id=$("#currentiddi").val();
+           
+            baidu.editor.plugins[thePlugins].editdom = popup.anchorEl;
+            me.execCommand(thePlugins,id);
+            this.hide();
         },
         _delete:function(){
             if( window.confirm('确认删除该控件吗？') ) {
@@ -523,7 +534,7 @@ UE.plugins['checkboxs'] = function () {
         var leipiPlugins = el.getAttribute('leipiplugins');
         if ( /span/ig.test( el.tagName ) && leipiPlugins==thePlugins) {
             var html = popup.formatHtml(
-                '<nobr>复选框组: <span onclick=$$._edittext() class="edui-clickable">编辑</span>&nbsp;&nbsp;<span onclick=$$._delete() class="edui-clickable">删除</span></nobr>' );
+                '<nobr>复选框组: <span onclick=$$._edittext(flowid) class="edui-clickable">编辑</span>&nbsp;&nbsp;<span onclick=$$._delete() class="edui-clickable">删除</span></nobr>' );
             if ( html ) {
                 var elInput = el.getElementsByTagName("input");
                 var rEl = elInput.length>0 ? elInput[0] : el;
@@ -550,6 +561,7 @@ UE.plugins['textarea'] = function () {
     var me = this,thePlugins = 'textarea';
     me.commands[thePlugins] = {
         execCommand:function (method,currentflowid) {
+            flowid = currentflowid;
             var dialog = new UE.ui.Dialog({
                 iframeUrl:this.options.UEDITOR_HOME_URL + UE.leipiFormDesignUrl+'/textarea.html?currentflowid='+currentflowid,
                 name:thePlugins,
@@ -580,9 +592,10 @@ UE.plugins['textarea'] = function () {
         editor:this,
         content: '',
         className: 'edui-bubble',
-        _edittext: function () {
+        _edittext: function (id) {
+            id=$("#currentiddi").val();
               baidu.editor.plugins[thePlugins].editdom = popup.anchorEl;
-              me.execCommand(thePlugins);
+              me.execCommand(thePlugins,id);
               this.hide();
         },
         _delete:function(){
@@ -598,7 +611,7 @@ UE.plugins['textarea'] = function () {
         var el = evt.target || evt.srcElement;
         if ( /textarea/ig.test( el.tagName ) ) {
             var html = popup.formatHtml(
-                '<nobr>多行文本框: <span onclick=$$._edittext() class="edui-clickable">编辑</span>&nbsp;&nbsp;<span onclick=$$._delete() class="edui-clickable">删除</span></nobr>' );
+                '<nobr>多行文本框: <span onclick=$$._edittext(flowid) class="edui-clickable">编辑</span>&nbsp;&nbsp;<span onclick=$$._delete() class="edui-clickable">删除</span></nobr>' );
             if ( html ) {
                 popup.getDom( 'content' ).innerHTML = html;
                 popup.anchorEl = el;
@@ -623,12 +636,13 @@ UE.plugins['select'] = function () {
     var me = this,thePlugins = 'select';
     me.commands[thePlugins] = {
         execCommand:function (method,currentflowid) {
+            flowid = currentflowid;
             var dialog = new UE.ui.Dialog({
                 iframeUrl:this.options.UEDITOR_HOME_URL + UE.leipiFormDesignUrl+'/select.html?currentflowid='+currentflowid,
                 name:thePlugins,
                 editor:this,
                 title: '下拉菜单',
-                cssRules:"width:590px;height:370px;",
+                cssRules:"width:730px;height:420px;",
                 buttons:[
                 {
                     className:'edui-okbutton',
@@ -653,9 +667,10 @@ UE.plugins['select'] = function () {
         editor:this,
         content: '',
         className: 'edui-bubble',
-        _edittext: function () {
+        _edittext: function (id) {
+            id=$("#currentiddi").val();
               baidu.editor.plugins[thePlugins].editdom = popup.anchorEl;
-              me.execCommand(thePlugins);
+              me.execCommand(thePlugins,id);
               this.hide();
         },
         _delete:function(){
@@ -672,7 +687,7 @@ UE.plugins['select'] = function () {
         var leipiPlugins = el.getAttribute('leipiplugins');
         if ( /select|span/ig.test( el.tagName ) && leipiPlugins==thePlugins) {
             var html = popup.formatHtml(
-                '<nobr>下拉菜单: <span onclick=$$._edittext() class="edui-clickable">编辑</span>&nbsp;&nbsp;<span onclick=$$._delete() class="edui-clickable">删除</span></nobr>' );
+                '<nobr>下拉菜单: <span onclick=$$._edittext(flowid) class="edui-clickable">编辑</span>&nbsp;&nbsp;<span onclick=$$._delete() class="edui-clickable">删除</span></nobr>' );
             if ( html ) {
                 if(el.tagName=='SPAN')
                 {

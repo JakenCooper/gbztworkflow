@@ -31,19 +31,19 @@
         <td><input type="text" id="fieldname" placeholder="必填项"></td>
         <td><input type="text" id="orgname" placeholder="必填项"></td>
     </tr>
-     <tr>
+     <tr style="display: none">
         <th><span>字体大小</span> </th>
         <th><span>流程变量</span> </th>
     </tr>
-    <tr>
+    <tr style="display: none">
         <td><input id="orgfontsize" type="text"  value="" class="input-small span1" placeholder="auto"/> px</td>
         <td><label class="checkbox inline"><input id="fieldflow" type="checkbox"/> 流程变量</label></td>
     </tr>
-    <tr>
+    <tr style="display: none">
         <th><span>输入框样式</span> </th>
         <th><span>增强</span> </th>
     </tr>
-    <tr>
+    <tr style="display: none">
         <td>
             宽 <input id="orgwidth" type="text" value="300" class="input-small span1" placeholder="auto"/> px
             &nbsp;&nbsp;
@@ -107,6 +107,11 @@ window.onload = function() {
         $G('orgwidth').value = gWidth;
         $G('orgheight').value = gHeight;
     }
+    var idValue=$("#id").val();
+    if(idValue ==''){
+        $("#id").val('form_areaText_'+MathRand());
+    }
+    loadNodesPowser();
 }
 dialog.oncancel = function () {
     if( UE.plugins[thePlugins].editdom ) {
@@ -114,7 +119,6 @@ dialog.oncancel = function () {
     }
 };
 dialog.onok = function (){
-
     if($G('fieldname').value==''){
         alert('请输入字段名称');
         return false;
@@ -160,6 +164,7 @@ dialog.onok = function (){
     var gValue=$G('orgvalue').value.replace(/\"/g,"&quot;"),gTitle=$G('orgname').value.replace(/\"/g,"&quot;"),gName=$G('fieldname').value,gFontSize=$G('orgfontsize').value,gWidth=$G('orgwidth').value,gHeight=$G('orgheight').value,id=$G('id').value,name=$G('name').value;
 
     if( !oNode ) {
+        alert("dfsdfsd");
         try {
             var html = '<textarea ';
             html += ' title = "' + gTitle + '"';
@@ -262,10 +267,7 @@ dialog.onok = function (){
         delete UE.plugins[thePlugins].editdom;
     }
 };
-</script>
 
-
-<script type="text/javascript">
     function  loadNodesPowser() {
         var id=$("#id").val();
         $.ajax({
@@ -276,10 +278,11 @@ dialog.onok = function (){
             data:{"taskNodeId":id},
             contentType: "application/x-www-form-urlencoded; charset=utf-8",
             success:function(data){
-                if(data.length<0){
+                if(data.length<=0){
                     return false;
                 }
-                var currentFlowId=data[0].currentFlowId;
+
+                var currentFlowId=data[0].currentFsavePermissionslowId;
                 $("#currentflowid").val(currentFlowId);
                 var text = data[0].columnName;
                 var select=$("#name");
@@ -345,14 +348,11 @@ dialog.onok = function (){
     $(function () {
         getCurrentflowid();
         addColumnName();
-        var id=$("#id").val();
-        if(id ==''){
-            $("#id").val('form_areaText_'+MathRand());
-        }
-        loadNodesPowser();
+
     });
     function addColumnName() {
         var currentflowid=$("#currentflowid").val();
+        
         $.ajax({
             type:'post',
             url:adminPath+'/defination/flows/findAllByFlowId',
@@ -360,9 +360,16 @@ dialog.onok = function (){
             data:{"currentflowid":currentflowid},
             success:function(data){
                 $.each(data, function (index) {
+                    /* if(oNode == null) {*/
                     var text = data[index].columnName;
                     $("#name").append("<option value='"+text+"'>"+text+"</option>");
+                   
                 });
+                if(oNode == null) {
+                }else {
+                    var namereal = oNode.getAttribute('name');
+                    $("#name").find("option[value = '" + namereal + "']").attr("selected", "selected");
+                }
 
             },
             error: function (XMLHttpRequest, textStatus, errorThrown) {
@@ -410,8 +417,9 @@ dialog.onok = function (){
 
         var currentflowid=$("#currentflowid").val();
         $.ajax({
-            type:'post',
-            url:adminPath+'/defination/nodes/findNodeByFlowIdOrderByCreateTimeDesc',
+            type:'get',
+            //url:adminPath+'/defination/nodes/findNodeByFlowIdOrderByCreateTimeDesc',
+            url:adminPath+'/defination/flows/'+currentflowid+'/nodes',
             dataType:'json',
             data:{"currentflowid":currentflowid},
             success:function(data){

@@ -2,11 +2,11 @@ package com.gbzt.gbztworkflow.modules.workflowengine.runtime.task;
 
 import com.gbzt.gbztworkflow.consts.AppConst;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.UserNodePriv;
-import com.gbzt.gbztworkflow.modules.flowdefination.service.UserNodePrivService;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.UserTreeInfo;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineAccessException;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineRuntimeException;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.TaskExecution;
+import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.EngineBaseArg;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.EngineBaseExecutor;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.IEngineArg;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.entity.EngineTask;
@@ -23,9 +23,8 @@ public class GetUserNodeData extends EngineBaseExecutor {
     private Logger logger = Logger.getLogger(GetUserNodeData.class);
     private static String LOGGER_TYPE_PREFIX = "GetUserNodeData,";
 
-    public static class GetUserNodeDataArg implements IEngineArg{
+    public static class GetUserNodeDataArg extends EngineBaseArg implements IEngineArg{
         public TaskExecution execution;
-        public UserNodePrivService userNodePrivService;
     }
 
     @Override
@@ -56,20 +55,40 @@ public class GetUserNodeData extends EngineBaseExecutor {
         UserNodePriv userNodePriv = new UserNodePriv();
         userNodePriv.setFlowId(execution.flowId);
         userNodePriv.setNodeId(execution.nodeId);
-        List<UserNodePriv> privindb = arg.userNodePrivService.findUserNodePrivsByNodeId(execution.nodeId);
-        if(isBlank(privindb)){
+        
+        UserNodePriv privindb = arg.nodeUserPrivService.findUseroneNodePrivsByNodeId(execution.nodeId);
+        if("".equals(privindb) || privindb == null){
+//            task.setExecutedResult(new UserTreeInfo());
             task.setExecutedResult(new ArrayList<UserTreeInfo>());
             return "success";
         }
+
+      //  List<UserNodePriv> privindb = arg.userNodePrivService.findUserNodePrivsByNodeId(execution.nodeId);
+       /* if(isBlank(privindb)){
+            task.setExecutedResult(new ArrayList<UserTreeInfo>());
+            return "success";
+        }*/
+
         // use nodeType of first node as nodeType of root node.
-        userNodePriv.setNodeType(privindb.get(0).getNodeType());
+        //userNodePriv.setNodeType(privindb.get(0).getNodeType());
+        userNodePriv.setNodeType(privindb.getNodeType());
         // construct loginNames and use  this list to filter users.
+        String names = privindb.getLoginName();
         List<String> loginNames = new ArrayList<String>();
+        if(names.contains(",")){
+            String arr[] = names.split(",");
+            for(int i=0;i<arr.length;i++){
+                loginNames.add(arr[i]);
+            }
+        }
+
+      /*  List<String> loginNames = new ArrayList<String>();
         for(UserNodePriv tempPriv : privindb){
             loginNames.add(tempPriv.getLoginName());
-        }
+        }*/
         userNodePriv.setLoginNames(loginNames);
-        task.setExecutedResult(arg.userNodePrivService.getAllUserInfo(userNodePriv));
+        List<UserTreeInfo> resultTreeInfos =arg.nodeUserPrivService.getAllUserInfo(userNodePriv);
+        task.setExecutedResult(resultTreeInfos);
         return "success";
     }
 

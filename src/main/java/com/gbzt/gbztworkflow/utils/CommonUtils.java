@@ -1,9 +1,12 @@
 package com.gbzt.gbztworkflow.utils;
 
 import com.gbzt.gbztworkflow.consts.ExecResult;
+import com.gbzt.gbztworkflow.modules.redis.RedisMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -82,6 +85,128 @@ public class CommonUtils {
            default:result = ResponseEntity.status(code).body(t);break;
         }
         return result;
+    }
+
+    public static <T> Map<String,String>  redisConvert(T t){
+        try {
+            Map<String,String> redisMapper = new HashMap<String,String>();
+            Class classT = t.getClass();
+            Class superClassT = classT.getSuperclass();
+            Field[] thisfields = classT.getDeclaredFields();
+            Field[] superfields = superClassT.getDeclaredFields();
+            Field[] fields = new Field[thisfields.length+superfields.length];
+            List<Field> flist = new ArrayList<Field>();
+            for(int i=0;i<thisfields.length;i++){
+                flist.add(thisfields[i]);
+            }
+            for(int i=0;i<superfields.length;i++){
+                flist.add(superfields[i]);
+            }
+            fields = flist.toArray(fields);
+            for(Field field : fields){
+                if(checkDeclaredAnnotation(field.getDeclaredAnnotations(),RedisMapper.class)){
+                    field.setAccessible(true);
+                    String fieldStringValue = convertToString(field.get(t));
+                    redisMapper.put(field.getName(),fieldStringValue);
+                }
+            }
+            return redisMapper;
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static <T> T redisConvert(T t,Map<String,String> redisMapper){
+        try {
+            Class classT = t.getClass();
+            Class superClassT = classT.getSuperclass();
+            Field[] thisfields = classT.getDeclaredFields();
+            Field[] superfields = superClassT.getDeclaredFields();
+            Field[] fields = new Field[thisfields.length+superfields.length];
+            List<Field> flist = new ArrayList<Field>();
+            for(int i=0;i<thisfields.length;i++){
+                flist.add(thisfields[i]);
+            }
+            for(int i=0;i<superfields.length;i++){
+                flist.add(superfields[i]);
+            }
+            fields = flist.toArray(fields);
+            for(Field field : fields){
+                if(checkDeclaredAnnotation(field.getDeclaredAnnotations(),RedisMapper.class)
+                        && redisMapper.get(field.getName()) != null){
+                    field.setAccessible(true);
+                    Object fieldValue = convertToFieldType(field.getType(),redisMapper.get(field.getName()));
+                    field.set(t,fieldValue);
+                }
+            }
+            return t;
+        }  catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private static boolean checkDeclaredAnnotation(Annotation[] annotations, Class targetAnno){
+        for(Annotation annotation:annotations){
+            if(annotation.annotationType() == targetAnno){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static <T> String convertToString(T t){
+        if(t.getClass() == String.class){
+            return (String)t;
+        }else if(t.getClass() == Integer.class){
+            return String.valueOf(t);
+        }else if(t.getClass() == Long.class){
+            return String.valueOf(t);
+        }else if(t.getClass() == Float.class){
+            return String.valueOf(t);
+        }else if(t.getClass() == Double.class){
+            return String.valueOf(t);
+        }else if(t.getClass() == Date.class){
+            Date targetDate = (Date)t;
+            return String.valueOf(targetDate.getTime());
+        }else if(t.getClass() == Boolean.class){
+            Boolean targetCharge = (Boolean)t;
+            if(targetCharge){
+                return "true";
+            }else{
+                return "false";
+            }
+        }else{
+            return t.toString();
+        }
+    }
+
+    private static <T> T convertToFieldType(Class<T> t,String target){
+        if(t == String.class){
+            return (T) target;
+        }else if(t == Integer.class){
+            return (T)new Integer(Integer.parseInt(target));
+        }else if(t == Long.class){
+            return (T)new Long(Long.parseLong(target));
+        }else if(t == Float.class){
+            return (T)new Float(Float.parseFloat(target));
+        }else if(t == Double.class){
+            return (T)new Double(Double.parseDouble(target));
+        }else if(t == Date.class){
+            Long targetTimeMills = Long.parseLong(target);
+            Date targetDate = new Date();
+            targetDate.setTime(targetTimeMills);
+            return (T)targetDate;
+        }else if(t == Boolean.class){
+            if(target.equals("true")){
+                return (T)new Boolean(true);
+            }else{
+                return (T)new Boolean(false);
+            }
+        }else{
+            return (T)target;
+        }
     }
 
     public static void main(String[] args) {

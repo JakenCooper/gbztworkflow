@@ -1,6 +1,8 @@
 package com.gbzt.gbztworkflow.modules.flowdefination.entity;
 
 import com.gbzt.gbztworkflow.modules.base.BaseEntity;
+import com.gbzt.gbztworkflow.modules.redis.RedisMapper;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -15,8 +17,10 @@ import java.util.Map;
 public class Flow extends BaseEntity {
     @Id
     @Column(name="id")
+    @RedisMapper
     private String id;
     @Column(name="name")
+    @RedisMapper
     private String flowName;
     @Transient
     private List<Node> allNodes = new ArrayList<Node>();
@@ -37,32 +41,43 @@ public class Flow extends BaseEntity {
 
     @Column(name="buss_table")
     //user selected table.
+    @RedisMapper
     private String bussTableName;
     @Transient
     //user selected columns.
     private List<String> bussColumns;
 
     @Column(name="form_key")
+    @RedisMapper
     private String formKey;
 
     @Column(name="buss_db_type")
+    @RedisMapper
     private String bussDbType;
     @Column(name="buss_db_host")
+    @RedisMapper
     private String bussDbHost;
     @Column(name="buss_db_port")
+    @RedisMapper
     private String bussDbPort;
     @Column(name="buss_db_name")
+    @RedisMapper
     private String bussDbName;
     @Column(name="buss_db_user_name")
+    @RedisMapper
     private String bussDbUserName;
     @Column(name="buss_db_user_pwd")
+    @RedisMapper
     private String bussDbUserPwd;
 
     @Column(name="module_name")
+    @RedisMapper
     private String  moduleName;
     @Column(name="module_name_cn")
+    @RedisMapper
     private String moduleNameCn;
     @Column(name="module_root_path")
+    @RedisMapper
     private String moduleRootPath;
 
     public String getBussDbType() {
@@ -120,7 +135,6 @@ public class Flow extends BaseEntity {
     public void setId(String id) {
         this.id = id;
     }
-
 
     public List<Node> getAllNodes() {
         return allNodes;
@@ -233,4 +247,5 @@ public class Flow extends BaseEntity {
     public void setModuleRootPath(String moduleRootPath) {
         this.moduleRootPath = moduleRootPath;
     }
+
 }
