@@ -26,7 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 
 @Service
-public class DefinationService extends BaseService {
+public class DefinationService_Old extends BaseService {
 
     private Logger logger = Logger.getLogger(TestController.class);
     private static String LOGGER_TYPE_PREFIX = "DefinationService,";
@@ -69,7 +69,7 @@ public class DefinationService extends BaseService {
             isnew = true;
         }
         if(isnew) {
-            if (jedisService.countFlowByFlowName(flow.getFlowName()) > 0) {
+            if (flowDao.countFlowByFlowName(flow.getFlowName()) > 0) {
                 return buildResult(false, "流程名称重复", null);
             }
         }
@@ -84,23 +84,42 @@ public class DefinationService extends BaseService {
             flow.genBaseVariables();
         }else{
             flow.setUpdateTime(new Date());
+            List<FlowBuss> flowBusses = flowBussDao.findAllByFlowId(flow.getId());
+            for(FlowBuss flowBuss : flowBusses){
+                flowBussDao.delete(flowBuss);
+            }
         }
-        jedisService.saveFlow(flow);
+        flowDao.save(flow);
+        List<FlowBuss> flowBusses = new ArrayList<FlowBuss>();
+        for(String column : flow.getBussColumns()){
+            FlowBuss flowBuss = new FlowBuss();
+            flowBuss.setId(CommonUtils.genUUid());
+            flowBuss.setFlowId(flow.getId());
+            flowBuss.setColumnName(column);
+            flowBuss.genBaseVariables();
+            flowBusses.add(flowBuss);
+        }
+        flowBussDao.save(flowBusses);
         String[] bussarr = new String[flow.getBussColumns().size()];
         affairConfiguerService.save(flow.getId(),flow.getBussColumns().toArray(bussarr));
-
         return buildResult(true,"保存成功",null);
+    }
+
+    @Transactional("jtm")
+    public void updateFlowName(String flowName,String flowId){
+        int result = flowDao.updateFlow(flowName,flowId);
+        System.out.println(result);
     }
 
     public ExecResult<Flow> getFlowById(String id){
         if(StringUtils.isBlank(id)){
             return buildResult(false,"查询id为空",null);
         }
-        return buildResult(true,"",jedisService.findFlowByIdOrName(id,null));
+        return buildResult(true,"",flowDao.findOne(id));
     }
 
     public Flow getFlowByName(String flowName){
-        return jedisService.findFlowByIdOrName(null,flowName);
+        return flowDao.findFlowByFlowName(flowName);
     }
 
     public List<Map<String,String>> getAllFlowsForOA(String procInstId){

@@ -28,7 +28,7 @@ public class JedisService extends BaseService {
 
     private static String KEY_ALL_FLOWS = "flowAll:";
     private static String KEY_FLOW = "flow:";
-    private static String KEY_FLOW_FLOWBUSS = "flow-flowbuss:";
+    private static String KEY_FLOW_FLOWBUSS = "flow!flowbuss:";
     private static String KEY_FLOWBUSS = "flowbuss:";
 
     /***
@@ -38,7 +38,7 @@ public class JedisService extends BaseService {
     public Integer countFlowByFlowName(String name){
         Jedis jedisClient = JedisTool.getJedis();
         try{
-            List<Object> scanResultList = scanValueInConstructor(jedisClient,CONSTRUCTOR_TYPE_ZSET,KEY_ALL_FLOWS,"*-"+name);
+            List<Object> scanResultList = scanValueInConstructor(jedisClient,CONSTRUCTOR_TYPE_ZSET,KEY_ALL_FLOWS,"*!"+name);
             if(isBlank(scanResultList)){
                 return 0;
             }
@@ -85,7 +85,6 @@ public class JedisService extends BaseService {
         }
         return flowBusses;
     }
-
     /***
      * @interface
      * @specification flow-flowbuss:?[s,in] flowbuss:?[h,in]
@@ -111,7 +110,10 @@ public class JedisService extends BaseService {
             JedisTool.returnJedis(jedisClient);
         }
     }
-
+    /***
+     * @interface
+     * @specification flow-flowbuss:?[s,in] flowbuss:?[h,in] flowAll:(z,nn) flow:?(h,in)
+     */
     public void saveFlow(Flow flow){
         Jedis jedisClient = JedisTool.getJedis();
         try{
@@ -127,17 +129,20 @@ public class JedisService extends BaseService {
                 }
             }
             Map<String,String> flowMap = CommonUtils.redisConvert(flow);
-//            pipeline.hmset(KEY_FLOW)
-            List<FlowBuss> flowBusses = new ArrayList<FlowBuss>();
+            pipeline.hmset(KEY_FLOW+flowId,flowMap);
+            pipeline.zadd(KEY_ALL_FLOWS, CommonUtils.getCurrentTimeMillsDouble(),
+                    flowId+"!"+flow.getFlowName());
+
             for(String column : flow.getBussColumns()){
                 FlowBuss flowBuss = new FlowBuss();
                 flowBuss.setId(CommonUtils.genUUid());
                 flowBuss.setFlowId(flow.getId());
                 flowBuss.setColumnName(column);
                 flowBuss.genBaseVariables();
-                flowBusses.add(flowBuss);
+                Map<String,String> flowBussMap = CommonUtils.redisConvert(flowBuss);
+                pipeline.hmset(KEY_FLOWBUSS + flowBuss.getId() , flowBussMap);
+                pipeline.sadd(KEY_FLOW_FLOWBUSS + flowId , flowBuss.getId());
             }
-
 
             pipeline.exec();
             pipeline.sync();
@@ -147,6 +152,47 @@ public class JedisService extends BaseService {
         }finally {
             JedisTool.returnJedis(jedisClient);
         }
+    }
+    /***
+     * @interface
+     * @specification flowAll:(z)
+     */
+    public Flow findFlowByIdOrName(String flowId,String flowName){
+        Jedis jedisClient = JedisTool.getJedis();
+        try{
+            List<Object> resultList = scanValueInConstructor(jedisClient,CONSTRUCTOR_TYPE_ZSET,KEY_ALL_FLOWS,flowId+"!*");
+            if(isBlank(resultList)){
+                return null;
+            }
+            for(Object tuple : resultList){
+                String[] tupleArr = (String[])tuple;
+                String tmpFlowId = (tupleArr[0].split("!"))[0];
+                String tmpFlowName = (tupleArr[0].split("!"))[1];
+                if(tmpFlowId.equals(flowId)){
+                    Map<String,String> flowMap = jedisClient.hgetAll(KEY_FLOW + tmpFlowId);
+                    if(isBlank(flowMap)){
+                        return null;
+                    }
+                    Flow flow = new Flow();
+                    flow = CommonUtils.redisConvert(flow,flowMap);
+                    return flow;
+                }
+                if(tmpFlowName.equals(flowName)){
+                    Map<String,String> flowMap = jedisClient.hgetAll(KEY_FLOW + tmpFlowId);
+                    if(isBlank(flowMap)){
+                        return null;
+                    }
+                    Flow flow = new Flow();
+                    flow = CommonUtils.redisConvert(flow,flowMap);
+                    return flow;
+                }
+            }
+        }catch(Exception e){
+            e.printStackTrace();
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+        return null;
     }
 
 
