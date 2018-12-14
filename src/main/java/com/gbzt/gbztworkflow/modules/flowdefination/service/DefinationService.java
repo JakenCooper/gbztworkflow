@@ -63,6 +63,8 @@ public class DefinationService extends BaseService {
         if(flow.getBussColumns() == null || flow.getBussColumns().size() == 0){
             return buildResult(false,"没有选择业务字段",null);
         }
+        //避免奇奇怪怪的问题
+        flow.setFlowName(flow.getFlowName().replaceAll("!","！"));
         boolean isnew = false;
         if(StringUtils.isBlank(flow.getId())){
             flow.setId(CommonUtils.genUUid());
@@ -104,11 +106,12 @@ public class DefinationService extends BaseService {
     }
 
     public List<Map<String,String>> getAllFlowsForOA(String procInstId){
-        List<Flow> flows = flowDao.findFlowsByDelTag(false);
+        List<Flow> flows = jedisService.findFlowsByDelTag(false);
         List<Map<String,String>> flowList = new ArrayList<Map<String,String>>();
         Flow targetFlow = null;
         if(StringUtils.isNotBlank(procInstId)){
             targetFlow = flowDao.findOne(procInstDao.findOne(procInstId).getFlowId());
+            targetFlow = jedisService.findFlowByIdOrName()
         }
         for(Flow flow:flows){
             if(StringUtils.isBlank(procInstId)){

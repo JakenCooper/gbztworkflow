@@ -287,12 +287,10 @@ dialog.onok = function (){
             dataType:'json',
             data:{"array":array},
             traditional: true,
-            async:false,
             success:function(data){
                 console.log("数据访问成功");
             },
             error: function (XMLHttpRequest, textStatus) {
-                alert(1);
                 // 状态码
                 console.log(XMLHttpRequest.status);
                 // 状态

@@ -22,10 +22,12 @@ public class BaseEntity {
     private String updateUser;
     @Column(name="del_tag")
     @org.hibernate.annotations.Type(type="yes_no")
+    @RedisMapper
     private boolean delTag;
     @Column(name="del_reason")
     private String delReason;
     @Column(name="remark")
+    @RedisMapper
     private String remark;
 
     public  void genBaseVariables(){

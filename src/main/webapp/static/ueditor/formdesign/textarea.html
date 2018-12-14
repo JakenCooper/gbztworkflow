@@ -119,6 +119,7 @@ dialog.oncancel = function () {
     }
 };
 dialog.onok = function (){
+
     if($G('fieldname').value==''){
         alert('请输入字段名称');
         return false;
@@ -164,7 +165,6 @@ dialog.onok = function (){
     var gValue=$G('orgvalue').value.replace(/\"/g,"&quot;"),gTitle=$G('orgname').value.replace(/\"/g,"&quot;"),gName=$G('fieldname').value,gFontSize=$G('orgfontsize').value,gWidth=$G('orgwidth').value,gHeight=$G('orgheight').value,id=$G('id').value,name=$G('name').value;
 
     if( !oNode ) {
-        alert("dfsdfsd");
         try {
             var html = '<textarea ';
             html += ' title = "' + gTitle + '"';
@@ -281,8 +281,7 @@ dialog.onok = function (){
                 if(data.length<=0){
                     return false;
                 }
-
-                var currentFlowId=data[0].currentFsavePermissionslowId;
+                var currentFlowId=data[0].currentFlowId;
                 $("#currentflowid").val(currentFlowId);
                 var text = data[0].columnName;
                 var select=$("#name");
