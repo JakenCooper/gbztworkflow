@@ -213,6 +213,10 @@ public class CommonUtils {
         return new Double(new Long(System.currentTimeMillis()).doubleValue());
     }
 
+    public static String getCurrentTimeMillsString(){
+        return String.valueOf(System.currentTimeMillis());
+    }
+
     public static void main(String[] args) {
     }
 }
