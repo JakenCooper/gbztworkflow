@@ -42,7 +42,7 @@ public class HtmlConstant {
 
        DEFULT_USER_TAG="<input name=\"name\" type=\"text\" readonly=\"readonly\" value=\"${fns:getUser().name}\"/>";
        
-       DEFULT_TIME_TAG="<c:set var=\"now\" value=\"<%=new java.util.Date()%> \"/> <fmt:formatDate type=\"both\" value=\"${now}\" /> ";
+       DEFULT_TIME_TAG="<c:set var=\"now\" value=\"<%=new java.util.Date()%>\"/> <fmt:formatDate type=\"both\" value=\"${now}\" /> ";
 
        NEW_FILE_TAG="<a href=\"javascript:;\" class=\"a-upload\">\n" +
                "    <input type=\"file\" name=\"\" >请选择文件\n" +

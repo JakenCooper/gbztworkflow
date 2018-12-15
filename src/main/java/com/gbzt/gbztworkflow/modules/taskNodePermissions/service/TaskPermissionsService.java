@@ -89,5 +89,9 @@ public class TaskPermissionsService {
         return taskPermissionsDao.deleteTaskNodePermissionsById(id);
     }
     
+    public Integer deleteTaskFormNameandId(String id){
+        return   taskFormIdNameDao.deleteTaskFormIdNameById(id);
+    }
+    
     
 }

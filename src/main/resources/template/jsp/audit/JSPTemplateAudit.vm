@@ -52,11 +52,11 @@
             $.ajax({
                 url:'${ctx}/act/task/canWithdrawOrRetreat',
                 type:'post',
-                data:'taskId=${${entityName}.act.taskId}&procInstId=${${entityName}.act.procInsId}&retreatOperType=withdraw',
+                data:'taskId=${${entityName}.act.taskId}&procInstId=${${entityName}.act.procInsId}&retreatOperType=retreat',
                 dataType:'text',
                 success:function(data){
                     if(data == 'can'){
-                        $('#btn-withdraw').show('1000');
+                        $('#btn-retreat').show();
                     }
                 },
                 error:function(){

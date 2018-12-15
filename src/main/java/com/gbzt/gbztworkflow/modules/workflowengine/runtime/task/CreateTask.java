@@ -34,10 +34,10 @@ public class CreateTask extends EngineBaseExecutor {
 
     public static class CreateTaskArg extends EngineBaseArg implements IEngineArg {
         private String[] requiredArg = new String[]{"flowId","procInstId","nodeDefId","assignUser","passUser"};
-        public DefinationService definationService;
-        public TaskDao taskDao;
-        public ProcInstDao procInstDao;
-        public HistProcDao histProcDao;
+        //public DefinationService definationService;
+        //public TaskDao taskDao;
+        //public ProcInstDao procInstDao;
+       // public HistProcDao histProcDao;
         public TaskExecution execution;
         public Line lineInst;
 

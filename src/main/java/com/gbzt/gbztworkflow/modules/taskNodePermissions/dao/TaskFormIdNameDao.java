@@ -12,4 +12,7 @@ public interface TaskFormIdNameDao  extends JpaRepository<TaskFormIdName,Integer
     
 //    public List<TaskFormIdName> findTaskFormNamebyformid(String tId);
     public List<TaskFormIdName> findTaskFormIdNamesByFormId(String formid);
+
+    @Transactional
+    public Integer deleteTaskFormIdNameById(String id);
 }

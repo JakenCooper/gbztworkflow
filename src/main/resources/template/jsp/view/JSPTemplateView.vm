@@ -186,7 +186,7 @@
                 dataType:'text',
                 success:function(data){
                     if(data == 'can'){
-                        $('#btn-withdraw').show('1000');
+                        $('#btn-withdraw').show();
                     }
                 },
                 error:function(){

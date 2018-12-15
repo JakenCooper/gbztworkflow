@@ -45,7 +45,23 @@ public class TaskNodePermissionsController {
     @ResponseBody
     public String saveFormIdAndName(String[] array){
         Map<String,Object> map=new HashMap<>();
-        int flag=taskPermissionsService.saveFormIdAndName(array);
+        int flag=0;
+        String formid = array[0];
+        String formname = array[1];
+        List<TaskFormIdName> list=taskPermissionsService.findTaskFormNamebyformid(formid);
+        if(list.size()>0){
+            if(formname.equals(list.get(0).getFormName())){
+                //不添加
+            }else{
+                //先删除 在添加
+                String id = list.get(0).getId();
+               int deleteflag= taskPermissionsService.deleteTaskFormNameandId(id);
+                flag = taskPermissionsService.saveFormIdAndName(array);
+                
+            }
+        }else {
+             flag = taskPermissionsService.saveFormIdAndName(array);
+        }
         if(flag==0){
             map.put("msg","0");
         }else{
