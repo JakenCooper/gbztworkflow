@@ -2,14 +2,17 @@ package com.gbzt.gbztworkflow.modules.workflowengine.pojo;
 
 import com.gbzt.gbztworkflow.modules.base.BaseEntity;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
+import javax.persistence.*;
 
 @Entity(name="gw_run_variables")
 public class TaskVariables extends BaseEntity {
-    public static final String VARS_TYPE_PROC = "proc_";
-    public static final String VARS_TYPE_TASK = "task_";
+    public static final String VARS_TYPE_PROC_PREFIX = "proc_";
+    public static final String VARS_TYPE_TASK_PREFIX = "task_";
+
+
+    public static final String VARS_TYPE_PROC = "proc";
+    public static final String VARS_TYPE_TASK = "task";
+
     @Id
     @Column(name="id")
     private String id;
@@ -25,6 +28,10 @@ public class TaskVariables extends BaseEntity {
     private String value;
     @Column(name="var_type")
     private String type;
+
+//    @ManyToOne(fetch=FetchType.EAGER)
+//    @JoinColumn(name="task_id")
+//    private Task task;
 
     public String getId() {
         return id;
@@ -81,4 +88,5 @@ public class TaskVariables extends BaseEntity {
     public void setType(String type) {
         this.type = type;
     }
+
 }

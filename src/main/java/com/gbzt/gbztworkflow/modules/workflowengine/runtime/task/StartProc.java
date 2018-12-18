@@ -121,6 +121,7 @@ public class StartProc extends EngineBaseExecutor {
             nextExcution.taskId = taskId;
             nextExcution.assignUser = execution.assignUser;
             nextExcution.assignUserList = execution.assignUserList;
+            nextExcution.argMap = execution.argMap;
 
             FinishTask.FinishTaskArg finishTaskArg = new FinishTask.FinishTaskArg();
             finishTaskArg.execution = nextExcution;

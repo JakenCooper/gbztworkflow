@@ -1,6 +1,7 @@
 package com.gbzt.gbztworkflow.modules.flowdefination.entity;
 
 import com.gbzt.gbztworkflow.modules.base.BaseEntity;
+import com.gbzt.gbztworkflow.modules.redis.entity.RedisMapper;
 import com.sun.xml.internal.rngom.parse.host.Base;
 import org.hibernate.annotations.Type;
 
@@ -13,29 +14,40 @@ import javax.persistence.Transient;
 public class Line extends BaseEntity {
     @Id
     @Column(name="id")
+    @RedisMapper
     private String id;
     @Column(name="flow_id")
+    @RedisMapper
     private String flowId;
     @Column(name="begin_node_id")
+    @RedisMapper
     private String beginNodeId;
     @Column(name="end_node_id")
+    @RedisMapper
     private String endNodeId;
     @Column(name="begin_node_name")
+    @RedisMapper
     private String beginNodeName;
     @Column(name="end_node_name")
+    @RedisMapper
     private String endNodeName;
 
     @Column(name="can_withdraw")
     @org.hibernate.annotations.Type(type="yes_no")
+    @RedisMapper
     private boolean canWithdraw;
     @Column(name="can_retreat")
     @org.hibernate.annotations.Type(type="yes_no")
+    @RedisMapper
     private boolean canRetreat;
     @Column(name="task_type")
+    @RedisMapper
     private String taskType;
     @Column(name="finish_type")
+    @RedisMapper
     private String finishType;
     @Column(name="exec_type")
+    @RedisMapper
     private String execType;
 
     @Transient

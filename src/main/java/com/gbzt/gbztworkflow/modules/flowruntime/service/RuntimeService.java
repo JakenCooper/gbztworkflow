@@ -5,10 +5,13 @@ import com.gbzt.gbztworkflow.modules.affairConfiguer.dao.AffairConfiguerDao;
 import com.gbzt.gbztworkflow.modules.affairConfiguer.entity.AffairConfiguer;
 import com.gbzt.gbztworkflow.modules.affairConfiguer.service.AffairConfiguerService;
 import com.gbzt.gbztworkflow.modules.base.BaseService;
+import com.gbzt.gbztworkflow.modules.commonFile.dao.CommonFileDao;
+import com.gbzt.gbztworkflow.modules.commonFile.entity.CommonFile;
 import com.gbzt.gbztworkflow.modules.flowdefination.dao.FlowDao;
 import com.gbzt.gbztworkflow.modules.flowdefination.dao.LineDao;
 import com.gbzt.gbztworkflow.modules.flowdefination.dao.NodeDao;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
+import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationService;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.UserNodePrivService;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.UserTreeInfo;
@@ -30,9 +33,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service(value="runtimeService")
 public class RuntimeService extends BaseService implements  IRuntimeService  {
@@ -67,6 +68,8 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
     private HistProcDao histProcDao;
     @Autowired
     private AffairConfiguerDao ad;
+    @Autowired
+    private CommonFileDao commonFileDao;
 
 
     /**
@@ -384,4 +387,48 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
         }
         return taskModel;
     }
+
+    @Override
+    public TaskModel uploadFileInfo(TaskModel taskModel) {
+        System.out.println("uploadFileInfo");
+        boolean flag=false;
+        try {
+            CommonFile commonFile=new CommonFile();
+            commonFile.setId(UUID.randomUUID().toString());
+            commonFile.setCreateDate(new Date());
+            commonFile.setFileName(taskModel.getFileName());
+            commonFile.setFileRealUrl(taskModel.getFileRealUrl());
+            commonFile.setFlowName(taskModel.getFlowName());
+            commonFile.setFileUrl(taskModel.getFileUrl());
+            commonFile.setProcInsId(taskModel.getProcInstId());
+            commonFile.setUploadBy(taskModel.getUploadBy());
+            commonFile.setDelFlag("0");
+            commonFileDao.save(commonFile);
+            flag=true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        if(!flag){
+            taskModel=null;
+        }
+        return taskModel;
+    }
+
+    @Override
+    public List<TaskModel> findCommonFileByProcInsId(TaskModel taskModel) {
+        System.out.println(taskModel.getProcInsId());
+        List<CommonFile> commonFileList=commonFileDao.findCommonFileByProcInsId(taskModel.getProcInsId());
+        List<TaskModel> taskModelList=new ArrayList<>();
+        if(commonFileList!=null){
+            for(int i=0;i<commonFileList.size();i++){
+                TaskModel t=new TaskModel();
+                t.setFileUrl(commonFileList.get(i).getFileUrl());
+                t.setFileName(commonFileList.get(i).getFileName());
+                t.setFileRealUrl(commonFileList.get(i).getFileRealUrl());
+                taskModelList.add(t);
+            }
+        }
+        return taskModelList;
+    }
+
 }

@@ -225,12 +225,12 @@ public class FinishTask extends EngineBaseExecutor {
                 String argValue = argMap.get(argKey);
                 String realKey = null;
                 String varType = null;
-                if (argKey.startsWith(TaskVariables.VARS_TYPE_PROC)) {
-                    realKey = argKey.substring(argKey.indexOf(TaskVariables.VARS_TYPE_PROC) + 5, argKey.length());
-                    varType = "proc";
-                } else if (argKey.startsWith(TaskVariables.VARS_TYPE_TASK)) {
-                    realKey = argKey.substring(argKey.indexOf(TaskVariables.VARS_TYPE_TASK) + 5, argKey.length());
-                    varType = "task";
+                if (argKey.startsWith(TaskVariables.VARS_TYPE_PROC_PREFIX)) {
+                    realKey = argKey.substring(argKey.indexOf(TaskVariables.VARS_TYPE_PROC_PREFIX) + 5, argKey.length());
+                    varType = TaskVariables.VARS_TYPE_PROC;
+                } else if (argKey.startsWith(TaskVariables.VARS_TYPE_TASK_PREFIX)) {
+                    realKey = argKey.substring(argKey.indexOf(TaskVariables.VARS_TYPE_TASK_PREFIX) + 5, argKey.length());
+                    varType = TaskVariables.VARS_TYPE_TASK;
                 }else{
                     continue;
                 }
@@ -242,6 +242,9 @@ public class FinishTask extends EngineBaseExecutor {
                 taskVariables.setKey(realKey);
                 taskVariables.setValue(argValue);
                 taskVariables.setType(varType);
+                taskVariables.genBaseVariables();
+                // 变量的创建人是当前任务的提交人
+                taskVariables.setCreateUser(execution.passUser);
                 variables.add(taskVariables);
             }
             arg.taskVariableDao.save(variables);

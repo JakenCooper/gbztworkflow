@@ -14,5 +14,5 @@ public interface HistTaskDao extends JpaRepository<HistTask,String>,JpaSpecifica
 
     public List<HistTask> findHistTasksByUserId(String userId);
 
-    public List<HistTask> findHistTasksByUserIdAndProcInstId(String userId,String procInstId);
+    public List<HistTask> findHistTasksByUserIdAndProcInstIdIn(String userId,String procInstId);
 }

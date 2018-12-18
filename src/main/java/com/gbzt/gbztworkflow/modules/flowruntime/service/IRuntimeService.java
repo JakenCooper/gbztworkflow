@@ -3,6 +3,7 @@ package com.gbzt.gbztworkflow.modules.flowruntime.service;
 import com.gbzt.gbztworkflow.modules.affairConfiguer.entity.AffairConfiguer;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.TaskModel;
+import com.gbzt.gbztworkflow.modules.workflowengine.pojo.Task;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -60,10 +61,18 @@ public interface IRuntimeService {
      * */
     public TaskModel getBussTable(TaskModel model);
 
-    /*
-    * 获取事务查询配置
-    * */
+    /*获取事务查询配置*/
     public List<TaskModel> getAffairConfiguerList(TaskModel taskModel);
 
     public TaskModel findFlowByFlowName(TaskModel taskModel);
+    /*end*/
+
+    /*文件上传*/
+    public TaskModel uploadFileInfo(TaskModel taskModel);
+
+    //根据流程实例id查询附件
+    public List<TaskModel> findCommonFileByProcInsId(TaskModel taskModel);
+
+
+
 }

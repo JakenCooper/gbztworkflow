@@ -8,11 +8,9 @@ import com.gbzt.gbztworkflow.modules.flowdefination.dao.FlowDao;
 import com.gbzt.gbztworkflow.modules.flowdefination.dao.LineDao;
 import com.gbzt.gbztworkflow.modules.flowdefination.dao.NodeDao;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
-import com.gbzt.gbztworkflow.modules.flowdefination.entity.FlowBuss;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Line;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
 import com.gbzt.gbztworkflow.modules.redis.service.JedisService;
-import com.gbzt.gbztworkflow.modules.test.TestController;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.ProcInstDao;
 import com.gbzt.gbztworkflow.utils.CommonUtils;
 import com.gbzt.gbztworkflow.utils.LogUtils;
@@ -26,10 +24,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 
 @Service
-public class DefinationService_Old extends BaseService {
+public class DefinationCacheService extends BaseService {
 
-    private Logger logger = Logger.getLogger(TestController.class);
-    private static String LOGGER_TYPE_PREFIX = "DefinationService,";
+    private Logger logger = Logger.getLogger(DefinationCacheService.class);
+    private static String LOGGER_TYPE_PREFIX = "DefinationCacheService,";
 
     @Autowired
     private FlowDao flowDao;
@@ -63,13 +61,15 @@ public class DefinationService_Old extends BaseService {
         if(flow.getBussColumns() == null || flow.getBussColumns().size() == 0){
             return buildResult(false,"没有选择业务字段",null);
         }
+        //避免奇奇怪怪的问题
+        flow.setFlowName(flow.getFlowName().replaceAll("!","！"));
         boolean isnew = false;
         if(StringUtils.isBlank(flow.getId())){
             flow.setId(CommonUtils.genUUid());
             isnew = true;
         }
         if(isnew) {
-            if (flowDao.countFlowByFlowName(flow.getFlowName()) > 0) {
+            if (jedisService.countFlowByFlowName(flow.getFlowName()) > 0) {
                 return buildResult(false, "流程名称重复", null);
             }
         }
@@ -77,57 +77,38 @@ public class DefinationService_Old extends BaseService {
         if(StringUtils.isBlank(flow.getFormKey())){
             StringBuffer formBuffer = new StringBuffer("/");
             formBuffer.append(flow.getModuleName()).append("/").append(CommonUtils.convertTableName(flow.getBussTableName()))
-                        .append("/").append("form");
+                    .append("/").append("form");
             flow.setFormKey(formBuffer.toString());
         }
         if(isnew) {
             flow.genBaseVariables();
         }else{
             flow.setUpdateTime(new Date());
-            List<FlowBuss> flowBusses = flowBussDao.findAllByFlowId(flow.getId());
-            for(FlowBuss flowBuss : flowBusses){
-                flowBussDao.delete(flowBuss);
-            }
         }
-        flowDao.save(flow);
-        List<FlowBuss> flowBusses = new ArrayList<FlowBuss>();
-        for(String column : flow.getBussColumns()){
-            FlowBuss flowBuss = new FlowBuss();
-            flowBuss.setId(CommonUtils.genUUid());
-            flowBuss.setFlowId(flow.getId());
-            flowBuss.setColumnName(column);
-            flowBuss.genBaseVariables();
-            flowBusses.add(flowBuss);
-        }
-        flowBussDao.save(flowBusses);
+        jedisService.saveFlow(flow);
         String[] bussarr = new String[flow.getBussColumns().size()];
         affairConfiguerService.save(flow.getId(),flow.getBussColumns().toArray(bussarr));
-        return buildResult(true,"保存成功",null);
-    }
 
-    @Transactional("jtm")
-    public void updateFlowName(String flowName,String flowId){
-        int result = flowDao.updateFlow(flowName,flowId);
-        System.out.println(result);
+        return buildResult(true,"保存成功",null);
     }
 
     public ExecResult<Flow> getFlowById(String id){
         if(StringUtils.isBlank(id)){
             return buildResult(false,"查询id为空",null);
         }
-        return buildResult(true,"",flowDao.findOne(id));
+        return buildResult(true,"",jedisService.findFlowByIdOrName(id,null));
     }
 
     public Flow getFlowByName(String flowName){
-        return flowDao.findFlowByFlowName(flowName);
+        return jedisService.findFlowByIdOrName(null,flowName);
     }
 
     public List<Map<String,String>> getAllFlowsForOA(String procInstId){
-        List<Flow> flows = flowDao.findFlowsByDelTag(false);
+        List<Flow> flows = jedisService.findFlowsByDelTag(false);
         List<Map<String,String>> flowList = new ArrayList<Map<String,String>>();
         Flow targetFlow = null;
         if(StringUtils.isNotBlank(procInstId)){
-            targetFlow = flowDao.findOne(procInstDao.findOne(procInstId).getFlowId());
+            targetFlow = jedisService.findFlowByIdOrName(jedisService.findProcInstById(procInstId).getFlowId(),null);
         }
         for(Flow flow:flows){
             if(StringUtils.isBlank(procInstId)){
@@ -152,7 +133,7 @@ public class DefinationService_Old extends BaseService {
     }
 
     public ExecResult<List<Flow>> getAllFlows(){
-        return buildResult(true,"",flowDao.findFlowsByDelTag(false));
+        return buildResult(true,"",jedisService.findFlowsByDelTag(false));
     }
 
     @Transactional("jtm")
@@ -160,12 +141,7 @@ public class DefinationService_Old extends BaseService {
         if(flow == null || StringUtils.isBlank(flow.getId())){
             return buildResult(false,"id为空，删除失败",null);
         }
-        List<Node> nodes = nodeDao.findNodeByFlowIdOrderByCreateTimeDesc(flow.getId());
-        for(Node node : nodes){
-            delNode(node);
-        }
-        flowDao.delete(flow.getId());
-        refreshDetailDefination(flow.getId());
+        jedisService.delFlow(flow.getId());
         return buildResult(true,"删除成功",null);
     }
 

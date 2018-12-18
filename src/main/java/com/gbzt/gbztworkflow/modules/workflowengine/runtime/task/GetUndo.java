@@ -7,6 +7,7 @@ import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineAccessExcept
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineRuntimeException;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.Task;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.TaskExecution;
+import com.gbzt.gbztworkflow.modules.workflowengine.pojo.TaskVariables;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.EngineBaseArg;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.EngineBaseExecutor;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.IEngineArg;
@@ -19,18 +20,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import javax.persistence.criteria.*;
+import java.util.*;
 
 public class GetUndo extends EngineBaseExecutor {
 
     private static final String TASK_TYPE = AppConst.TASK_TEMPLATE_GETUNDO_SYNC;
+    private static final String ERR_MULTI_VARIABLE_TYPE = "不支持多类型变量查询！";
 
     private Logger logger = Logger.getLogger(GetUndo.class);
     private static String LOGGER_TYPE_PREFIX = "GetUndo,";
@@ -58,6 +54,39 @@ public class GetUndo extends EngineBaseExecutor {
     public String executeEngineTask(EngineTask task) throws EngineRuntimeException {
         GetUndo.GetUndoArg arg =(GetUndo.GetUndoArg)task.getArgs();
         final TaskExecution execution = arg.execution;
+
+        final List<TaskVariables> oriTaskVariables = new ArrayList<TaskVariables>();
+        // !!!! 现在只支持查询单个类型的变量对象（流程类型或者任务类型），否则直接抛出异常
+        final String[] typeArr = new String[1];
+        if(execution.argMap != null && execution.argMap.keySet().size() !=0 ){
+            for(String argKey : execution.argMap.keySet()) {
+                String argValue = execution.argMap.get(argKey);
+                String realKey = null;
+                String varType = null;
+                if (argKey.startsWith(TaskVariables.VARS_TYPE_PROC_PREFIX)) {
+                    realKey = argKey.substring(argKey.indexOf(TaskVariables.VARS_TYPE_PROC_PREFIX) + 5, argKey.length());
+                    varType = TaskVariables.VARS_TYPE_PROC;
+                    // 类型校验
+                    if(isNotBlank(typeArr[0]) && !typeArr[0].equals(varType)){
+                        throw new EngineRuntimeException(ERR_MULTI_VARIABLE_TYPE);
+                    }
+                    typeArr[0] = TaskVariables.VARS_TYPE_PROC;
+                } else if (argKey.startsWith(TaskVariables.VARS_TYPE_TASK_PREFIX)) {
+                    realKey = argKey.substring(argKey.indexOf(TaskVariables.VARS_TYPE_TASK_PREFIX) + 5, argKey.length());
+                    varType = TaskVariables.VARS_TYPE_TASK;
+                    // 类型校验
+                    if(isNotBlank(typeArr[0]) && !typeArr[0].equals(varType)){
+                        throw new EngineRuntimeException(ERR_MULTI_VARIABLE_TYPE);
+                    }
+                    typeArr[0] = TaskVariables.VARS_TYPE_TASK;
+                } else {
+                    continue;
+                }
+                List<TaskVariables> taskVariablesList = arg.taskVariableDao.findTaskVariablesByTypeAndKeyAndValue(varType,realKey,argValue);
+                oriTaskVariables.addAll(taskVariablesList);
+            }
+        }
+
         Integer pageNum = execution.pageNum == null || execution.pageNum <= 0 ?0:execution.pageNum-1;
         Integer pageSize = execution.pageSize == null || execution.pageSize <= 0?10:execution.pageSize;
         Sort sort = new Sort(Sort.Direction.DESC,"createTime");
@@ -75,7 +104,27 @@ public class GetUndo extends EngineBaseExecutor {
                     Predicate belongtoprocinst = criteriaBuilder.equal(root.get("procInstId").as(String.class),execution.procInstId);
                     predicates.add(belongtoprocinst);
                 }
-                return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+                if(oriTaskVariables.size() > 0){
+                    // 按照变量类型过滤相关属性(流程类型必须按照流程实例id进行过滤——【【【【【因为不可能每一个task都提交任务变量！！！！！】】】】)
+                    // 任务类型就按照任务id进行过滤，其含义是精确过滤某些任务
+                    if(typeArr[0].equals(TaskVariables.VARS_TYPE_PROC)){
+                        Set<String> procInstIds = new HashSet<String>();
+                        for(TaskVariables tmpTaskVariable : oriTaskVariables){
+                            procInstIds.add(tmpTaskVariable.getProcInstId());
+                        }
+                        Expression<String> inexpression = root.<String>get("procInstId");
+                        predicates.add(inexpression.in(procInstIds));
+                    }else if(typeArr[0].equals(TaskVariables.VARS_TYPE_TASK)){
+                        Set<String> taskIds = new HashSet<String>();
+                        for(TaskVariables tmpTaskVariable : oriTaskVariables){
+                            taskIds.add(tmpTaskVariable.getTaskId());
+                        }
+                        Expression<String> inexpression = root.<String>get("id");
+                        predicates.add(inexpression.in(taskIds));
+                    }
+                }
+                Predicate[] predicateArray = new Predicate[predicates.size()];
+                return criteriaBuilder.and(predicates.toArray(predicateArray));
             }
         };
         Pageable pageable = new PageRequest(pageNum,pageSize,sort);
@@ -115,8 +164,5 @@ public class GetUndo extends EngineBaseExecutor {
     public TaskModel handleCallback(EngineTask task) throws EngineRuntimeException {
         return (TaskModel)task.getExecutedResult();
     }
-
-
-
 
 }

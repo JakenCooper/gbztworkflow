@@ -3,8 +3,10 @@ package com.gbzt.gbztworkflow.modules.redis.service;
 import com.gbzt.gbztworkflow.modules.base.BaseService;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.FlowBuss;
+import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
 import com.gbzt.gbztworkflow.modules.redis.exception.JedisRuntimeException;
 import com.gbzt.gbztworkflow.modules.redis.pool.JedisTool;
+import com.gbzt.gbztworkflow.modules.workflowengine.pojo.ProcInst;
 import com.gbzt.gbztworkflow.utils.CommonUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Service;
@@ -26,15 +28,26 @@ public class JedisService extends BaseService {
     private static String CONSTRUCTOR_TYPE_ZSET = "zset";
     private static String CONSTRUCTOR_TYPE_HASH = "hash";
 
+    //ns:none,key:[flowid]![flowname],type:zset
     private static String KEY_ALL_FLOWS = "flowAll:";
     private static String KEY_FLOW = "flow:";
+    //ns:flowid,key:[flowbussid],type:set
     private static String KEY_FLOW_FLOWBUSS = "flow!flowbuss:";
     private static String KEY_FLOWBUSS = "flowbuss:";
 
-    private static String KEY_ALL_PROCINST = "proinstAll:";fds
-//    private static String
+    //ns:none,key:[procinstid]![flowid],type:zset
+    private static String KEY_ALL_PROCINST = "procinstAll:";
+    //ns:[procinstid],key:hash key,type:hash
+    private static String KEY_PROCINST = "procinst:";
 
-    //--------------------- flow related --begin
+    //ns:[nodeid],key:hash key,type:hash
+    private static String KEY_NODE = "node:";
+    //ns:[lineid],key:hash key,type:hash
+    private static String KEY_LINE = "line:";
+    //ns:none,key:[flowid]![nodeid]![lineid],type:hash (hash value:create_time)
+    private static String KEY_FLOW_NODE_LINE = "flow!node!line:";
+
+    //+++++++++++++++++++++ flow related --begin
     /***
      * @interface
      * @specification flows:[z,nn]
@@ -42,7 +55,8 @@ public class JedisService extends BaseService {
     public Integer countFlowByFlowName(String name){
         Jedis jedisClient = JedisTool.getJedis();
         try{
-            List<Object> scanResultList = internalScanValueInConstructor(jedisClient,CONSTRUCTOR_TYPE_ZSET,KEY_ALL_FLOWS,"*!"+name);
+            List<Object> scanResultList = internalScanValueInConstructor(jedisClient,CONSTRUCTOR_TYPE_ZSET,KEY_ALL_FLOWS,
+                    "*!"+name);
             if(isBlank(scanResultList)){
                 return 0;
             }
@@ -55,6 +69,7 @@ public class JedisService extends BaseService {
             }
         }catch(Exception e){
             e.printStackTrace();
+            throw new JedisRuntimeException(e);
         }finally {
             JedisTool.returnJedis(jedisClient);
         }
@@ -80,6 +95,8 @@ public class JedisService extends BaseService {
         try{
             String flowId = flow.getId();
             Set<String> flowbussIds = jedisClient.smembers(KEY_FLOW_FLOWBUSS + flowId);
+            List<Flow> currentFlows= internalFindAllSubElements(false,KEY_ALL_FLOWS,
+                    flowId+"!*",CONSTRUCTOR_TYPE_ZSET,KEY_FLOW,new Flow());
             Pipeline pipeline = jedisClient.pipelined();
             pipeline.multi();
 
@@ -88,6 +105,11 @@ public class JedisService extends BaseService {
                 for (String flowbussid : flowbussIds) {
                     pipeline.del(KEY_FLOWBUSS + flowbussid);
                 }
+            }
+            if(isNotBlank(currentFlows)){
+                Flow oldFlow = currentFlows.get(0);
+                pipeline.del(KEY_FLOW + flowId);
+                pipeline.zrem(KEY_ALL_FLOWS,flowId+"!"+oldFlow.getFlowName());
             }
             Map<String,String> flowMap = CommonUtils.redisConvert(flow);
             pipeline.hmset(KEY_FLOW+flowId,flowMap);
@@ -163,6 +185,7 @@ public class JedisService extends BaseService {
             }
         }catch(Exception e){
             e.printStackTrace();
+            throw new JedisRuntimeException(e);
         }finally {
             JedisTool.returnJedis(jedisClient);
         }
@@ -193,13 +216,91 @@ public class JedisService extends BaseService {
             }
         }catch(Exception e){
             e.printStackTrace();
+            throw new JedisRuntimeException(e);
         }finally {
             JedisTool.returnJedis(jedisClient);
         }
         return flows;
     }
 
+    public void delFlow(String flowId){
+        Jedis jedisClient = JedisTool.getJedis();
+        try{
+            List<Object> flowScanResultList = internalScanValueInConstructor(jedisClient,CONSTRUCTOR_TYPE_ZSET,KEY_ALL_FLOWS,
+                    flowId+"!*");
+            List<Object> flowNLResultList = internalScanValueInConstructor(jedisClient,CONSTRUCTOR_TYPE_HASH,KEY_FLOW_NODE_LINE,
+                    flowId+"!*");
+            if(isBlank(flowScanResultList)){
+                return ;
+            }
+            String[] flowEleArr = (((String[])flowScanResultList.get(0))[0]).split("!");
+            internalClearParentAndSubElements(KEY_ALL_FLOWS,flowId+"!"+flowEleArr[1],CONSTRUCTOR_TYPE_ZSET,KEY_FLOW);
+            internalClearAllParentAndSubElements(KEY_FLOW_FLOWBUSS + flowId,CONSTRUCTOR_TYPE_SET,KEY_FLOWBUSS);
+            Pipeline pipeline = jedisClient.pipelined();
+            pipeline.multi();
+            for(Object flowNLResult : flowNLResultList){
+                String flowNLHashKey = ((String[])flowNLResult)[0];
+                String[] flowNLHashArray = flowNLHashKey.split("!");
+                if(flowNLHashArray.length == 2){
+                    pipeline.del(KEY_NODE + flowNLHashArray[1]);
+                }else if(flowNLHashArray.length == 3){
+                    pipeline.del(KEY_LINE + flowNLHashArray[2]);
+                }else{
+                    continue;
+                }
+                pipeline.hdel(KEY_FLOW_NODE_LINE , flowNLHashKey);
+            }
+            pipeline.exec();
+            pipeline.sync();
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
+
     //--------------------- flow related --end
+
+    //+++++++++++++++++++++ node related --begin
+
+    public List<Node> findNodeByDefIdDesc(){
+
+    }
+
+    //--------------------- node related --end
+
+    //+++++++++++++++++++++ flow runtime related --begin
+    public ProcInst findProcInstById(String procInstId){
+        Jedis jedisClient = JedisTool.getJedis();
+        try{
+            List<ProcInst> procInsts = internalFindAllSubElements(false,KEY_ALL_PROCINST,
+                    procInstId+"!*",CONSTRUCTOR_TYPE_ZSET,KEY_PROCINST,new ProcInst());
+            if(isBlank(procInsts)){
+                return null;
+            }
+            return procInsts.get(0);
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
+
+    //--------------------- flow runtime related --begin
+
+
+
+    //#############################################################################################################################
+    //#############################################################################################################################
+    //#############################################################################################################################
+    //#############################################################################################################################
+    //#############################################################################################################################
+    //#############################################################################################################################
+    //#############################################################################################################################
+    //#############################################################################################################################
+    //#############################################################################################################################
 
 
     // only support "equals" situation
@@ -207,99 +308,140 @@ public class JedisService extends BaseService {
     // 1. get all data ---- datatag=true , despreate parentValue , child hash part use parent search result
     // 2. get one data(filter) ---- datatag=false , compare parentValue , child hash part use parentValue
     // (attention: only support equal situation! quote parentElement belows.)
+    private <T> List<T> internalFindAllSubElements(Jedis jedisClient,boolean datatag,String parentKey,String parentValue,
+                                                   String constructorType,String childKey,T t){
+        List<T> resultList = new ArrayList<T>();
+        if(!constructorType.equals(CONSTRUCTOR_TYPE_ZSET) && !constructorType.equals(CONSTRUCTOR_TYPE_SET)){
+            return resultList;
+        }
+        if(datatag){
+            List<Object> parentScanResult = null;
+            if(constructorType.equals(CONSTRUCTOR_TYPE_ZSET)){
+                parentScanResult = internalScanValueInConstructor(jedisClient,CONSTRUCTOR_TYPE_ZSET,parentKey,"*");
+            }
+            if(constructorType.equals(CONSTRUCTOR_TYPE_SET)){
+                parentScanResult = internalScanValueInConstructor(jedisClient,CONSTRUCTOR_TYPE_SET,parentKey,"*");
+            }
+
+            if(isBlank(parentScanResult)){
+                return resultList;
+            }
+            for(Object parentElement : parentScanResult){
+                String subKey = ((String[])parentElement)[0];
+                // [!!] use subKey as sub key part.
+                Map<String,String> subMap = jedisClient.hgetAll(childKey + subKey);
+                if(isBlank(subMap)){
+                    continue;
+                }
+                t = CommonUtils.redisConvert(t,subMap);
+                resultList.add(t);
+            }
+        }else{
+
+            List<Object> parentScanResult = internalScanValueInConstructor(jedisClient,constructorType,parentKey,parentValue);
+            if(isBlank(parentScanResult)){
+                return resultList;
+            }
+            // [!!] use parentKey as sub key part.
+            Map<String,String> tMap = jedisClient.hgetAll(childKey + parentValue);
+            t = CommonUtils.redisConvert(t , tMap);
+            resultList.add(t);
+        }
+        return resultList;
+    }
     private <T> List<T> internalFindAllSubElements(boolean datatag,String parentKey,String parentValue,
                                                    String constructorType,String childKey,T t){
         Jedis jedisClient = JedisTool.getJedis();
-        List<T> resultList = new ArrayList<T>();
         try{
-            if(!constructorType.equals(CONSTRUCTOR_TYPE_ZSET) && !constructorType.equals(CONSTRUCTOR_TYPE_SET)){
-                return resultList;
-            }
-            if(datatag){
-                List<Object> parentScanResult = null;
-                if(constructorType.equals(CONSTRUCTOR_TYPE_ZSET)){
-                    parentScanResult = internalScanValueInConstructor(jedisClient,CONSTRUCTOR_TYPE_ZSET,parentKey,"*");
-                }
-                if(constructorType.equals(CONSTRUCTOR_TYPE_SET)){
-                    parentScanResult = internalScanValueInConstructor(jedisClient,CONSTRUCTOR_TYPE_SET,parentKey,"*");
-                }
-
-                if(isBlank(parentScanResult)){
-                    return resultList;
-                }
-                for(Object parentElement : parentScanResult){
-                    String subKey = ((String[])parentElement)[0];
-                    // [!!] use subKey as sub key part.
-                    Map<String,String> subMap = jedisClient.hgetAll(childKey + subKey);
-                    if(isBlank(subMap)){
-                        continue;
-                    }
-                    t = CommonUtils.redisConvert(t,subMap);
-                    resultList.add(t);
-                }
-            }else{
-                if(constructorType.equals(CONSTRUCTOR_TYPE_ZSET)){
-                    List<Object> parentScanResult = internalScanValueInConstructor(jedisClient,CONSTRUCTOR_TYPE_ZSET,parentKey,parentValue);
-                    if(isBlank(parentScanResult)){
-                        return resultList;
-                    }
-                }
-                if(constructorType.equals(CONSTRUCTOR_TYPE_SET) && !jedisClient.sismember(parentKey,parentValue)){
-                    return resultList;
-                }
-                // [!!] use parentKey as sub key part.
-                Map<String,String> tMap = jedisClient.hgetAll(childKey + parentValue);
-                t = CommonUtils.redisConvert(t , tMap);
-                resultList.add(t);
-            }
+            return internalFindAllSubElements(jedisClient,datatag,parentKey,parentValue,constructorType,childKey,t);
         }catch(Exception e){
-            e.printStackTrace();
-        }finally {
+            e.printStackTrace();;
+            throw new JedisRuntimeException(e);
+        }finally{
             JedisTool.returnJedis(jedisClient);
         }
-        return resultList;
     }
 
 
     // parentKey can be in or nn , childType must be in
+    private void internalClearParentAndSubElements(Pipeline pipeline,String parentKey,String parentValue,
+                                                   String constructorType,String childType){
+        pipeline.multi();
+        if(constructorType.equals(CONSTRUCTOR_TYPE_SET)){
+            pipeline.srem(parentKey,parentValue);
+        }else if(constructorType.equals(CONSTRUCTOR_TYPE_ZSET)){
+            pipeline.zrem(parentKey,parentValue);
+        }
+        pipeline.del(childType + parentValue);
+        pipeline.exec();
+    }
     private void internalClearParentAndSubElements(String parentKey,String parentValue,
                                                    String constructorType,String childType){
         Jedis jedisClient = JedisTool.getJedis();
         try{
             Pipeline pipeline = jedisClient.pipelined();
-            pipeline.multi();
-            if(constructorType.equals(CONSTRUCTOR_TYPE_SET)){
-                pipeline.srem(parentKey,parentValue);
-            }else if(constructorType.equals(CONSTRUCTOR_TYPE_ZSET)){
-                pipeline.zrem(parentKey,parentValue);
-            }
-            pipeline.del(childType + parentValue);
-            pipeline.exec();
+            internalClearParentAndSubElements(pipeline,parentKey,parentValue,constructorType,childType);
         }catch(Exception e){
             e.printStackTrace();
+            throw new JedisRuntimeException(e);
         }finally {
             JedisTool.returnJedis(jedisClient);
         }
     }
 
+    private void internalClearAllParentAndSubElements(String parentKey,String constructorType,String childType){
+        Jedis jedisClient = JedisTool.getJedis();
+        try{
+            Set<String> parentKeySets = null;
+            if(constructorType.equals(CONSTRUCTOR_TYPE_SET)){
+                parentKeySets = jedisClient.smembers(parentKey);
+            }else if(constructorType.equals(CONSTRUCTOR_TYPE_ZSET)){
+                parentKeySets = jedisClient.zrange(parentKey,0,Integer.MAX_VALUE);
+            }
+            if(isBlank(parentKeySets)){
+                return ;
+            }
+            Pipeline pipeline = jedisClient.pipelined();
+            pipeline.multi();
+            pipeline.del(parentKey);
+            for(String childKey : parentKeySets){
+                pipeline.del(childType + childKey);
+            }
+            pipeline.exec();
+            pipeline.sync();
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
+
+
     // parentKey can be in or nn , childType must be in
+    private <T> void internalAddParentAndSubElements(Pipeline pipeline,String parentKey,String[] parentValue,
+                                                     String constructorType,String childType,T t){
+        pipeline.multi();
+        if(constructorType.equals(CONSTRUCTOR_TYPE_SET)){
+            pipeline.sadd(parentKey,parentValue[0]);
+        }else if(constructorType.equals(CONSTRUCTOR_TYPE_ZSET)){
+            pipeline.zadd(parentKey,Double.parseDouble(parentValue[1]),parentValue[0]);
+        }
+        pipeline.del(childType);
+        Map<String,String> childMap = CommonUtils.redisConvert(t);
+        pipeline.hmset(childType,childMap);
+        pipeline.exec();
+    }
+
     private <T> void internalAddParentAndSubElements(String parentKey,String[] parentValue,
                                                      String constructorType,String childType,T t){
         Jedis jedisClient = JedisTool.getJedis();
         try{
             Pipeline pipeline = jedisClient.pipelined();
-            pipeline.multi();
-            if(constructorType.equals(CONSTRUCTOR_TYPE_SET)){
-                pipeline.sadd(parentKey,parentValue[0]);
-            }else if(constructorType.equals(CONSTRUCTOR_TYPE_ZSET)){
-                pipeline.zadd(parentKey,Double.parseDouble(parentValue[1]),parentValue[0]);
-            }
-            pipeline.del(childType);
-            Map<String,String> childMap = CommonUtils.redisConvert(t);
-            pipeline.hmset(childType,childMap);
-            pipeline.exec();
+            internalAddParentAndSubElements(pipeline,parentKey,parentValue,constructorType,childType,t);
         }catch(Exception e){
             e.printStackTrace();
+            throw new JedisRuntimeException(e);
         }finally {
             JedisTool.returnJedis(jedisClient);
         }
@@ -356,5 +498,15 @@ public class JedisService extends BaseService {
             return resultList;
         }
         return null;
+    }
+
+    public static void main(String[] args) {
+        List<String> resultList =new ArrayList<String>();
+        String result = "";
+        for(int i=0;i<20;i++){
+            result = "result "+(i+1);
+            resultList.add(result);
+        }
+        System.out.println(resultList);
     }
 }

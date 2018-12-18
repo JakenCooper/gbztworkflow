@@ -2,7 +2,9 @@ package com.gbzt.gbztworkflow.modules.formDesign.service;
 
 
 import com.gbzt.gbztworkflow.modules.flowdefination.dao.FlowDao;
+import com.gbzt.gbztworkflow.modules.flowdefination.dao.NodeDao;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
+import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
 import com.gbzt.gbztworkflow.modules.formDesign.Util.HtmlConstant;
 import com.gbzt.gbztworkflow.modules.formDesign.Util.UeditorTools;
 import com.gbzt.gbztworkflow.modules.formDesign.dao.FormDesignDao;
@@ -36,6 +38,8 @@ public class FormDesignService {
     private TaskPermissionsDao taskPermissionsDao;
     @Autowired
     private FlowDao flowDao;
+    @Autowired
+    private NodeDao nodeDao;
 
     public void save(FormDesign formDesign) throws ParseException {
      /*   if(formDesign.getCreateDate()!=null){
@@ -427,12 +431,20 @@ public class FormDesignService {
                     }
 
                     if(HtmlConstant.FILE_TAG.equals(type)){
-                        nodesMap.put(key,"\t\t\t"+HtmlConstant.NEW_FILE_TAG);
+                        Node node= nodeDao.findNodeByFlowIdAndBeginNode(currentFlowId,true);
+                        String startWhen="\n\r\t\t##start_:when test=\"${'"+node.getName()+"'==taskName"+"}\"_###end\n\r";
+                        String endWhen="\n\r\t\t##end_c:when_###end\n\r";
+                        String otherwiseStart="\n\r\t\t##start_:otherwise _###end\n\r";
+                        String otherwiseEnd="\n\r\t\t##end_c:otherwise _###end\n\r";
+                        String fileCode="##chooseStart\t\t\t" + startWhen+"\r\n"+HtmlConstant.NEW_FILE_TAG+endWhen+"\r\n"+
+                                otherwiseStart+"\n\r"+HtmlConstant.FILE_LIST_TAG+"\n\r"+otherwiseEnd+"##chooseEnd";
+                        nodesMap.put(key, "\t\t\t" + fileCode);
                     }
 
                     element.after(key);
                 }
                 if(!isView) {
+
                     if (taskNodePermissionsList.size() != 0) {
                         String uuid = UUID.randomUUID().toString();
                         String key = "##tranJsp" + uuid + "##tranJsp_";
@@ -446,10 +458,6 @@ public class FormDesignService {
                             // = 号为避免实体类属性中也存在name字符串
                             outerHtml = outerHtml.replace("input", "form:input").replace("name=", "path=").replace(">", "/>");
                             nodesMap.put(key, "##chooseStart\t\t\t" + startOther + "\n\r" + outerHtml + "\n\r" + endOther);
-                        }
-
-                        if (HtmlConstant.FILE_TAG.equals(type)) {
-                            nodesMap.put(key, "\t\t\t" + HtmlConstant.NEW_FILE_TAG);
                         }
 
                         element.after(key);
@@ -490,9 +498,13 @@ public class FormDesignService {
                         startWhen="\n\r\t\t##start_:when test=\"${'"+taskName+"'==taskName"+"}\"_###end\n\r";
                         endWhen="\n\r\t\t##end_c:when_###end\n\r";
                     }
-
-                    element.attr("style",style);
+                    String titleStyle="";
+                    if("title".equals(name)){
+                         titleStyle="width:96%;font-family:SimHei;font-size:16px;text-align:center;";
+                    }
+                    element.attr("style",style+titleStyle);
                     element.removeAttr("readonly");
+
                     if("不可见".equals(permission)){
                         //设置新的权限
                         element.attr("style",style+"display:none");
@@ -680,7 +692,7 @@ public class FormDesignService {
             jspCode=jspCode.replaceAll("##chooseEnd","</c:choose>");
         }
         if(jspCode.contains("${readonly}")){
-            jspCode=jspCode.replace("${readonly}","readonly");
+            jspCode=jspCode.replace("${readonly}","true");
         }
         if(jspCode.contains("${timeSelect}")){
             jspCode=jspCode.replace("${timeSelect}",HtmlConstant.TIME_SELECT_TAG);
@@ -698,7 +710,6 @@ public class FormDesignService {
         if(jspCode.contains("${dafultTime}")){
             jspCode=jspCode.replace("${dafultTime}",HtmlConstant.DEFULT_TIME_TAG);
         }
-        
         long endTime = System.currentTimeMillis(); //获取结束时间
 
         System.out.println("程序运行时间：" + (endTime - startTime) + "ms");

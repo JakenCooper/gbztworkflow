@@ -17,4 +17,6 @@ public interface NodeDao extends JpaRepository<Node,String>,JpaSpecificationExec
 
     public List<Node> findNodesByIdIn(List<String> ids);
 
+    public Node findNodeByFlowIdAndBeginNode(String flowId,boolean flag);
+
 }

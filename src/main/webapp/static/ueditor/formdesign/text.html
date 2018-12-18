@@ -252,7 +252,7 @@ dialog.oncancel = function () {
 };
 dialog.onok = function (){
 
-
+        debugger
 
     if($G('fieldname').value==''){
         alert('请输入字段名称');
@@ -464,11 +464,11 @@ dialog.onok = function (){
         </td>
     </tr>
 
-   <tr style="display: none">
-        <th><span>&nbsp;&nbsp;&nbsp;&nbsp;长&nbsp;&nbsp;X&nbsp;&nbsp;宽&nbsp;&nbsp;&nbsp;&&nbsp;&nbsp;&nbsp;字体大小</span> </th>
+   <tr >
+        <th><span>&nbsp;&nbsp;&nbsp;&nbsp;宽&nbsp;&nbsp;X&nbsp;&nbsp;长&nbsp;&nbsp;&nbsp;&&nbsp;&nbsp;&nbsp;字体大小</span> </th>
         <th><span>可见性</span> </th>
     </tr>
-    <tr style="display: none">
+    <tr >
         <td>
             <input id="orgwidth" type="text" value="150" class="input-small span1" placeholder="auto"/>
             X
@@ -478,7 +478,7 @@ dialog.onok = function (){
 
         </td>
         <td>
-            <label class="checkbox inline"><input id="orghide" type="checkbox"/> 隐藏 </label>
+            <label class="checkbox inline"><input id="orghide" type="hidden"/> 待用 </label>
         </td>
     </tr>
     <tr>

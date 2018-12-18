@@ -8,34 +8,21 @@
     <%@ include file="/WEB-INF/views/include/treeview.jsp" %>
     <%@ include file="/WEB-INF/views/include/fileupload.jsp"%>
     <%@ include file="/WEB-INF/views/include/selectNext.jsp" %>
-    <%@ include file="/static/velocitystyle/JSstyle.jsp" %>
     <script src="${pageContext.request.contextPath}/static/custom/textEditor.js" type="text/javascript"></script>
     <script src="${pageContext.request.contextPath}/static/commonUtils.js" type="text/javascript"></script>
-    <link href="${pageContext.request.contextPath}/static/velocitystyle/style.css" type="text/css" rel="stylesheet" />
     <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/static/css/commonstyle.css">
-    <%--<%@ include file="/WEB-INF/velocitystyle/JSstyle.jsp" %>--%>
     <link rel="stylesheet" href="${pageContext.request.contextPath}/static/bootstraptimecss/bootstrap-datetimepicker.css" media="all">
     <script src="${pageContext.request.contextPath}/static/bootstraptime/bootstrap-datetimepicker.js"></script>
     <script src="${ctxStatic}/My97DatePicker/WdatePicker.js" type="text/javascript"></script>
 	<script type="text/javascript">
         $(function () {
-			
-            // 根据流程加载tree数据
-            //selectNextPersonAudit();
-            
-            // 加载页面样式
-            var modeRemark = "${map.modeRemark}";
-            style(modeRemark);// 0:紧凑模式 ; 1: 非紧凑模式
-
             $(".a-upload").on("change","input[type='file']",function(){
                 var filePath=$(this).val();
                 var arr=filePath.split('\\');
                 var fileName=arr[arr.length-1];
                 $(".showFileName").html(fileName);
             });
-            // 设置选择下一步流程窗口的高度
-            //setTreeH();
-            
+            cleanBlankP();
 			$("#inputForm").validate({
 				submitHandler: function(form){
 					loading('正在提交，请稍等...');
@@ -67,19 +54,6 @@
             }
         }
 
-        // 根据流程加载tree数据
-        <%--function selectNextPersonAudit(){--%>
-        <%--var procDefKey = "${${entityName}.act.procDefKey}";--%>
-        <%--var procInsId = "${${entityName}.act.procInsId}";--%>
-        <%--var procdefid = "${${entityName}.act.procDefId}";--%>
-        <%--var taskRelatedOption = $('#userfulWord').val().split('_');--%>
-        <%--var taskdefkey = taskRelatedOption[0];--%>
-        <%--var taskkey = taskRelatedOption[1];--%>
-
-        <%--var labelName = '';--%>
-        <%--var office_id="";--%>
-        <%--selectAudit(procdefid,procDefKey,taskdefkey,taskkey,labelName,procInsId,office_id);--%>
-        <%--}--%>
 	</script>
     <style>
         #demoList a{
@@ -104,7 +78,8 @@
             overflow: hidden;
             display: inline-block;
             *display: inline;
-            *zoom: 1
+            *zoom: 1;
+            float: left;
         }
 
         .a-upload  input {
@@ -124,11 +99,18 @@
             text-decoration: none
         }
 
+        /*1024分辨率下样式*/
+        @media screen and (max-width:1024px) {
+            .form-horizontal{
+                margin:0px 2px 0px 0px!important;
+            }
+            #newButtonDiv {
+                width: 560px!important;
+            }
+        }
     </style>
     <script type="text/javascript">
         $(function(){
-            //$("#name").focus();
-
             var filename = $("#filenamelist").val();
             var filepath = $("#filepathlist").val();
             var downloadfile =$("#downloadfile").val();
@@ -249,7 +231,6 @@
                 $("#wordsCount").val(wordsCount);
             }
         }
-        // TODO
         function updateFileContent(content, fileTypes) {
             $("#textContent").val(content);
             $("#textType").val(fileTypes);
@@ -318,7 +299,14 @@
                 }
             });
         }
-        
+        function cleanBlankP() { // 清除空P
+            $('#mainView p:contains("br")').remove();
+            $('#mainView p').each(function(index,ele){
+                if($(ele).html()=='<br>'){
+                    $(ele).remove();
+                }
+            });
+        }
         function history(){
             var proc_Ins_Id = arguments[0];
             $.get('${ctx}/act/task/histoicFlowSimple',{procInsId:proc_Ins_Id},function(data){
@@ -354,11 +342,11 @@
 ##            <input id="takeBack"  class="btn btn-danger"  type="button" value="收  回" onclick="takeBack()" />
 ##            &nbsp;&nbsp;&nbsp;&nbsp;
 ##        </c:if>w
-        <!-- <input id="btnCancel" class="btn" style="background: #F3F3F3; color: black;" type="button" value="返  回" onclick="refreshList()" /> -->
-    <button class="btn btn-warning" id="btn-withdraw" onclick="withdrawOrRetreatOper('withdraw')">收      回</button> &nbsp;&nbsp;
-    <!--<button class="btn btn-danger" id="btn-retreat" onclick="withdrawOrRetreatOper('retreat')">退      回</button> &nbsp;&nbsp;-->
-    <button class="btn btn-primary" onclick="history('${${entityName}.act.procInsId}');">流转历史</button> &nbsp;&nbsp;&nbsp;&nbsp;
-        <button class="btn btn-warning" onclick="refreshList()">返  回</button>
+            <%--<!-- <input id="btnCancel" class="btn" style="background: #F3F3F3; color: black;" type="button" value="返  回" onclick="refreshList()" /> -->--%>
+        <%--<button class="btn btn-warning" id="btn-withdraw" onclick="withdrawOrRetreatOper('withdraw')">收      回</button> &nbsp;&nbsp;--%>
+        <%--<!--<button class="btn btn-danger" id="btn-retreat" onclick="withdrawOrRetreatOper('retreat')">退      回</button> &nbsp;&nbsp;-->--%>
+        <%--<button class="btn btn-primary" onclick="history('${${entityName}.act.procInsId}');">流转历史</button> &nbsp;&nbsp;&nbsp;&nbsp;--%>
+        <%--<button class="btn btn-warning" onclick="refreshList()">返  回</button>--%>
     </div>
     <script type="text/javascript">
         (function(){
@@ -367,11 +355,20 @@
         })();
     </script>
 </ul>
-<div id="mainView" style="overflow-y: auto;height:0px;float: left;width: 75%;">
+<div id="newButtonDiv" style="width:543px;margin:0 auto;height:30px;">
+    <%--暂存 编辑正文 返回 流转历史--%>
+    <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="返  回" onclick="refreshList()"/>&nbsp;
+    <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="暂  存" onclick=""/>&nbsp;
+    <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="查看正文" onclick=""/>&nbsp;
+    <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" id="btn-withdraw" class="btn" type="button" value="收  回" onclick="withdrawOrRetreatOper('withdraw')"/>&nbsp;
+    <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="监  控" onclick="history('${${entityName}.act.procInsId}');"/>&nbsp;
+</div>
+<div id="containerDIV" style="margin: 0 auto;width: 575px">
+<div id="mainView" style="overflow-y: auto;height:auto;float: left;width: 570px;margin-top: 10px;">
 	<form:form id="inputForm" modelAttribute="${map.entityName}" name="form"
 			   action="${ctx}/${map.package}/${map.entityName}/" method="post"
 			   class="form-horizontal" enctype="multipart/form-data">
-		<div style="width: 75%">${map.formView}</div>
+		<div>${map.formView}</div>
         <form:hidden path="id" />
         <form:hidden path="act.taskId" />
         <form:hidden path="act.taskName" />
@@ -409,6 +406,7 @@
         <!-- 下一步负责人 -->
         <form:input type="hidden" id="assignee" path="act.assignee" value=""/>
 	</form:form>
+</div>
 </div>
 <div class="modal fade" id="myModal" style="top:10%;display:none;width:700px;position:fixed;left:40%;" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-dialog">

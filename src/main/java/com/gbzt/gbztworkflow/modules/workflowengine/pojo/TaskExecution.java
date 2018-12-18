@@ -41,12 +41,14 @@ public class TaskExecution {
     public Integer pageNum;
     public Integer pageSize;
     public Integer totalPage;
+    public Map<String,String> argMap;
 
     //[gethisttask]
     //public String passUser;  -[necessary]
 //    public Integer pageNum;
 //    public Integer pageSize;
 //    public Integer totalPage;
+//    public Map<String,String> argMap;
 
 
     //[getnodeuserdata]
@@ -109,8 +111,6 @@ public class TaskExecution {
     public void setRetreatOperPermission(boolean retreatOperPermission) {
         this.retreatOperPermission = retreatOperPermission;
     }
-
-    public Map<String,String> argMap;
 
     public Map<String, String> getArgMap() {
         return argMap;

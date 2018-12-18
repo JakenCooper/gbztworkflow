@@ -1,7 +1,7 @@
 package com.gbzt.gbztworkflow.utils;
 
 import com.gbzt.gbztworkflow.consts.ExecResult;
-import com.gbzt.gbztworkflow.modules.redis.RedisMapper;
+import com.gbzt.gbztworkflow.modules.redis.entity.RedisMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 

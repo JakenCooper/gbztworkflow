@@ -2,6 +2,8 @@ package com.gbzt.gbztworkflow.modules.flowdefination.entity;
 
 
 import com.gbzt.gbztworkflow.modules.base.BaseEntity;
+import com.gbzt.gbztworkflow.modules.redis.entity.RedisMapper;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -16,24 +18,33 @@ import java.util.List;
 public class Node extends BaseEntity {
     @Id
     @Column(name="id")
+    @RedisMapper
     private String id;
     @Column(name="node_def_id")
+    @RedisMapper
     private String nodeDefId;
     @Column(name="name")
+    @RedisMapper
     private String name;
     @Column(name="description")
+    @RedisMapper
     private String description;
     @Column(name="flow_id")
+    @RedisMapper
     private String flowId;
     @Column(name="is_begin_node")
     @org.hibernate.annotations.Type(type="yes_no")
+    @RedisMapper
     private boolean beginNode;
     @Column(name="is_end_node")
     @org.hibernate.annotations.Type(type="yes_no")
+    @RedisMapper
     private boolean endNode;
     @Column(name="sort_num")
+    @RedisMapper
     private Integer sortNum =1;
     @Column(name="assign_user")
+    @RedisMapper
     private String assignUser;
 
     @Transient
@@ -163,7 +174,24 @@ public class Node extends BaseEntity {
         Collections.sort(nodes,new Comparator<Node>() {
             @Override
             public int compare(Node n1, Node n2) {
-                return n1.getSortNum()> n2.getSortNum() ? 1 : -1;
+                if(n1.getSortNum() > n2.getSortNum()){
+                    return 1;
+                }else if(n1.getSortNum() < n2.getSortNum()){
+                    return -1;
+                }else{
+                    if(StringUtils.isBlank(n1.getNodeDefId()) || StringUtils.isBlank(n2.getNodeDefId())){
+                        return 0;
+                    }
+                    String node1DefId = (n1.getNodeDefId().split("-"))[1];
+                    String node2DefId = (n2.getNodeDefId().split("-"))[1];
+                    if(Integer.parseInt(node1DefId) > Integer.parseInt(node2DefId)){
+                        return 1;
+                    }else if(Integer.parseInt(node1DefId) < Integer.parseInt(node2DefId)){
+                        return -1;
+                    }else{
+                        return 0;
+                    }
+                }
             }
         });
         return nodes;

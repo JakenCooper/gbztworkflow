@@ -1,6 +1,8 @@
 package com.gbzt.gbztworkflow.modules.flowruntime.model;
 
+import javax.persistence.Column;
 import java.io.Serializable;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -44,6 +46,83 @@ public class TaskModel extends BaseModel implements Serializable {
     private String colName;//字段名称
     private String searchType;//查询类型
     /*end*/
+    /*文件上传属性:*/
+    private String fileName;
+    private String fileRealUrl;
+    private String fileUrl;
+    private String procInsId;
+    private Date createDate;
+    private String uploadBy;
+    private String delFlag;
+    /*end*/
+    //查询开始节点名称
+    private String startNodesName;
+
+    public String getStartNodesName() {
+        return startNodesName;
+    }
+
+    public void setStartNodesName(String startNodesName) {
+        this.startNodesName = startNodesName;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public String getProcInsId() {
+        return procInsId;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public String getFileRealUrl() {
+        return fileRealUrl;
+    }
+
+    public void setFileRealUrl(String fileRealUrl) {
+        this.fileRealUrl = fileRealUrl;
+    }
+
+    public String getFileUrl() {
+        return fileUrl;
+    }
+
+    public void setFileUrl(String fileUrl) {
+        this.fileUrl = fileUrl;
+    }
+
+
+
+    public void setProcInsId(String procInsId) {
+        this.procInsId = procInsId;
+    }
+
+    public Date getCreateDate() {
+        return createDate;
+    }
+
+    public void setCreateDate(Date createDate) {
+        this.createDate = createDate;
+    }
+
+    public String getUploadBy() {
+        return uploadBy;
+    }
+
+    public void setUploadBy(String uploadBy) {
+        this.uploadBy = uploadBy;
+    }
+
+    public String getDelFlag() {
+        return delFlag;
+    }
+
+    public void setDelFlag(String delFlag) {
+        this.delFlag = delFlag;
+    }
 
     public String getChColName() {
         return chColName;

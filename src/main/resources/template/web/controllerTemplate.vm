@@ -4,11 +4,15 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.gbzt.gbztworkflow.modules.flowruntime.model.TaskData;
+import com.gbzt.gbztworkflow.modules.flowruntime.model.TaskModel;
 import com.thinkgem.jeesite.common.config.Global;
 import com.thinkgem.jeesite.common.utils.IdGen;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import com.thinkgem.jeesite.modules.act.entity.TaskSearchArg;
+import net.sf.json.JSONObject;
 import org.springframework.ui.Model;
+import net.sf.json.JSONArray;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -95,6 +99,8 @@ public class ${EntityName}Controller extends BaseController {
             if(StringUtils.isBlank(${entityName}.getAct().getProcDefId()) && list.size()>0){
                 ${entityName}.getAct().setProcDefId(list.get(0).getProcDefId());
             }
+            List<TaskModel>fileList= actTaskService.findCommonFileByProcInsId(${entityName}.getProcInsId());
+            model.addAttribute("fileList",fileList);
             model.addAttribute("filepathlist", "nofile");
             model.addAttribute("filenamelist", "nofile");
             model.addAttribute("dowmloadfile", "nofile");
@@ -104,7 +110,7 @@ public class ${EntityName}Controller extends BaseController {
             if("done".equals(${entityName}.getAct().getStatus())){
                 return "modules/${package}/${entityName}View";
             }
-            List<TaskData> datas = actTaskService.getAllCurrentTask(${entityName}.getProcInsId(),UserUtils.getUser().getLoginName(),null, null);
+            List<TaskData> datas = actTaskService.getAllCurrentTask(${entityName}.getProcInsId(),UserUtils.getUser().getLoginName(),null, null,new TaskSearchArg());
             TaskData targetData = null;
             for(TaskData tmpTaskData : datas){
                 if(tmpTaskData.getTaskId().equals(${entityName}.getAct().getTaskId())){
@@ -129,6 +135,7 @@ public class ${EntityName}Controller extends BaseController {
 
     @RequestMapping("save")
     public String save(@RequestParam("file") MultipartFile[] files,${EntityName} ${entityName}, Model model, HttpServletRequest request, HttpServletResponse response,RedirectAttributes redirectAttributes){
+        String fileJsonInfo=request.getParameter("fileJsonInfo");
         ${EntityName} ${entityName}Clone = null;
         try {
             ${entityName}Clone = (${EntityName}) ${entityName}.clone();
@@ -155,7 +162,10 @@ public class ${EntityName}Controller extends BaseController {
             }
             switch (${entityName}Clone.getAct().getFlagTrans()) {
                 case "yes":
-                    ${entityName}Service.saveNew(${entityName}Clone,"yes");
+                    ${EntityName} ${entityName}1 = ${entityName}Service.saveNew(${entityName}Clone,"yes");
+                    if(StringUtils.isNotBlank(fileJsonInfo)){
+                        uploadFile(fileJsonInfo,${entityName}1);
+                    }
                     model.addAttribute("message", "流程处理成功！");
                     if(isNewRecord){
                         return "redirect:"+Global.getAdminPath()+"/act/task/todo?messagetag=1";
@@ -203,5 +213,21 @@ public class ${EntityName}Controller extends BaseController {
         ${entityName}Service.delete(${entityName});
         addMessage(redirectAttributes, "删除单表成功");
         return "redirect:"+Global.getAdminPath()+"/${package}/${entityName}/?repage";
-    } 
+    }
+    
+    public void uploadFile(String fileJsonInfo,${EntityName} ${entityName}){
+        JSONArray json = JSONArray.fromObject(fileJsonInfo);
+        int size = json.size();
+        for (int i = 0; i < size; i++) {
+            TaskModel taskModel=new TaskModel();
+            taskModel.setFlowName("专项纪要");
+            taskModel.setUploadBy(UserUtils.getUser().getLoginName());
+            taskModel.setProcInstId(${entityName}.getProcInsId());
+            JSONObject o = (JSONObject) json.get(i);
+            taskModel.setFileName(o.get("fileName").toString());
+            taskModel.setFileRealUrl(o.get("fileRealUrl").toString());
+            taskModel.setFileUrl(o.get("fileUrl").toString());
+            actTaskService.uploadFileInfo(taskModel);
+        }
+    }
 }

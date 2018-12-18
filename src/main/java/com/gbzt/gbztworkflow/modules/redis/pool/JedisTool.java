@@ -13,16 +13,17 @@ public class JedisTool {
 
     private JedisPool pool = null;
     private JedisPool getPool(){
-        JedisPoolConfig config = new JedisPoolConfig();
-        config.setMaxTotal(3000);
-        config.setMaxIdle(50000);
-        config.setMaxWaitMillis(10000L);
-        config.setTestOnBorrow(true);
-        config.setTestOnCreate(true);
-
-        JedisPool pool = new JedisPool(config,AppConst.REDIS_SERVER_HOST,Integer.parseInt(AppConst.REDIS_SERVER_PORT),
-                3000);
-        return pool;
+//        JedisPoolConfig config = new JedisPoolConfig();
+//        config.setMaxTotal(3000);
+//        config.setMaxIdle(50000);
+//        config.setMaxWaitMillis(10000L);
+//        config.setTestOnBorrow(true);
+//        config.setTestOnCreate(true);
+//
+//        JedisPool pool = new JedisPool(config,AppConst.REDIS_SERVER_HOST,Integer.parseInt(AppConst.REDIS_SERVER_PORT),
+//                3000);
+//        return pool;
+        return null;
     }
 
     public static Jedis getJedis(){

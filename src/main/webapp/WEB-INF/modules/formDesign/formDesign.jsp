@@ -66,8 +66,17 @@
                 <input type="hidden" id="currentiddi"/>
             </div>
         </div>
-        <textarea style="width:100%;height:100%" name="html" id="container"></textarea></form>
-
+      <%--  <textarea style="width:100%;height:100%" name="html" id="container"></textarea></form>--%>
+        <div style="margin: 0 auto" width="975px;">
+            <div style="float:left;width:200px;border:1px dashed greenyellow">
+                菜单
+            </div>
+            <textarea style="float:left;width:574px" name="html" id="container"></textarea>
+            <div style="float:left;width:200px;border:1px dashed plum">
+                发送树
+            </div>
+            <div style="clear:both"></div>
+        </div>
 </div>
 <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
     <div class="modal-dialog" role="document">

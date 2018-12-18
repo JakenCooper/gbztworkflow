@@ -1,4 +1,4 @@
-package com.gbzt.gbztworkflow.modules.redis;
+package com.gbzt.gbztworkflow.modules.redis.entity;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

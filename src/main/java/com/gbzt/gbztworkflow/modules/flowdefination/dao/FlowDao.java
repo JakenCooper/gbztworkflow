@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+import java.util.List;
+
 public interface FlowDao extends JpaRepository<Flow,String>,JpaSpecificationExecutor<Flow> {
 
     public List<Flow> findFlowsByDelTag(boolean delTag);
@@ -23,6 +25,7 @@ public interface FlowDao extends JpaRepository<Flow,String>,JpaSpecificationExec
     @Modifying
     @Query("update com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow flow set  flow.flowName=:flowName where flow.id=:flowId")
     public int updateFlow(@Param(value="flowName") String flowName,@Param(value="flowId") String flowId);
-    
+
     public Flow findById(String id);
+
 }

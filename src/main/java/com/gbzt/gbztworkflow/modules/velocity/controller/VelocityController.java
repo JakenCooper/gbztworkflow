@@ -126,6 +126,9 @@ public class VelocityController extends BaseController {
         datas.put("readonly","readonly");
         datas.put("form",formDesign.getJspCode());
         datas.put("formView",formDesign.getJspCodeView());
+        // 设置fns标签
+        datas.put("fnsloginName","${fns:getUser().loginName}");
+        
         String projectWarPath = null;
         try {
             // 生成文件

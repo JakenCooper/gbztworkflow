@@ -8,11 +8,8 @@
     <%@ include file="/WEB-INF/views/include/treeview.jsp" %>
     <%@ include file="/WEB-INF/views/include/fileupload.jsp"%>
     <%@ include file="/WEB-INF/views/include/selectNext.jsp" %>
-    <%--<%@ include file="/WEB-INF/velocitystyle/JSstyle.jsp" %>--%>
-    <%@ include file="/static/velocitystyle/JSstyle.jsp" %>
     <script src="${pageContext.request.contextPath}/static/custom/textEditor.js" type="text/javascript"></script>
     <script src="${pageContext.request.contextPath}/static/commonUtils.js" type="text/javascript"></script>
-    <link href="${pageContext.request.contextPath}/static/velocitystyle/style.css" type="text/css" rel="stylesheet" />
     <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/static/css/commonstyle.css">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/static/bootstraptimecss/bootstrap-datetimepicker.css" media="all">
     <script src="${pageContext.request.contextPath}/static/bootstraptime/bootstrap-datetimepicker.js"></script>
@@ -22,7 +19,7 @@
 
             // 设置mainView高度
             // setMainViewH();
-            
+            cleanBlankP();
             // 加载页面样式
             var modeRemark = "${map.modeRemark}";
             style(modeRemark);// 0:紧凑模式 ; 1: 非紧凑模式
@@ -48,7 +45,7 @@
             });
             $("#checkAllTrue").bind("click", { type: "checkAllTrue" }, checkNode);
             $("#checkAllFalse").bind("click", { type: "checkAllFalse" }, checkNode);
-
+            setSendRegionHeight();// 将左侧发送区域的高度设定为右侧右侧表单高度
             $.ajax({
                 url:'${ctx}/act/task/canWithdrawOrRetreat',
                 type:'post',
@@ -142,6 +139,20 @@
         }
 
 
+
+        function setSendRegionHeight() { // 将左侧发送区域的高度设定为右侧右侧表单高度
+            var height = $('#inputForm table tbody').height() - 83;
+            $('#fasongPanel table.table td #tree').height(height);
+        }
+
+        function cleanBlankP() { // 清除空P
+            $('#mainView p:contains("br")').remove();
+            $('#mainView p').each(function(index,ele){
+                if($(ele).html()=='<br>'){
+                    $(ele).remove();
+                }
+            });
+        }
 
     </script>
 
@@ -305,7 +316,8 @@
             overflow: hidden;
             display: inline-block;
             *display: inline;
-            *zoom: 1
+            *zoom: 1;
+            float: left;
         }
 
         .a-upload  input {
@@ -324,6 +336,19 @@
             border-color: #ccc;
             text-decoration: none
         }
+
+        /*1024分辨率下样式*/
+        @media screen and (max-width:1024px) {
+            .form-horizontal{
+                margin:0px 2px 0px 0px!important;
+            }
+            #containerDIV {
+                margin:0 0 0 5px!important;
+            }
+            #newButtonDiv {
+                width: 800px!important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -336,10 +361,6 @@
 		</a>
 	</li>
     <div id="buttonDiv" style="float: right;margin-right: 3%;margin-top: 10px">
-        <!--<button class="btn btn-warning" id="btn-withdraw" onclick="withdrawOrRetreatOper('withdraw')">收      回</button> &nbsp;&nbsp;-->
-        <button class="btn btn-danger" id="btn-retreat" onclick="withdrawOrRetreatOper('retreat')">退      回</button> &nbsp;&nbsp;
-        <button class="btn btn-primary" onclick="history('${${entityName}.act.procInsId}');">流转历史</button> &nbsp;&nbsp;&nbsp;&nbsp;
-        <button class="btn btn-warning" onclick="refreshList()">返  回</button>
 	</div>
     <script type="text/javascript">
         (function(){
@@ -348,7 +369,17 @@
         })();
     </script>
 </ul>
-<div id="mainView" style="overflow-y: auto;height:0px;float: left;width: 75%;">
+<div id="newButtonDiv" style="width:842px;margin:0 auto;height:30px;">
+    <%--暂存 编辑正文 返回 流转历史--%>
+    <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="返  回" onclick="refreshList()"/>&nbsp;
+    <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" id="btn-retreat" class="btn" type="button" value="退  回" onclick="withdrawOrRetreatOper('retreat')"/>&nbsp;
+    <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="暂  存" onclick=""/>&nbsp;
+    <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="编辑正文" onclick=""/>&nbsp;
+    <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="监  控" onclick="history('${${entityName}.act.procInsId}');"/>&nbsp;
+    <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="发  送" onclick="submitForm('yes')"/>&nbsp;
+</div>
+<div id="containerDIV" style="margin: 0 auto;width: 773px">
+<div id="mainView" style="overflow-y: auto;height:auto;float: left;width: 570px;margin-top: 10px;">
 	<form:form id="inputForm" modelAttribute="${map.entityName}" name="form"
 			   action="${ctx}/${map.package}/${map.entityName}/" method="post"
 			   class="form-horizontal" enctype="multipart/form-data">
@@ -387,18 +418,13 @@
         <!-- 下一步负责人 -->
         <form:input type="hidden" id="assignee" path="act.assignee" value=""/>
 
-        <div style="width: 75%">${map.form}</div>
+        <div>${map.form}</div>
 	</form:form>
 </div>
 
 <!--右侧发送区域  -->
-<div id="fasongPanel" style="float: left;margin-top: 10px;width: 25%;">
+<div id="fasongPanel" style="float: left;height:200px;width:200px;margin-top: 10px;">
     <table class="table table-bordered table-condensed">
-        <tr>
-            <td style="text-align: center;">
-                <input id="btnSubmit" style="width:80px;background: #25669A; color: white" class="btn" type="button" value="发  送" onclick="submitForm('yes')"/>&nbsp;
-            </td>
-        </tr>
         <tr>
             <td style="text-align: center; vertical-align: middle;">
                 <select id="userfulWord" style="width: 90%;" class="input-xlarge " onchange="selectNextPersonAudit()" >
@@ -409,11 +435,21 @@
             </td>
         </tr>
         <tr>
-            <td>
-                <div id="tree" class="ztree" style="overflow: auto;"></div>
+                <td style="text-align: center; max-height: 50px;">
+                    <%--<input id="btnSubmit" style="width:80px;background: #25669A; color: white" class="btn" type="button" value="发  送" onclick="submitForm('yes')"/>&nbsp;--%>
+                    <div id="search" class="form-search hide">
+                        <label for="key">关键字：</label><input type="text" class="empty" id="key" name="key" maxlength="50" style="height: 15px;margin-bottom:0px;width:110px;"/>
+                    </div>
+                    <%--<input type="text" style="height: 20px;margin-bottom:0px;width:190px;"/>--%>
+                </td>
+            </tr>
+			<tr>
+			            <td>
+                <div id="tree" class="ztree" style="height: 200px;overflow: auto;"></div>
             </td>
         </tr>
     </table>
+</div>
 </div>
 <div class="modal fade" id="myModal" style="top:10%;display:none;width:700px;position:fixed;left:40%;" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-dialog">

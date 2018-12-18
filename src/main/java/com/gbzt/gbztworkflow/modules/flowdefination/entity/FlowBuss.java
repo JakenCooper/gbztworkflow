@@ -1,7 +1,7 @@
 package com.gbzt.gbztworkflow.modules.flowdefination.entity;
 
 import com.gbzt.gbztworkflow.modules.base.BaseEntity;
-import com.gbzt.gbztworkflow.modules.redis.RedisMapper;
+import com.gbzt.gbztworkflow.modules.redis.entity.RedisMapper;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;

@@ -1,6 +1,6 @@
 package com.gbzt.gbztworkflow.modules.base;
 
-import com.gbzt.gbztworkflow.modules.redis.RedisMapper;
+import com.gbzt.gbztworkflow.modules.redis.entity.RedisMapper;
 
 import javax.persistence.*;
 import java.util.Date;

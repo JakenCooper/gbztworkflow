@@ -8,6 +8,7 @@ import java.util.Date;
 
 import com.gbzt.gbztworkflow.modules.flowruntime.model.TaskData;
 import com.google.common.collect.Maps;
+import com.thinkgem.jeesite.modules.act.entity.TaskSearchArg;
 import com.thinkgem.jeesite.common.service.CrudService;
 import com.thinkgem.jeesite.common.utils.MessageUtils;
 import com.thinkgem.jeesite.common.utils.StringUtils;
@@ -67,7 +68,7 @@ public class ${EntityName}Service  extends CrudService<${EntityName}Dao, ${Entit
     }
 
     @Transactional(readOnly = false)
-    public void saveNew(${EntityName} ${entityName},String transFlag) {
+    public ${EntityName} saveNew(${EntityName} ${entityName},String transFlag) {
         try {
             //参数
             Map<String,String> argMap = new HashMap<String,String>();
@@ -104,7 +105,7 @@ public class ${EntityName}Service  extends CrudService<${EntityName}Dao, ${Entit
                 ${entityName}.getAct().setBusinessId(${entityName}.getId());
                 // finalstep: 设置转换map
                 ${entityName}.getAct().setVarsMap(vars);
-                argMap.put(TaskData.VARS_TYPE_PREFIX_PROC+"content", content);
+                // argMap.put(TaskData.VARS_TYPE_PREFIX_PROC+"content", content);
                 ${entityName}.getAct().setArgMap(argMap);
             
                 String procInsId = null;
@@ -132,7 +133,7 @@ public class ${EntityName}Service  extends CrudService<${EntityName}Dao, ${Entit
             
                 @SuppressWarnings("unused")
                 //unused only in template,should be handled correctly during actual business.
-                TaskData taskData = actTaskService.getAllCurrentTask(${entityName}.getProcInsId(),  UserUtils.getUser().getLoginName(),null,null).get(0);
+                TaskData taskData = actTaskService.getAllCurrentTask(${entityName}.getProcInsId(),  UserUtils.getUser().getLoginName(),null,null,new TaskSearchArg()).get(0);
             
                 ${entityName}.getAct().setVarsMap(vars);
                 try {
@@ -144,6 +145,7 @@ public class ${EntityName}Service  extends CrudService<${EntityName}Dao, ${Entit
         } catch (Exception e) {
             e.printStackTrace();
         }
+                return ${entityName};
     }
     
 }

@@ -16,6 +16,7 @@ public class HtmlConstant {
     public static final String MODEL_NOT_COMPACT;
     public static final String DEFULT_USER_TAG;
     public static final String DEFULT_TIME_TAG;
+    public static final String FILE_LIST_TAG;
    static {
        INPUT_TAG="input";
 
@@ -45,9 +46,13 @@ public class HtmlConstant {
        DEFULT_TIME_TAG="<c:set var=\"now\" value=\"<%=new java.util.Date()%>\"/> <fmt:formatDate type=\"both\" value=\"${now}\" /> ";
 
        NEW_FILE_TAG="<a href=\"javascript:;\" class=\"a-upload\">\n" +
-               "    <input type=\"file\" name=\"\" >请选择文件\n" +
-               "</a><p class=\"showFileName\"></p>";
+               "    <input id=\"file\" onchange=\"uploadToOfficeStore()\" multipleState=\"multiple\" type=\"file\"  >请选择文件\n" +
+               "</a><span class=\"showFileName\"></span>";
        MODEL_COMPACT= "<input type=\"hidden\" value=\"0\"/>";
        MODEL_NOT_COMPACT="<input type=\"hidden\" value=\"1\"/>";
+
+       FILE_LIST_TAG="  <c:forEach var=\"obj\" items=\"${fileList}\">\n" +
+               "<a class=\"btn-link\" onclick=\"downloadAttachNew('${ctx}','${obj.fileUrl}','${obj.fileName}')\">${obj.fileName}</a>\n" +
+               "</c:forEach>";
    }
 }
