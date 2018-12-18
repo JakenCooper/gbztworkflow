@@ -12,10 +12,7 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class JedisService extends BaseService {
@@ -262,13 +259,144 @@ public class JedisService extends BaseService {
 
     //--------------------- flow related --end
 
-    //+++++++++++++++++++++ node related --begin
+    //+++++++++++++++++++++ node and line related --begin
 
-    public List<Node> findNodeByDefIdDesc(){
-
+    public List<Node> findNodeByFlowIdOrderByDefIdDesc(String flowId){
+        Jedis jedisClient = JedisTool.getJedis();
+        List<Node> nodes = new ArrayList<Node>();
+        try{
+            List<Object> nodeOriList = internalScanValueInConstructor(jedisClient,CONSTRUCTOR_TYPE_HASH,
+                    KEY_FLOW_NODE_LINE,flowId+"!*");
+            if(isBlank(nodeOriList)){
+                return nodes;
+            }
+            Pipeline pipeline = jedisClient.pipelined();
+            for(Object obj : nodeOriList){
+                String[] keyArr = ((String[])obj)[0].split("!");
+                if(keyArr.length == 3){
+                    continue;
+                }
+                //pre handle...
+                Node node = new Node();
+                nodes.add(node);
+                pipeline.hgetAll(KEY_NODE + keyArr[1]);
+            }
+            List<Object> resultList = pipeline.syncAndReturnAll();
+            if(isBlank(resultList)){
+                return new ArrayList<Node>();
+            }
+            for(int i=0;i<resultList.size();i++){
+                Node currentNode = nodes.get(i);
+                Map<String,String> objMap = (Map<String,String>)resultList.get(i);
+                CommonUtils.redisConvert(currentNode,objMap);
+            }
+            return nodes;
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
     }
 
-    //--------------------- node related --end
+    public Node findNodeById(String nodeId){
+        Jedis jedisClient = JedisTool.getJedis();
+        try{
+            Map<String,String> nodeMap = jedisClient.hgetAll(KEY_NODE + nodeId);
+            if(isBlank(nodeMap)){
+                return null;
+            }
+            Node node = new Node();
+            CommonUtils.redisConvert(node,nodeMap);
+            return node;
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
+
+    public List<Node> findNodeByIds(List<String> nodeIds){
+        Jedis jedisClient = JedisTool.getJedis();
+        List<Node> nodes = new ArrayList<Node>();
+        List<Node> finalNodes = new ArrayList<Node>();
+        try{
+            Pipeline pipeline = jedisClient.pipelined();
+            for(String nodeid : nodeIds){
+                pipeline.hmget(KEY_NODE + nodeid);
+                Node node = new Node();
+                nodes.add(node);
+            }
+            List<Object> searchResultList = pipeline.syncAndReturnAll();
+            for(int i=0;i<searchResultList.size();i++){
+                Object searchResult = searchResultList.get(i);
+                Node node = nodes.get(i);
+                Map<String,String> nodemap = (Map<String,String>)searchResult;
+                if(isBlank(nodemap)){
+                    continue;
+                }
+                CommonUtils.redisConvert(node,nodemap);
+            }
+            for(Node node : nodes){
+                if(isNotBlank(node.getId())){
+                    finalNodes.add(node);
+                }
+            }
+            return finalNodes;
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
+
+    // outlines:can be scaned by key,but inlines can not,must scan whole hash
+    public void findAndSetNodeWholeAttributes(Node targetNode){
+        Jedis jedisClient = JedisTool.getJedis();
+        String flowId = targetNode.getFlowId();
+        try{
+            List<String[]> scanAllList = new ArrayList<String[]>();
+            Set<String> outLineIds = new HashSet<String>();
+            Set<String> inLineIds  = new HashSet<String>();
+            Set<String> outNodeIds  = new HashSet<String>();
+            Set<String> inNodeIds  = new HashSet<String>();
+            List<Object> scanResultList = internalScanValueInConstructor(jedisClient,CONSTRUCTOR_TYPE_HASH,
+                    KEY_FLOW_NODE_LINE,flowId+"!*");
+            for(Object scanResult : scanResultList){
+                String[] singleLineResult = (String[])scanResult;
+                String[] scankeyarr = singleLineResult[0].split("!");
+                if(scankeyarr.length == 2){
+                    continue;
+                }
+                scanAllList.add(singleLineResult);
+            }
+
+            Pipeline pipeline = jedisClient.pipelined();
+            for(String[] scanResult : scanAllList){
+                String[] keyArr = scanResult[0].split("!");
+                String value = scanResult[1];
+                if(keyArr[1].equals(targetNode.getId())){
+                    outLineIds.add(keyArr[2]);
+                    outNodeIds.add(value);
+                }
+                if(value.equals(targetNode.getId())){
+                    inLineIds.add(keyArr[2]);
+                    inNodeIds.add(keyArr[1]);
+                }
+            }
+            forfds
+            List<Object> execResultList = pipeline.syncAndReturnAll();
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
+
+    //--------------------- node and line related --end
 
     //+++++++++++++++++++++ flow runtime related --begin
     public ProcInst findProcInstById(String procInstId){

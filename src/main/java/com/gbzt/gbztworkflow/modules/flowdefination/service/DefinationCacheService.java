@@ -157,11 +157,11 @@ public class DefinationCacheService extends BaseService {
         if(StringUtils.isBlank(flowId)){
             return buildResult(false,"流程id为空",null);
         }
-        return buildResult(true,"",nodeDao.findNodeByFlowIdOrderByNodeDefIdDesc(flowId));
+        return buildResult(true,"",jedisService.findNodeByFlowIdOrderByDefIdDesc(flowId));
     }
 
     public Node getNodeByIdSimple(String nodeId){
-        return nodeDao.findOne(nodeId);
+        return jedisService.findNodeById(nodeId);
     }
 
     public ExecResult<Node> getNodeById(String nodeId){
