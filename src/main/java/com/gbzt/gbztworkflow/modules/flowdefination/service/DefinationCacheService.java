@@ -15,6 +15,8 @@ import com.gbzt.gbztworkflow.modules.workflowengine.dao.ProcInstDao;
 import com.gbzt.gbztworkflow.utils.CommonUtils;
 import com.gbzt.gbztworkflow.utils.LogUtils;
 import com.gbzt.gbztworkflow.utils.SimpleCache;
+import net.sf.json.JSON;
+import net.sf.json.JSONObject;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -142,6 +144,7 @@ public class DefinationCacheService extends BaseService {
             return buildResult(false,"id为空，删除失败",null);
         }
         jedisService.delFlow(flow.getId());
+        refreshDetailDefination(flow.getId());
         return buildResult(true,"删除成功",null);
     }
 
@@ -183,7 +186,7 @@ public class DefinationCacheService extends BaseService {
         if(StringUtils.isBlank(node.getFlowId())){
             return buildResult(false,"流程id为空",null);
         }
-        if(nodeDao.countNodeByNameAndFlowId(node.getName(),node.getFlowId()) > 0){
+        if(jedisService.counterNodeNameByFlowId(node.getFlowId(),node.getName()) > 0){
             return buildResult(false,"改流程下节点名称重复",null);
         }
         if(StringUtils.isBlank(node.getId())){
@@ -193,7 +196,7 @@ public class DefinationCacheService extends BaseService {
             node.setSortNum(1);
         }
         node.genBaseVariables();
-        nodeDao.save(node);
+        jedisService.saveNode(node);
         refreshDetailDefination(node.getFlowId());
         return buildResult(true,"保存成功",null);
     }
@@ -211,43 +214,19 @@ public class DefinationCacheService extends BaseService {
             node.setSortNum(1);
         }
         node.genBaseVariables();
-        nodeDao.save(node);
+        jedisService.saveNode(node);
         refreshDetailDefination(node.getFlowId());
         return buildResult(true,"修改成功",null);
     }
 
     @Transactional("jtm")
     public ExecResult delNode(Node node){
-        node = nodeDao.findOne(node.getId());
+        node = jedisService.findNodeById(node.getId());
         if(node == null || StringUtils.isBlank(node.getId())){
             return buildResult(false,"id为空，删除失败",null);
         }
         // delete all lines related to this node.
-        List<Line> inLineList = lineDao.findLinesByBeginNodeId(node.getId());
-        List<Line> outLineList = lineDao.findLinesByEndNodeId(node.getId());
-        try {
-            if(inLineList != null && inLineList.size() > 0){
-                for(Line inline : inLineList){
-                    ExecResult execResult = delLine(inline);
-                    if(!execResult.charge){
-                        throw new IllegalAccessException("");
-                    }
-                }
-            }
-            if(outLineList != null && outLineList.size() > 0){
-                for(Line outline : outLineList){
-                    ExecResult execResult = delLine(outline);
-                    if(!execResult.charge){
-                        throw new IllegalAccessException("");
-                    }
-                }
-            }
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-            return buildResult(false,"连线删除失败",null);
-        }
-
-        nodeDao.delete(node.getId());
+        jedisService.delNode(node);
         refreshDetailDefination(node.getFlowId());
         return buildResult(true,"删除成功",null);
     }
@@ -267,13 +246,9 @@ public class DefinationCacheService extends BaseService {
         if(line == null || StringUtils.isBlank(line.getBeginNodeId()) || StringUtils.isBlank(line.getEndNodeId())){
             return buildResult(false,"缺少节点数据，删除失败",null);
         }
-        List<Line> currentLines = lineDao.findLinesByBeginNodeIdAndEndNodeId(line.getBeginNodeId(),line.getEndNodeId());
-        if(currentLines !=null && currentLines.size()>0){
-            for(Line currentLine : currentLines){
-//                currentLine.setDelTag(true);
-//                lineDao.save(currentLine);
-                lineDao.delete(currentLine);
-            }
+        Line currentLine = jedisService.findLineByBeginNodeIdAndEndNodeId(line.getBeginNodeId(),line.getEndNodeId());
+        if(currentLine != null){
+            jedisService.delLine(currentLine);
         }
         refreshDetailDefination(line.getFlowId());
         return buildResult(true,"删除成功",null);
@@ -288,12 +263,11 @@ public class DefinationCacheService extends BaseService {
                 || StringUtils.isBlank(line.getBeginNodeName()) || StringUtils.isBlank(line.getEndNodeName())){
             return buildResult(false,"节点数据不全，添加失败",null);
         }
-        delLine(new Line(line.getBeginNodeId(),line.getEndNodeId()));
         if(StringUtils.isBlank(line.getId())){
             line.setId(CommonUtils.genUUid());
         }
         line.genBaseVariables();
-        lineDao.save(line);
+        jedisService.saveLine(line);
         refreshDetailDefination(line.getFlowId());
         return buildResult(true,"保存成功",null);
     }
@@ -305,25 +279,21 @@ public class DefinationCacheService extends BaseService {
 
     private void refreshDetailDefination(String flowId){
         String loggerType = LOGGER_TYPE_PREFIX+"refreshDetailDefination";
-        String key = "flow_defination_detail_"+flowId;
-        if(SimpleCache.inCache(key)){
-            SimpleCache.remove(key);
-        }
+        String key = SimpleCache.CACHE_KEY_PREFIX_FLOW_DETAIL+flowId;
+        jedisService.setCachedString(key,null);
     }
 
     public void generateDetailDefination(String flowId){
         String loggerType = LOGGER_TYPE_PREFIX+"generateDetailDefination";
         String key = SimpleCache.CACHE_KEY_PREFIX_FLOW_DETAIL+flowId;
-        if(SimpleCache.inCache(key)){
+        if(jedisService.findCachedString(key) != null){
             return ;
         }
-        ExecResult flowExecResult = getFlowById(flowId);
-        if(!flowExecResult.charge){
-            logger.error(LogUtils.getMessage(loggerType,flowExecResult.message));
-            return ;
+        Flow flowInst = jedisService.findFlowByIdOrName(flowId,null);
+        if(flowInst == null){
+            logger.error(LogUtils.getMessage(loggerType,"todo cache is null,flowid === "+flowId));
         }
-        Flow flowInst = (Flow)flowExecResult.result;
-        List<Node> allFlowNode = nodeDao.findNodeByFlowIdOrderByCreateTimeDesc(flowId);
+        List<Node> allFlowNode = jedisService.findNodeByFlowIdOrderByDefIdDesc(flowId);
         Node.sortNodes(allFlowNode);
         List<Line> allLines = new ArrayList<Line>();
         Map<String,Node> nodeMap = new HashMap<String,Node>();
@@ -335,26 +305,10 @@ public class DefinationCacheService extends BaseService {
             if(node.isEndNode()){
                 flowInst.setEndNode(node);
             }
-            node.setOutLines(lineDao.findLinesByBeginNodeId(node.getId()));
-            node.setInLines(lineDao.findLinesByEndNodeId(node.getId()));
-
+            jedisService.findAndSetNodeWholeAttributes(node);
             //insert lines.
             allLines.addAll(node.getOutLines());
 
-            if(node.getOutLines() != null && node.getOutLines().size() > 0){
-                List<String> nextNodesIds = new ArrayList<String>();
-                for(Line line : node.getOutLines()){
-                    nextNodesIds.add(line.getEndNodeId());
-                }
-                node.setNextNodes(Node.sortNodes(nodeDao.findNodesByIdIn(nextNodesIds)));
-            }
-            if(node.getInLines() != null && node.getInLines().size() > 0){
-                List<String> foreNodesIds = new ArrayList<String>();
-                for(Line line : node.getInLines()){
-                    foreNodesIds.add(line.getBeginNodeId());
-                }
-                node.setForeNodes(Node.sortNodes(nodeDao.findNodesByIdIn(foreNodesIds)));
-            }
             nodeMap.put(node.getName(),node);
             nodeIdMap.put(node.getId(),node);
         }
@@ -369,6 +323,7 @@ public class DefinationCacheService extends BaseService {
         }
         flowInst.setLineMap(lineMap);
 
-        SimpleCache.putIntoCache(key,flowInst);
+        jedisService.setCachedString(key,JSONObject.fromObject(flowInst).toString());
+
     }
 }

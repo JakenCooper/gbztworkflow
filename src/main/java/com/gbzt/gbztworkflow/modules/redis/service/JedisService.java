@@ -469,8 +469,172 @@ public class JedisService extends BaseService {
             Map<String,String> nodeMap = CommonUtils.redisConvert(targetNode);
             pipeline.del(KEY_NODE + targetNode.getId());
             pipeline.hmset(KEY_NODE + targetNode.getId(),nodeMap);
-            pipeline.zrem(KEY_FLOW_NODE_LINE,targetNode.getFlowId()+"!"+targetNode.getId());
-            pipeline.zadd(KEY_FLOW_NODE_LINE,)
+            pipeline.hdel(KEY_FLOW_NODE_LINE,targetNode.getFlowId()+"!"+targetNode.getId());
+            pipeline.hset(KEY_FLOW_NODE_LINE,targetNode.getFlowId()+"!"+targetNode.getId(),targetNode.getId());
+            pipeline.exec();
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
+
+    public Integer counterNodeNameByFlowId(String flowId,String nodeName){
+        Jedis jedisClient = JedisTool.getJedis();
+        try{
+            List<Object> nodesInFlow = internalScanValueInConstructor(jedisClient,CONSTRUCTOR_TYPE_HASH,KEY_FLOW_NODE_LINE,
+                    flowId+"!*");
+            List<String> nodeIdList = new ArrayList<String>();
+            for(Object nodeObj : nodesInFlow){
+                String hashkey = ((String[])nodeObj)[0];
+                String[] hashKeyArr = hashkey.split("!");
+                if(hashKeyArr.length == 3){
+                    continue;
+                }
+                nodeIdList.add(hashKeyArr[1]);
+            }
+            Pipeline pipeline = jedisClient.pipelined();
+            for(String nodeId : nodeIdList){
+                pipeline.hgetAll(KEY_NODE + nodeId);
+            }
+            List<Object> searchList = pipeline.syncAndReturnAll();
+            for(Object searchObj : searchList){
+                Map<String,String> tmpNodeMap = (Map<String,String>)searchObj;
+                if(nodeName.equals(tmpNodeMap.get("name"))){
+                    return 1;
+                }
+            }
+            return 0;
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
+
+    public void delNode(Node node){
+        Jedis jedisClient = JedisTool.getJedis();
+        String flowId = node.getFlowId();
+        try{
+            List<String[]> scanAllList = new ArrayList<String[]>();
+            List<String> delKeys = new ArrayList<String>();
+            Set<String> outLineIds = new HashSet<String>();
+            Set<String> inLineIds  = new HashSet<String>();
+            List<Object> scanResultList = internalScanValueInConstructor(jedisClient,CONSTRUCTOR_TYPE_HASH,
+                    KEY_FLOW_NODE_LINE,flowId+"!*");
+            for(Object scanResult : scanResultList){
+                String[] singleLineResult = (String[])scanResult;
+                String[] scankeyarr = singleLineResult[0].split("!");
+                if(node.getId().equals(scankeyarr[1])){
+                    // first place setting del keys,need complete key.
+                    delKeys.add(singleLineResult[0]);
+                }
+                if(scankeyarr.length == 2){
+                    continue;
+                }
+                scanAllList.add(singleLineResult);
+            }
+
+            Pipeline pipeline = jedisClient.pipelined();
+            for(String[] scanResult : scanAllList){
+                String[] keyArr = scanResult[0].split("!");
+                String value = scanResult[1];
+                if(keyArr[1].equals(node.getId())){
+                    outLineIds.add(keyArr[2]);
+                }
+                if(value.equals(node.getId())){
+                    inLineIds.add(keyArr[2]);
+                    // second place setting del keys,need complete key.
+                    delKeys.add(scanResult[0]);
+                }
+            }
+            pipeline.multi();
+            pipeline.del(KEY_NODE + node.getId());
+            for(String delKey : delKeys){
+                pipeline.hdel(KEY_FLOW_NODE_LINE , delKey);
+            }
+            for(String inLineId : inLineIds){
+                pipeline.del(KEY_LINE + inLineId);
+            }
+            for(String outLineId : outLineIds){
+                pipeline.del(KEY_LINE + outLineId);
+            }
+            pipeline.exec();
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
+
+
+    public Line findLineByBeginNodeIdAndEndNodeId(String beginNodeId,String endNodeId){
+        Jedis jedisClient = JedisTool.getJedis();
+        try{
+            List<Object> scanResult = internalScanValueInConstructor(jedisClient,CONSTRUCTOR_TYPE_HASH,KEY_FLOW_NODE_LINE,
+                    "*!"+beginNodeId+"!*");
+            if(isBlank(scanResult)){
+                return null;
+            }
+            for(Object hashRow : scanResult){
+                String hashKey = ((String[])hashRow)[0];
+                String[] hashKeyArr = hashKey.split("!");
+                String hashValue = ((String[])hashRow)[1];
+                if(endNodeId.equals(hashValue)){
+                    String lineId = hashKeyArr[2];
+                    Line line = new Line();
+                    Map<String,String> lineMap = jedisClient.hgetAll(KEY_LINE + lineId);
+                    if(isBlank(lineMap)){
+                        return null;
+                    }
+                    CommonUtils.redisConvert(line,lineMap);
+                    return line;
+                }
+            }
+            return null;
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
+
+    //[flowid]![beginnodeid]![lineid] ---- [endnodeid]
+    public void saveLine(Line line){
+        Jedis jedisClient = JedisTool.getJedis();
+        try{
+            Line currentLine = findLineByBeginNodeIdAndEndNodeId(line.getBeginNodeId(),line.getEndNodeId());
+            Map<String,String> lineMap = CommonUtils.redisConvert(line);
+            Pipeline pipeline = jedisClient.pipelined();
+            pipeline.multi();
+            pipeline.del(KEY_LINE + line.getId());
+            pipeline.hmset(KEY_LINE + line.getId(),lineMap);
+            if(currentLine != null){
+                pipeline.hdel(KEY_FLOW_NODE_LINE , line.getFlowId(),line.getBeginNodeId(),currentLine.getId());
+            }
+            pipeline.hdel(KEY_FLOW_NODE_LINE,line.getFlowId() + line.getBeginNodeId() + line.getId());
+            pipeline.hset(KEY_FLOW_NODE_LINE,line.getFlowId() + line.getBeginNodeId() + line.getId(),
+                    line.getEndNodeId());
+            pipeline.exec();
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
+
+    public void delLine(Line line){
+        Jedis jedisClient = JedisTool.getJedis();
+        try{
+            Pipeline pipeline = jedisClient.pipelined();
+            pipeline.multi();
+            pipeline.del(KEY_LINE + line.getId());
+            pipeline.hdel(KEY_FLOW_NODE_LINE , line.getFlowId()+"!"+line.getBeginNodeId()+"!"+line.getId());
             pipeline.exec();
         }catch(Exception e){
             e.printStackTrace();
@@ -481,6 +645,35 @@ public class JedisService extends BaseService {
     }
 
     //--------------------- node and line related --end
+
+
+    public String findCachedString(String key){
+        Jedis jedisClient = JedisTool.getJedis();
+        try{
+            return jedisClient.get(key);
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
+
+    public void setCachedString(String key,String value){
+        Jedis jedisClient = JedisTool.getJedis();
+        try{
+            if(value == null){
+                jedisClient.del(key);
+                return ;
+            }
+            jedisClient.set(key,value);
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
 
     //+++++++++++++++++++++ flow runtime related --begin
     public ProcInst findProcInstById(String procInstId){
