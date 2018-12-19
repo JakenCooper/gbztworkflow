@@ -168,25 +168,10 @@ public class DefinationCacheService extends BaseService {
         if(StringUtils.isBlank(nodeId)){
             return buildResult(false,"节点id为空",null);
         }
-        Node node = nodeDao.findOne(nodeId);
+        Node node = jedisService.findNodeById(nodeId);
         // 查询关于节点的详细信息
-        node.setAllNodesInFlow(nodeDao.findNodeByFlowIdOrderByNodeDefIdDesc(node.getFlowId()));
-        node.setOutLines(lineDao.findLinesByBeginNodeId(node.getId()));
-        node.setInLines(lineDao.findLinesByEndNodeId(node.getId()));
-        if(node.getOutLines() != null && node.getOutLines().size() > 0){
-            List<String> nextNodesIds = new ArrayList<String>();
-            for(Line line : node.getOutLines()){
-                nextNodesIds.add(line.getEndNodeId());
-            }
-            node.setNextNodes(nodeDao.findNodesByIdIn(nextNodesIds));
-        }
-        if(node.getInLines() != null && node.getInLines().size() > 0){
-            List<String> foreNodesIds = new ArrayList<String>();
-            for(Line line : node.getInLines()){
-                foreNodesIds.add(line.getBeginNodeId());
-            }
-            node.setForeNodes(nodeDao.findNodesByIdIn(foreNodesIds));
-        }
+        node.setAllNodesInFlow(jedisService.findNodeByFlowIdOrderByDefIdDesc(node.getFlowId()));
+        jedisService.findAndSetNodeWholeAttributes(node);
         return buildResult(true,"",node);
     }
 

@@ -3,6 +3,7 @@ package com.gbzt.gbztworkflow.modules.redis.service;
 import com.gbzt.gbztworkflow.modules.base.BaseService;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.FlowBuss;
+import com.gbzt.gbztworkflow.modules.flowdefination.entity.Line;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
 import com.gbzt.gbztworkflow.modules.redis.exception.JedisRuntimeException;
 import com.gbzt.gbztworkflow.modules.redis.pool.JedisTool;
@@ -28,7 +29,7 @@ public class JedisService extends BaseService {
     //ns:none,key:[flowid]![flowname],type:zset
     private static String KEY_ALL_FLOWS = "flowAll:";
     private static String KEY_FLOW = "flow:";
-    //ns:flowid,key:[flowbussid],type:set
+    //ns:[flowid],key:[flowbussid],type:set
     private static String KEY_FLOW_FLOWBUSS = "flow!flowbuss:";
     private static String KEY_FLOWBUSS = "flowbuss:";
 
@@ -362,6 +363,10 @@ public class JedisService extends BaseService {
             Set<String> inLineIds  = new HashSet<String>();
             Set<String> outNodeIds  = new HashSet<String>();
             Set<String> inNodeIds  = new HashSet<String>();
+            List<Line> outLineList = new ArrayList<Line>();
+            List<Line> inLineList = new ArrayList<Line>();
+            List<Node> inNodeList = new ArrayList<Node>();
+            List<Node> outNodeList = new ArrayList<Node>();
             List<Object> scanResultList = internalScanValueInConstructor(jedisClient,CONSTRUCTOR_TYPE_HASH,
                     KEY_FLOW_NODE_LINE,flowId+"!*");
             for(Object scanResult : scanResultList){
@@ -386,8 +391,87 @@ public class JedisService extends BaseService {
                     inNodeIds.add(keyArr[1]);
                 }
             }
-            forfds
+
+            for(String outLineId : outLineIds){
+                pipeline.hgetAll(KEY_LINE + outLineId);
+            }
             List<Object> execResultList = pipeline.syncAndReturnAll();
+            for(Object execResult : execResultList){
+                Map<String,String> attrMap = (Map<String,String>)execResult;
+                if(isBlank(attrMap)){
+                    continue;
+                }
+                Line outLine = new Line();
+                CommonUtils.redisConvert(outLine,attrMap);
+                outLineList.add(outLine);
+            }
+            pipeline = jedisClient.pipelined();
+            for(String inLineId : inLineIds){
+                pipeline.hgetAll(KEY_LINE + inLineId);
+            }
+            execResultList = pipeline.syncAndReturnAll();
+            for(Object execResult : execResultList){
+                Map<String,String> attrMap = (Map<String,String>)execResult;
+                if(isBlank(attrMap)){
+                    continue;
+                }
+                Line inLine = new Line();
+                CommonUtils.redisConvert(inLine,attrMap);
+                inLineList.add(inLine);
+            }
+            pipeline = jedisClient.pipelined();
+            for(String outNodeId : outNodeIds){
+                pipeline.hgetAll(KEY_NODE + outNodeId);
+            }
+            execResultList = pipeline.syncAndReturnAll();
+            for(Object execResult : execResultList){
+                Map<String,String> attrMap = (Map<String,String>)execResult;
+                if(isBlank(attrMap)){
+                    continue;
+                }
+                Node outNode = new Node();
+                CommonUtils.redisConvert(outNode,attrMap);
+                outNodeList.add(outNode);
+            }
+            pipeline = jedisClient.pipelined();
+            for(String inNodeId : inNodeIds){
+                pipeline.hgetAll(KEY_NODE + inNodeId);
+            }
+            execResultList = pipeline.syncAndReturnAll();
+            for(Object execResult : execResultList){
+                Map<String,String> attrMap = (Map<String,String>)execResult;
+                if(isBlank(attrMap)){
+                    continue;
+                }
+                Node inNode = new Node();
+                CommonUtils.redisConvert(inNode,attrMap);
+                inNodeList.add(inNode);
+            }
+
+            targetNode.setOutLines(outLineList);
+            targetNode.setInLines(inLineList);
+            targetNode.setNextNodes(outNodeList);
+            targetNode.setForeNodes(inNodeList);
+
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
+
+    public void saveNode(Node targetNode){
+        Jedis jedisClient = JedisTool.getJedis();
+        try{
+            Pipeline pipeline = jedisClient.pipelined();
+            pipeline.multi();
+            Map<String,String> nodeMap = CommonUtils.redisConvert(targetNode);
+            pipeline.del(KEY_NODE + targetNode.getId());
+            pipeline.hmset(KEY_NODE + targetNode.getId(),nodeMap);
+            pipeline.zrem(KEY_FLOW_NODE_LINE,targetNode.getFlowId()+"!"+targetNode.getId());
+            pipeline.zadd(KEY_FLOW_NODE_LINE,)
+            pipeline.exec();
         }catch(Exception e){
             e.printStackTrace();
             throw new JedisRuntimeException(e);

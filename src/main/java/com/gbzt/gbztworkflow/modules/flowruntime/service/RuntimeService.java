@@ -431,4 +431,15 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
         return taskModelList;
     }
 
+    @Override
+    public TaskModel delCommonFileByproInsId(TaskModel taskModel) {
+        Integer flag=commonFileDao.deleteByProcInsId(taskModel.getProcInsId());
+        if(flag!=0){
+            taskModel.setDelFlag("success");
+        }else{
+            taskModel.setDelFlag("failed");
+        }
+        return taskModel;
+    }
+
 }

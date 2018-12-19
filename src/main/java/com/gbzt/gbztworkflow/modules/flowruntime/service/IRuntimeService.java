@@ -73,6 +73,7 @@ public interface IRuntimeService {
     //根据流程实例id查询附件
     public List<TaskModel> findCommonFileByProcInsId(TaskModel taskModel);
 
+    public TaskModel delCommonFileByproInsId(TaskModel taskModel);
 
 
 }
