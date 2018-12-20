@@ -36,11 +36,6 @@ public class JedisService extends BaseService {
     private static String KEY_FLOW_FLOWBUSS = "flow!flowbuss:";
     private static String KEY_FLOWBUSS = "flowbuss:";
 
-    //ns:none,key:[procinstid]![flowid],type:zset
-    private static String KEY_ALL_PROCINST = "procinstAll:";
-    //ns:[procinstid],key:hash key,type:hash
-    private static String KEY_PROCINST = "procinst:";
-
     //ns:[nodeid],key:hash key,type:hash
     private static String KEY_NODE = "node:";
     //ns:[lineid],key:hash key,type:hash
@@ -53,6 +48,12 @@ public class JedisService extends BaseService {
 
     //ns:[usernodeprivid],key:hash,type:hash
     private static String KEY_USERNODEPRIV = "usernodepriv:";
+
+
+    //ns:none,key:[procinstid]![flowid],type:zset
+    private static String KEY_ALL_PROCINST = "procinstAll:";
+    //ns:[procinstid],key:hash key,type:hash
+    private static String KEY_PROCINST = "procinst:";
 
     //+++++++++++++++++++++ flow related --begin
     /***
