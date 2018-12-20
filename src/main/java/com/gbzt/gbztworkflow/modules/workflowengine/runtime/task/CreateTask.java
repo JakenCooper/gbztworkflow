@@ -34,10 +34,6 @@ public class CreateTask extends EngineBaseExecutor {
 
     public static class CreateTaskArg extends EngineBaseArg implements IEngineArg {
         private String[] requiredArg = new String[]{"flowId","procInstId","nodeDefId","assignUser","passUser"};
-        //public DefinationService definationService;
-        //public TaskDao taskDao;
-        //public ProcInstDao procInstDao;
-       // public HistProcDao histProcDao;
         public TaskExecution execution;
         public Line lineInst;
 
@@ -87,8 +83,13 @@ public class CreateTask extends EngineBaseExecutor {
         taskObj.setProcInstId(execution.procInstId);
         taskObj.setFlowId(execution.flowId);
         taskObj.setCreateTimeMills(System.currentTimeMillis());
-        ProcInst procInst = arg.procInstDao.findOne(execution.procInstId);
-        Flow flowInst = super.getFlowComplete(arg.definationService,execution.flowId);
+        ProcInst procInst = null;
+        if(!AppConst.REDIS_SWITCH) {
+            procInst = arg.procInstDao.findOne(execution.procInstId);
+        }else{
+            procInst = arg.jedisService.findProcInstById(execution.procInstId);
+        }
+        Flow flowInst = super.getFlowComplete(arg.definationService,arg.definationCacheService,execution.flowId);
         if(isBlank(execution.nodeId) || isBlank(execution.nodeDefId)){
             if(isBlank(execution.nodeId)){
                 for(Node node : flowInst.getAllNodes()){
@@ -163,11 +164,21 @@ public class CreateTask extends EngineBaseExecutor {
         if(subTasks.size() > 0){
             taskObj.setChildTaskTag(true);
         }
-        arg.taskDao.save(taskObj);
-        if(subTasks.size() > 0){
-            arg.taskDao.save(subTasks);
+        if(!AppConst.REDIS_SWITCH) {
+            arg.taskDao.save(taskObj);
+            if (subTasks.size() > 0) {
+                arg.taskDao.save(subTasks);
+            }
+        }else{
+            if(subTasks.size() > 0){
+                subTasks.add(taskObj);
+                arg.jedisService.saveTask(subTasks);
+            }else{
+                arg.jedisService.saveTask(taskObj);
+            }
         }
         // [logic] 只有标记字段为true时才需要创建histtask（目前只有收回退回时无需创建）
+        // histproc的userid是任务的指派人
         if(execution.needHistProc) {
             HistProc histProc = new HistProc();
             histProc.setId(CommonUtils.genUUid());
@@ -178,7 +189,11 @@ public class CreateTask extends EngineBaseExecutor {
             histProc.setTaskId(taskObj.getId());
             histProc.setUserId(taskObj.getAssignUser());
             histProc.setCreateTimeMills(System.currentTimeMillis());
-            arg.histProcDao.save(histProc);
+            if(!AppConst.REDIS_SWITCH) {
+                arg.histProcDao.save(histProc);
+            }else{
+                arg.jedisService.saveHistProc(histProc);
+            }
         }
 
         task.setExecutedResult(taskObj.getId());

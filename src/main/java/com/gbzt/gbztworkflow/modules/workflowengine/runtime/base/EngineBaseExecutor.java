@@ -1,13 +1,15 @@
 package com.gbzt.gbztworkflow.modules.workflowengine.runtime.base;
 
+import com.gbzt.gbztworkflow.consts.AppConst;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
+import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationCacheService;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationService;
-import com.gbzt.gbztworkflow.modules.workflowengine.runtime.EngineTaskTemplateFactory;
-import com.gbzt.gbztworkflow.modules.workflowengine.runtime.entity.EngineTask;
+import com.gbzt.gbztworkflow.modules.redis.service.JedisService;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineAccessException;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineRuntimeException;
-import com.gbzt.gbztworkflow.modules.workflowengine.runtime.task.CreateTask;
+import com.gbzt.gbztworkflow.modules.workflowengine.runtime.EngineTaskTemplateFactory;
+import com.gbzt.gbztworkflow.modules.workflowengine.runtime.entity.EngineTask;
 import com.gbzt.gbztworkflow.utils.CommonUtils;
 import com.gbzt.gbztworkflow.utils.SimpleCache;
 import org.apache.commons.lang3.StringUtils;
@@ -15,7 +17,6 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
 
-import javax.persistence.Column;
 import java.util.Collection;
 
 public abstract  class EngineBaseExecutor implements EngineExecutable,EngineCallback{
@@ -47,18 +48,28 @@ public abstract  class EngineBaseExecutor implements EngineExecutable,EngineCall
         return engineTask;
     }
 
-    protected final Flow getFlowComplete(DefinationService definationService,String flowId){
-        // TODO not necessary
-        definationService.generateDetailDefination(flowId);
-        //TODO cache oper..
-        return  (Flow)SimpleCache.getFromCache(SimpleCache.CACHE_KEY_PREFIX_FLOW_DETAIL+flowId);
+    protected final Flow getFlowComplete(DefinationService definationService,
+                                         DefinationCacheService definationCacheService,
+                                         String flowId) {
+        Flow flowInst = null;
+        if (!AppConst.REDIS_SWITCH) {
+            definationService.generateDetailDefination(flowId);
+            flowInst = (Flow)SimpleCache.getFromCache(JedisService.CACHE_KEY_PREFIX_FLOW_DETAIL+flowId);
+        }else{
+            definationCacheService.generateDetailDefination(flowId);
+            flowInst = definationCacheService.findDetailDefination(flowId);
+        }
+
+        return flowInst;
     }
 
     // return :Object[node,line]
-    protected final Object[] getNextNodeInfo(DefinationService definationService,String flowId,
+    protected final Object[] getNextNodeInfo(DefinationService definationService,DefinationCacheService definationCacheService,
+                                             String flowId,
                                              String thisNodeId,String passStr){
         Object[] resultArr = new Object[2];
-        Flow flowInst = getFlowComplete(definationService,flowId);
+        //zhangys
+        Flow flowInst = getFlowComplete(definationService,definationCacheService,flowId);
         Node thisNode = flowInst.getNodeIdMap().get(thisNodeId);
         String nextNodeDefId = "audit-"+passStr;
         Node nextNode = null;

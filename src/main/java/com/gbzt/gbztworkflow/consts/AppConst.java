@@ -27,6 +27,7 @@ public class AppConst {
     public static final String METADATA_DEFAULT_DBTYPE;
     public static final String METADATA_DEFAULT_MODULEPATH;
 
+    public static final Boolean REDIS_SWITCH;
     public static final String REDIS_SERVER_HOST;
     public static final String REDIS_SERVER_PORT;
 
@@ -78,6 +79,12 @@ public class AppConst {
 
         REDIS_SERVER_HOST = prop.getProperty("redis.server.host");
         REDIS_SERVER_PORT = prop.getProperty("redis.server.port");
+        String redisSwitch = prop.getProperty("redis.server.switch");
+        if("true".equals(redisSwitch)){
+            REDIS_SWITCH = true;
+        }else{
+            REDIS_SWITCH = false;
+        }
     }
 
 

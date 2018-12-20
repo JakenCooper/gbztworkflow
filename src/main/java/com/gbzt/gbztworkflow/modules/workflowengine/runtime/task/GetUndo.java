@@ -138,7 +138,8 @@ public class GetUndo extends EngineBaseExecutor {
         for(Task resultTask : pageResult.getContent()){
             // TODO fetch variables for proc and task (cache)
             Map<String,Object> resultMap = new HashMap<String,Object>();
-            Flow flowInst = super.getFlowComplete(arg.definationService,resultTask.getFlowId());
+            //zhangys
+            Flow flowInst = super.getFlowComplete(arg.definationService,null,resultTask.getFlowId());
             resultMap.put("taskId",resultTask.getId());
             resultMap.put("flowId",resultTask.getFlowId());
             resultMap.put("flowName",flowInst.getFlowName());

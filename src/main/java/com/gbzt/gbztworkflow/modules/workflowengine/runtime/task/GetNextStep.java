@@ -3,6 +3,7 @@ package com.gbzt.gbztworkflow.modules.workflowengine.runtime.task;
 import com.gbzt.gbztworkflow.consts.AppConst;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
+import com.gbzt.gbztworkflow.modules.redis.service.JedisService;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineAccessException;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineRuntimeException;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.Task;
@@ -43,14 +44,16 @@ public class GetNextStep extends EngineBaseExecutor {
     @Override
     public void preHandleTask(EngineTask task) throws EngineAccessException {
         GetNextStep.GetNextStepArg arg = (GetNextStep.GetNextStepArg)task.getArgs();
-        Flow flowInst = arg.definationService.getFlowByName(arg.execution.flowName);
-        // TODO not necessary
-        arg.definationService.generateDetailDefination(flowInst.getId());
-        //TODO cache oper..
-        flowInst = (Flow)SimpleCache.getFromCache(SimpleCache.CACHE_KEY_PREFIX_FLOW_DETAIL+flowInst.getId());
-        if(flowInst == null || flowInst.getStartNode() == null){
+        Flow flowInst =null;
+        if(!AppConst.REDIS_SWITCH) {
+            flowInst = arg.definationService.getFlowByName(arg.execution.flowName);
+        }else{
+            flowInst = arg.jedisService.findFlowByIdOrName(null,arg.execution.flowName);
+        }
+        if(flowInst == null || flowInst.getId() ==null ||flowInst.getStartNode() == null){
             throw new EngineAccessException("flow not exist or no start node.");
         }
+        flowInst = super.getFlowComplete(arg.definationService,arg.definationCacheService,flowInst.getId());
         arg.flowInst = flowInst;
     }
 
@@ -65,7 +68,12 @@ public class GetNextStep extends EngineBaseExecutor {
         if(StringUtils.isBlank(arg.execution.taskId)){
             targetNode = flowInst.getStartNode();
         }else{
-            Task taskObj = arg.taskDao.findOne(execution.taskId);
+            Task taskObj = null;
+            if(!AppConst.REDIS_SWITCH) {
+                taskObj = arg.taskDao.findOne(execution.taskId);
+            }else{
+                taskObj = arg.jedisService.findTaskById(execution.taskId);
+            }
             targetNode = arg.flowInst.getNodeIdMap().get(taskObj.getNodeId());
         }
         for(Node node : targetNode.getNextNodes()){

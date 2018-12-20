@@ -7,6 +7,7 @@ import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.UserNodePriv;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.UserTreeInfo;
+import com.gbzt.gbztworkflow.modules.redis.service.JedisService;
 import com.gbzt.gbztworkflow.utils.CommonUtils;
 import com.gbzt.gbztworkflow.utils.SimpleCache;
 import org.apache.commons.lang3.StringUtils;
@@ -314,7 +315,7 @@ public class UserNodePrivService extends MetadataService {
         userNodePrivDao.save(privs);
         List<UserTreeInfo> infos = getAllUserInfo(userNodePriv);
         if(infos != null && infos.size() > 0){
-            SimpleCache.putIntoCache(SimpleCache.CACHE_KEY_PREFIX_USER_NODE_PRIV+userNodePriv.getNodeId(),
+            SimpleCache.putIntoCache(JedisService.CACHE_KEY_PREFIX_USER_NODE_PRIV+userNodePriv.getNodeId(),
                     infos);
         }
 

@@ -12,9 +12,11 @@ import com.gbzt.gbztworkflow.modules.flowdefination.dao.LineDao;
 import com.gbzt.gbztworkflow.modules.flowdefination.dao.NodeDao;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
+import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationCacheService;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationService;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.UserNodePrivService;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.UserTreeInfo;
+import com.gbzt.gbztworkflow.modules.redis.service.JedisService;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.*;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.Task;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.TaskExecution;
@@ -54,6 +56,8 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
     @Autowired
     private DefinationService definationService;
     @Autowired
+    private DefinationCacheService definationCacheService;
+    @Autowired
     private UserNodePrivService nodeUserPrivService;
 
     @Autowired
@@ -70,6 +74,8 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
     private AffairConfiguerDao ad;
     @Autowired
     private CommonFileDao commonFileDao;
+    @Autowired
+    private JedisService jedisService;
 
 
     /**
@@ -91,6 +97,7 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
         targetBaseArg.lineDao = this.lineDao;
         targetBaseArg.definationService = this.definationService;
         targetBaseArg.nodeUserPrivService = this.nodeUserPrivService;
+        targetBaseArg.definationCacheService = this.definationCacheService;
 
         targetBaseArg.procInstDao = this.procInstDao;
         targetBaseArg.taskDao = this.taskDao;
@@ -98,6 +105,7 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
         targetBaseArg.histTaskDao = this.histTaskDao;
         targetBaseArg.histProcDao = this.histProcDao;
         targetBaseArg.ad = this.ad;
+        targetBaseArg.jedisService = this.jedisService;
     }
 
     /*

@@ -97,6 +97,7 @@ public class DefinationCacheService extends BaseService {
         String[] bussarr = new String[flow.getBussColumns().size()];
         affairConfiguerService.save(flow.getId(),flow.getBussColumns().toArray(bussarr));
 
+        refreshDetailDefination(flow.getId());
         return buildResult(true,"保存成功",null);
     }
 
@@ -319,8 +320,8 @@ public class DefinationCacheService extends BaseService {
             nodeIdMap.put(node.getId(),node);
         }
         flowInst.setAllNodes(allFlowNode);
-        flowInst.setNodeMap(nodeMap);
-        flowInst.setNodeIdMap(nodeIdMap);
+//        flowInst.setNodeMap(nodeMap);
+//        flowInst.setNodeIdMap(nodeIdMap);
 
         flowInst.setAllLines(allLines);
         Map<String,Line> lineMap = new HashMap<String,Line>();
@@ -333,12 +334,60 @@ public class DefinationCacheService extends BaseService {
 
     }
 
+    public Flow findDetailDefination(String flowId){
+        String key = JedisService.CACHE_KEY_PREFIX_FLOW_DETAIL+flowId;
+        String loggerType = LOGGER_TYPE_PREFIX+"findDetailDefination";
+
+        Flow flowInst = null;
+        String cachedValue = jedisService.findCachedString(key);
+        if(StringUtils.isBlank(cachedValue)){
+            return null;
+        }
+        try {
+            JSONObject jsonObject = JSONObject.fromObject(cachedValue);
+            JsonConfig jsonConfig = new JsonConfig();
+            Map<String,Class> classMap = new HashMap<>();
+            jsonConfig.setRootClass(Flow.class);
+            classMap.put("allNodes",Node.class);
+            classMap.put("allLines",Line.class);
+            classMap.put("outLines",Line.class);
+            classMap.put("inLines",Line.class);
+            classMap.put("nextNodes",Node.class);
+            classMap.put("foreNodes",Node.class);
+            classMap.put("allNodesInFlow",Node.class);
+            jsonConfig.setClassMap(classMap);
+
+            flowInst = (Flow)JSONObject.toBean(jsonObject,jsonConfig);
+            if(flowInst.getAllNodes() != null && flowInst.getAllNodes().size() > 0){
+                for(Node node : flowInst.getAllNodes()){
+                    flowInst.getNodeMap().put(node.getName(),node);
+                    flowInst.getNodeIdMap().put(node.getId(),node);
+                }
+            }
+            if(flowInst.getAllLines() != null && flowInst.getAllLines().size() > 0){
+                for(Line line : flowInst.getAllLines()){
+                    flowInst.getLineMap().put(line.getId(),line);
+                }
+            }
+            return flowInst;
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error(LogUtils.getMessage(loggerType,"缓存解析错误，缓存的当前值是："
+                    +cachedValue),e);
+        }
+        return null;
+    }
+
 
     public static void main(String[] args) {
         Flow flow = new Flow();
         flow.setId("12321321");
         flow.setFlowName("我是白痴");
         flow.setFormKey("/fdasfdsa/fdsafdsa/fdasfdsa");
+        List<String> bussColumn =new ArrayList<String>();
+        bussColumn.add("col1");
+        bussColumn.add("col2");
+        flow.setBussColumns(bussColumn);
         List<Node> allnodes =new ArrayList<Node>();
         Node node1 = new Node();
         node1.setId("bcxzvcxz1");
@@ -349,6 +398,14 @@ public class DefinationCacheService extends BaseService {
         node2.setSortNum(2);
         node2.setBeginNode(true);
         node2.setBeginNodeStr("true");
+
+        node1.getNextNodes().add(node2);
+        Line line =new Line();
+        line.setCanRetreat(true);
+        line.setCanWithdraw(false);
+        line.setFlowId("嘿嘿");
+        node1.getOutLines().add(line);
+
         allnodes.add(node1);
         allnodes.add(node2);
         flow.setAllNodes(allnodes);
@@ -370,6 +427,9 @@ public class DefinationCacheService extends BaseService {
         jsonConfig.setRootClass(Flow.class);
         classMap.put("allNodes",Node.class);
         classMap.put("allNodesInFlow",Node.class);
+        classMap.put("nextNodes",Node.class);
+        classMap.put("outLines",Line.class);
+
         jsonConfig.setClassMap(classMap);
 
 //        jsonConfig.setNewBeanInstanceStrategy(new NewBeanInstanceStrategy() {
@@ -429,6 +489,22 @@ public class DefinationCacheService extends BaseService {
             System.out.println(flow1.getNodeIdMap().get(key).getId());
             System.out.println(flow1.getNodeIdMap().get(key).getSortNum());
             System.out.println(flow1.getNodeIdMap().get(key).isBeginNode());
+        }
+        System.out.println(flow1.getBussColumns());
+        System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++");
+        for(Node tempNode : flow1.getAllNodes()){
+            List<Node> nextNodesListTmp = tempNode.getNextNodes();
+            List<Line> nextLinesListTmp = tempNode.getOutLines();
+            if(nextNodesListTmp != null && nextNodesListTmp.size() > 0){
+                for(Node nn : nextNodesListTmp){
+                    System.out.println(nn.getId()+" --- "+nn.getSortNum()+" -- "+nn.isBeginNode());
+                }
+            }
+            if(nextLinesListTmp != null && nextLinesListTmp.size() > 0){
+                for(Line ll : nextLinesListTmp){
+                    System.out.println(ll.getFlowId()+" --- "+ll.isCanRetreat()+" -- "+ll.isCanWithdraw());
+                }
+            }
         }
     }
 }

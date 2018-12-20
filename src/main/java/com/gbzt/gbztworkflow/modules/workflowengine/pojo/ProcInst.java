@@ -1,6 +1,7 @@
 package com.gbzt.gbztworkflow.modules.workflowengine.pojo;
 
 import com.gbzt.gbztworkflow.modules.base.BaseEntity;
+import com.gbzt.gbztworkflow.modules.redis.entity.RedisMapper;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -11,32 +12,43 @@ import java.util.Date;
 public class ProcInst extends BaseEntity {
     @Id
     @Column(name="id")
+    @RedisMapper
     private String id;
     @Column(name="flow_id")
+    @RedisMapper
     private String flowId;
     @Column(name="buss_id")
+    @RedisMapper
     private String bussId;
     @Column(name="buss_table")
+    @RedisMapper
     private String bussTable;
 
     @Column(name="finish_tag")
     @org.hibernate.annotations.Type(type="yes_no")
+    @RedisMapper
     private boolean finishTag;
     @Column(name="finish_time")
+    @RedisMapper
     private Date finishTime;
     @Column(name="duration")
+    @RedisMapper
     private Long duration;
 
     @Column(name="latest_task_id")
+    @RedisMapper
     private String latestTaskId;
     @Column(name="latest_task_user")
+    @RedisMapper
     private String latestTaskUser;
 
     @Column(name="owner_type")
     // owner range setting
+    @RedisMapper
     private String ownerType;
 
     @Column(name="form_key")
+    @RedisMapper
     private String formKey;
 
     public String getId() {

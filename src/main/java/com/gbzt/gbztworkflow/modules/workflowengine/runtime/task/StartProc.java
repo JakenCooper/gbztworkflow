@@ -53,7 +53,7 @@ public class StartProc extends EngineBaseExecutor {
             if(isBlank(execution.assignUser) && isBlank(execution.assignUserList)){
                 throw new EngineAccessException("no assigned user(s)..");
             }
-            Flow flowInst = getFlowComplete(arg.definationService,execution.flowId);
+            Flow flowInst = super.getFlowComplete(arg.definationService,arg.definationCacheService,execution.flowId);
             List<Node> nextNodes = flowInst.getStartNode().getNextNodes();
             Node endNode = null;
             for(Node node : nextNodes){
@@ -84,10 +84,13 @@ public class StartProc extends EngineBaseExecutor {
         procInst.setBussTable(arg.flowInst.getBussTableName());
         procInst.setCreateUser(execution.passUser);
         procInst.setFormKey(arg.flowInst.getFormKey());
-        arg.procInstDao.save(procInst);
+        if(!AppConst.REDIS_SWITCH) {
+            arg.procInstDao.save(procInst);
+        }else{
+            arg.jedisService.saveProcInst(procInst);
+        }
 
-        Flow flowInst = super.getFlowComplete(arg.definationService,execution.flowId);
-        //TODO cache oper
+        Flow flowInst = arg.flowInst;
 
         if(isNotBlank(execution.passStr)){
             TaskExecution nextExcution = new TaskExecution();

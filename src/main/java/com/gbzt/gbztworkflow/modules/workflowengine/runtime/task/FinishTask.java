@@ -4,6 +4,7 @@ import com.gbzt.gbztworkflow.consts.AppConst;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Line;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
+import com.gbzt.gbztworkflow.modules.redis.service.JedisService;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.HistTaskDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.TaskDao;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineAccessException;
@@ -20,6 +21,7 @@ import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.IEngineArg;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.entity.EngineTask;
 import com.gbzt.gbztworkflow.utils.CommonUtils;
 import org.apache.log4j.Logger;
+import redis.clients.jedis.Jedis;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -61,18 +63,29 @@ public class FinishTask extends EngineBaseExecutor {
         String taskId = execution.taskId;   // -
         String passStr = execution.passStr; //-
 
-        Task taskObj = arg.taskDao.findOne(taskId);
-        List<Task> subTasks = arg.taskDao.findTasksByParentTaskId(taskId);
+        Task taskObj = null;
+        List<Task> subTasks = null;
+        Node thisNode = null;
+        if(!AppConst.REDIS_SWITCH){
+            taskObj = arg.taskDao.findOne(taskId);
+            subTasks = arg.taskDao.findTasksByParentTaskId(taskId);
+            thisNode = arg.definationService.getNodeByIdSimple(taskObj.getNodeId());
+        }else{
+            taskObj = arg.jedisService.findTaskById(taskId);
+            subTasks = arg.jedisService.findSubTaskByTaskId(taskObj.getProcInstId(),taskObj.getId());
+            thisNode = arg.jedisService.findNodeById(taskObj.getNodeId());
+        }
 
         // for next task creation
         Line nextLine = null;
         String nextNodeId = null;
-        Node thisNode = arg.definationService.getNodeByIdSimple(taskObj.getNodeId());
-        Flow flowInst = super.getFlowComplete(arg.definationService,taskObj.getFlowId());
+
+        //zhangys
+        Flow flowInst = super.getFlowComplete(arg.definationService,arg.definationCacheService,taskObj.getFlowId());
         arg.flowInst = flowInst;
         // only parent task can move on to next task
         if(isNotBlank(passStr) && isBlank(taskObj.getParentTaskId())){
-            Object[] resultArr = super.getNextNodeInfo(arg.definationService,execution.flowId,
+            Object[] resultArr = super.getNextNodeInfo(arg.definationService,arg.definationCacheService,execution.flowId,
                     taskObj.getNodeId(),passStr);
             nextNodeId = ((Node)resultArr[0]).getId();
             nextLine = (Line)resultArr[1];
@@ -97,13 +110,18 @@ public class FinishTask extends EngineBaseExecutor {
             // 注意：soliduser是 “下一个节点的soliduser”
             String solidUser = null;
             if(isNotBlank(nextNodeId)){
-                Node nextNode =  arg.definationService.getNodeByIdSimple(nextNodeId);
+                Node nextNode = null;
+                if(!AppConst.REDIS_SWITCH) {
+                    nextNode = arg.definationService.getNodeByIdSimple(nextNodeId);
+                }else{
+                    nextNode = arg.jedisService.findNodeById(nextNodeId);
+                }
                 solidUser = nextNode.getAssignUser();
             }
             if(isBlank(subTasks)){
-                updateTask(taskObj,arg.taskDao,execution);
+                updateTask(taskObj,arg.taskDao,arg.jedisService,execution);
                 addVariables(arg);
-                addHistTask(taskObj,arg.histTaskDao,execution);
+                addHistTask(taskObj,arg.histTaskDao,arg.jedisService,execution);
                 if(isNotBlank(solidUser)){
                     nextArg.execution.assignUser = solidUser;
                 }
@@ -135,8 +153,8 @@ public class FinishTask extends EngineBaseExecutor {
                 if(isNotBlank(solidUser)){
                     execution.passUser = solidUser;
                 }
-                updateTask(taskObj,arg.taskDao,execution);
-                addHistTask(taskObj,arg.histTaskDao,execution);
+                updateTask(taskObj,arg.taskDao,arg.jedisService,execution);
+                addHistTask(taskObj,arg.histTaskDao,arg.jedisService,execution);
                 //默认选择第一个step，所以如果送阅任务可以到多个下一步节点，只有第一个会生效
                 nextNodeId = thisNode.getNextNodes().get(0).getId();
                 nextLine = flowInst.getLineMap().get(thisNode.getId()+","+nextNodeId);
@@ -158,9 +176,9 @@ public class FinishTask extends EngineBaseExecutor {
             }
         }else{
             //TODO consider finishType -
-            updateTask(taskObj,arg.taskDao,execution);
+            updateTask(taskObj,arg.taskDao,arg.jedisService,execution);
             addVariables(arg);
-            addHistTask(taskObj,arg.histTaskDao,execution);
+            addHistTask(taskObj,arg.histTaskDao,arg.jedisService,execution);
             // [logic] 每次完成子任务时，检测是否所有子任务都已经完成，如果所有子任务都已经完成，则将父任务标记为完成，
             //  顺便完成其他逻辑处理，例如创建histproc
             List<Task> finalSubTasks = arg.taskDao.findTasksByParentTaskId(taskId);
@@ -196,16 +214,20 @@ public class FinishTask extends EngineBaseExecutor {
         return null;
     }
 
-    private void updateTask(Task taskObj,TaskDao taskDao,TaskExecution execution){
+    private void updateTask(Task taskObj, TaskDao taskDao, JedisService jedisService,TaskExecution execution){
         taskObj.setFinishTag(true);
         taskObj.setFinishUser(execution.passUser); // -
         taskObj.setFinishTime(new Date());
         taskObj.setDuration(new Date().getTime()-taskObj.getCreateTime().getTime());
         taskObj.setDescription(execution.description);
-        taskDao.save(taskObj);
+        if(!AppConst.REDIS_SWITCH) {
+            taskDao.save(taskObj);
+        }else{
+            jedisService.updateTask(taskObj);
+        }
     }
 
-    private void addHistTask(Task taskObj,HistTaskDao histTaskDao,TaskExecution execution){
+    private void addHistTask(Task taskObj,HistTaskDao histTaskDao,JedisService jedisService,TaskExecution execution){
         histTaskDao.deleteHistTaskByProcInstIdAndUserId(taskObj.getProcInstId(),execution.passUser);
         HistTask histTask = new HistTask();
         histTask.genBaseVariables();;

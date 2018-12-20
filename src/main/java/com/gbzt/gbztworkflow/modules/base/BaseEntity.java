@@ -30,6 +30,9 @@ public class BaseEntity {
     @RedisMapper
     private String remark;
 
+    @Transient
+    private String delTagStr;
+
     public  void genBaseVariables(){
         if(createTime == null){
             createTime = new Date();
@@ -94,5 +97,13 @@ public class BaseEntity {
 
     public void setDelReason(String delReason) {
         this.delReason = delReason;
+    }
+
+    public String getDelTagStr() {
+        return delTagStr;
+    }
+
+    public void setDelTagStr(String delTagStr) {
+        this.delTagStr = delTagStr;
     }
 }

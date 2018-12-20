@@ -1,6 +1,7 @@
 package com.gbzt.gbztworkflow.modules.workflowengine.pojo;
 
 import com.gbzt.gbztworkflow.modules.base.BaseEntity;
+import com.gbzt.gbztworkflow.modules.redis.entity.RedisMapper;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -13,28 +14,39 @@ import java.util.List;
 public class Task extends BaseEntity {
     @Id
     @Column(name="id")
+    @RedisMapper
     private String id;
     @Column(name="task_type")
+    @RedisMapper
     private String taskType;  //usertask or systask
     @Column(name="proc_inst_id")
+    @RedisMapper
     private String procInstId;
     @Column(name="flow_id")
+    @RedisMapper
     private String flowId;
     @Column(name="buss_id")
+    @RedisMapper
     private String bussId;
     @Column(name="buss_table")
+    @RedisMapper
     private String bussTable;
     @Column(name="node_id")
+    @RedisMapper
     private String nodeId;
     @Column(name="node_name")
+    @RedisMapper
     private String nodeName;
     @Column(name="node_def_id")
+    @RedisMapper
     private String nodeDefId;
 
     @Column(name="parent_task_id")
+    @RedisMapper
     private String parentTaskId;
     @Column(name="child_task_tag")
     @org.hibernate.annotations.Type(type="yes_no")
+    @RedisMapper
     private boolean childTaskTag;
     @Transient
     private Task parentTask;
@@ -42,71 +54,99 @@ public class Task extends BaseEntity {
     private List<Task> subTasks;
 
     @Column(name="finish_type")
+    @RedisMapper
     private String finishType; // af,due to pass & [model] already-finish single/multi
     // (single+assginUser = normal task ; single+assignList = argument model ; multi+assignList = songyue/huiqian)
     @Column(name="assign_user")
+    @RedisMapper
     private String assignUser; // nf (atten:diff from assignuser in tasks and execs: user in next step or current step) not-finish
     @Column(name="claim_tag")
     @org.hibernate.annotations.Type(type="yes_no")
+    @RedisMapper
     private boolean claimTag; // nf(sub) and af due to claim
     @Column(name="claim_user")
+    @RedisMapper
     private String claimUser; // nf(sub) and af due to claim
     @Transient
+    @RedisMapper
     private List<String> assignUserList; // af
     @Column(name="owner")
+    @RedisMapper
     private String owner; // af,due to finishuser and owner settings [model]
     @Column(name="assign_time")
+    @RedisMapper
     private Date assignTime; //nf
     @Column(name="claim_time")
+    @RedisMapper
     private Date claimTime; //nf
     @Column(name="pass_str")
+    @RedisMapper
     private String passStr; //af
 
     @Column(name="finish_tag")
     @org.hibernate.annotations.Type(type="yes_no")
+    @RedisMapper
     private boolean finishTag;
     @Column(name="finish_user")
+    @RedisMapper
     private String finishUser;
     @Column(name="finish_time")
+    @RedisMapper
     private Date finishTime;
     @Column(name="duration")
+    @RedisMapper
     private Long duration;
     @Column(name="description")
+    @RedisMapper
     private String description;
     @Column(name="withdraw_tag")
     @org.hibernate.annotations.Type(type="yes_no")
+    @RedisMapper
     private boolean withdrawTag;
     @Column(name="retreat_tag")
     @org.hibernate.annotations.Type(type="yes_no")
+    @RedisMapper
     private boolean retreatTag;
     @Column(name="withdraw_description")
+    @RedisMapper
     private String withdrawDescription;
     @Column(name="retreat_description")
+    @RedisMapper
     private String retreatDescription;
 
     @Column(name="create_time_mills")
+    @RedisMapper
     private Long createTimeMills;
 
     // only useful for "multi" finish type
     @Column(name="execution_type")
+    @RedisMapper
     private String executionType; // (block or concurrent) [model]
     @Column(name="execution_order")
+    @RedisMapper
     private String executionOrder; // (if block,order for execution or decide every step)
 
     @Transient
+    @RedisMapper
     private boolean qcTag;
     @Transient
+    @RedisMapper
     private String qcUser;
     @Transient
+    @RedisMapper
     private boolean qcRtnTag;
     @Transient
+    @RedisMapper
     private String qcRtnDescription;
 
     @Transient
+    @RedisMapper
     private boolean transTag;
     @Transient
+    @RedisMapper
     private String transUser;
     @Transient
+    @RedisMapper
     private String transDescription;
 
     @Column(name="priority")

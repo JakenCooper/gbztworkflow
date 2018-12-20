@@ -3,6 +3,7 @@ package com.gbzt.gbztworkflow.modules.workflowengine.runtime.task;
 import com.gbzt.gbztworkflow.consts.AppConst;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.UserNodePriv;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.UserTreeInfo;
+import com.gbzt.gbztworkflow.modules.redis.service.JedisService;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineAccessException;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineRuntimeException;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.TaskExecution;
@@ -46,7 +47,7 @@ public class GetUserNodeData extends EngineBaseExecutor {
     public String executeEngineTask(EngineTask task) throws EngineRuntimeException {
         GetUserNodeData.GetUserNodeDataArg  arg = (GetUserNodeData.GetUserNodeDataArg)task.getArgs();
         TaskExecution execution = arg.execution;
-        List<UserTreeInfo> cacheinfos = (List<UserTreeInfo>)SimpleCache.getFromCache(SimpleCache.CACHE_KEY_PREFIX_USER_NODE_PRIV
+        List<UserTreeInfo> cacheinfos = (List<UserTreeInfo>)SimpleCache.getFromCache(JedisService.CACHE_KEY_PREFIX_USER_NODE_PRIV
                 +execution.nodeId);
         if(isNotBlank(cacheinfos)){
             task.setExecutedResult(cacheinfos);

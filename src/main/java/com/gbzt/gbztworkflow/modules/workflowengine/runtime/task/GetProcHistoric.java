@@ -70,7 +70,7 @@ public class GetProcHistoric extends EngineBaseExecutor {
         List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
         for(Task resultTask : finalTasks){
             Map<String,Object> resultMap = new HashMap<String,Object>();
-            Flow flowInst = super.getFlowComplete(arg.definationService,resultTask.getFlowId());
+            Flow flowInst = super.getFlowComplete(arg.definationService,null,resultTask.getFlowId());
             resultMap.put("taskId",resultTask.getId());
             resultMap.put("flowId",resultTask.getFlowId());
             resultMap.put("flowName",flowInst.getFlowName());

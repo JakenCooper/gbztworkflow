@@ -48,6 +48,9 @@ public class Node extends BaseEntity {
     private String assignUser;
     @Transient
     private String beginNodeStr;
+    @Transient
+    private String endNodeStr;
+
 
     public String getBeginNodeStr() {
         return beginNodeStr;

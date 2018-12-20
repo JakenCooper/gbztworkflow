@@ -2,6 +2,7 @@ package com.gbzt.gbztworkflow.utils;
 
 import com.gbzt.gbztworkflow.consts.ExecResult;
 import com.gbzt.gbztworkflow.modules.redis.entity.RedisMapper;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -107,6 +108,9 @@ public class CommonUtils {
                 if(checkDeclaredAnnotation(field.getDeclaredAnnotations(),RedisMapper.class)){
                     field.setAccessible(true);
                     String fieldStringValue = convertToString(field.get(t));
+                    if(fieldStringValue == null){
+                        continue;
+                    }
                     redisMapper.put(field.getName(),fieldStringValue);
                 }
             }
@@ -137,6 +141,9 @@ public class CommonUtils {
                         && redisMapper.get(field.getName()) != null){
                     field.setAccessible(true);
                     Object fieldValue = convertToFieldType(field.getType(),redisMapper.get(field.getName()));
+                    if(fieldValue == null){
+                        continue;
+                    }
                     field.set(t,fieldValue);
                 }
             }
@@ -157,6 +164,9 @@ public class CommonUtils {
     }
 
     private static <T> String convertToString(T t){
+        if(t == null){
+            return null;
+        }
         if(t.getClass() == String.class){
             return (String)t;
         }else if(t.getClass() == Integer.class){
@@ -177,12 +187,26 @@ public class CommonUtils {
             }else{
                 return "false";
             }
-        }else{
+        }else if(t.getClass() == List.class || t.getClass() == ArrayList.class){
+            List list = (List)t;
+            StringBuffer sb = new StringBuffer();
+            for(Object obj : list){
+                sb.append(obj.toString()).append(",");
+            }
+            if(sb.length() == 0){
+                return null;
+            }
+            return sb.substring(0,sb.length()-1);
+        }
+        else{
             return t.toString();
         }
     }
 
     private static <T> T convertToFieldType(Class<T> t,String target){
+        if(StringUtils.isBlank(target)){
+            return null;
+        }
         if(t == String.class){
             return (T) target;
         }else if(t == Integer.class){
@@ -204,7 +228,18 @@ public class CommonUtils {
             }else{
                 return (T)new Boolean(false);
             }
-        }else{
+        }else if(t == List.class || t == ArrayList.class){
+            List convertList = new ArrayList();
+            String[] targetArr = target.split(",");
+            if(targetArr == null || targetArr.length == 0){
+                return null;
+            }
+            for(String targetstr : targetArr){
+                convertList.add(targetstr);
+            }
+            return (T)convertList;
+        }
+        else{
             return (T)target;
         }
     }

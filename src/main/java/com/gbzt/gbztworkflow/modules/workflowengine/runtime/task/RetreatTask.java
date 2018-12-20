@@ -176,7 +176,8 @@ public class RetreatTask extends EngineBaseExecutor {
         HistProc lastHistProc = histProcs.get(histProcs.size()-1);
         HistProc secondLastHistProc = histProcs.get(histProcs.size()-2);
 
-        Flow flowInst = super.getFlowComplete(arg.definationService,procInst.getFlowId());
+        //zhangys
+        Flow flowInst = super.getFlowComplete(arg.definationService,null,procInst.getFlowId());
         Node secondLastNode = flowInst.getNodeIdMap().get(secondLastHistProc.getNodeId());
         Node lastNode  = flowInst.getNodeIdMap().get(lastHistProc.getNodeId());
         Line line = flowInst.getLineMap().get(secondLastNode.getId()+","+lastNode.getId());
