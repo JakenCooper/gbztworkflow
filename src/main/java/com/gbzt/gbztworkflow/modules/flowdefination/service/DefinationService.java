@@ -344,7 +344,7 @@ public class DefinationService extends BaseService {
 
     private void refreshDetailDefination(String flowId){
         String loggerType = LOGGER_TYPE_PREFIX+"refreshDetailDefination";
-        String key = "flow_defination_detail_"+flowId;
+        String key = JedisService.CACHE_KEY_PREFIX_FLOW_DETAIL+flowId;
         if(SimpleCache.inCache(key)){
             SimpleCache.remove(key);
         }
@@ -352,7 +352,7 @@ public class DefinationService extends BaseService {
 
     public void generateDetailDefination(String flowId){
         String loggerType = LOGGER_TYPE_PREFIX+"generateDetailDefination";
-        String key = SimpleCache.CACHE_KEY_PREFIX_FLOW_DETAIL+flowId;
+        String key = JedisService.CACHE_KEY_PREFIX_FLOW_DETAIL+flowId;
         if(SimpleCache.inCache(key)){
             return ;
         }

@@ -46,6 +46,16 @@ public class Node extends BaseEntity {
     @Column(name="assign_user")
     @RedisMapper
     private String assignUser;
+    @Transient
+    private String beginNodeStr;
+
+    public String getBeginNodeStr() {
+        return beginNodeStr;
+    }
+
+    public void setBeginNodeStr(String beginNodeStr) {
+        this.beginNodeStr = beginNodeStr;
+    }
 
     @Transient
     private List<Line> outLines = new ArrayList<Line>();

@@ -1,10 +1,7 @@
 package com.gbzt.gbztworkflow.modules.redis.service;
 
 import com.gbzt.gbztworkflow.modules.base.BaseService;
-import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
-import com.gbzt.gbztworkflow.modules.flowdefination.entity.FlowBuss;
-import com.gbzt.gbztworkflow.modules.flowdefination.entity.Line;
-import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
+import com.gbzt.gbztworkflow.modules.flowdefination.entity.*;
 import com.gbzt.gbztworkflow.modules.redis.exception.JedisRuntimeException;
 import com.gbzt.gbztworkflow.modules.redis.pool.JedisTool;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.ProcInst;
@@ -17,6 +14,12 @@ import java.util.*;
 
 @Service
 public class JedisService extends BaseService {
+
+    // 这里只是声明键的名称，而真正的保存方式可能是由SimpleCache提供，也有可能是由该类提供
+    /** seperation: flowid*/
+    public static final String CACHE_KEY_PREFIX_FLOW_DETAIL = "cache_flow_defination_detail_";
+    /** seperation: nodeid*/
+    public static final String CACHE_KEY_PREFIX_USER_NODE_PRIV="cache_user_node_priv_";
 
     private Logger logger = Logger.getLogger(JedisService.class);
     private static String STATIC_BEGIN_IDX = "0";
@@ -42,8 +45,14 @@ public class JedisService extends BaseService {
     private static String KEY_NODE = "node:";
     //ns:[lineid],key:hash key,type:hash
     private static String KEY_LINE = "line:";
-    //ns:none,key:[flowid]![nodeid]![lineid],type:hash (hash value:create_time)
+    //ns:none,key:[flowid]![nodeid]![lineid],type:hash (hash value:nodeid or endnodeid)!important
     private static String KEY_FLOW_NODE_LINE = "flow!node!line:";
+
+    //ns:[nodeid],key:[usernodeprivid],type:set ---- //special:only one element in this set.
+    private static String KEY_NODE_USERNODEPRIV = "node!usernodepriv:";
+
+    //ns:[usernodeprivid],key:hash,type:hash
+    private static String KEY_USERNODEPRIV = "usernodepriv:";
 
     //+++++++++++++++++++++ flow related --begin
     /***
@@ -675,6 +684,50 @@ public class JedisService extends BaseService {
         }
     }
 
+
+    public UserNodePriv findUserNodePrivByNodeId(String nodeId){
+        Jedis jedisClient = JedisTool.getJedis();
+        try{
+            List<UserNodePriv> userNodePrivs = internalFindAllSubElements(true,KEY_NODE_USERNODEPRIV + nodeId,
+                    null,CONSTRUCTOR_TYPE_SET,KEY_USERNODEPRIV,new UserNodePriv());
+            return userNodePrivs.get(0);
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
+
+    public void saveUserNodePrivs(UserNodePriv userNodePriv){
+        Jedis jedisClient = JedisTool.getJedis();
+        try{
+            internalClearParentAndSubElements(KEY_NODE_USERNODEPRIV + userNodePriv.getNodeId(),
+                    userNodePriv.getId(),CONSTRUCTOR_TYPE_SET,KEY_USERNODEPRIV);
+            internalAddParentAndSubElements(KEY_NODE_USERNODEPRIV + userNodePriv.getNodeId(),
+                    new String[]{userNodePriv.getId(),null},CONSTRUCTOR_TYPE_SET,
+                    KEY_USERNODEPRIV+userNodePriv.getId(),userNodePriv);
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
+
+    public void delUserNodePrivs(UserNodePriv userNodePriv){
+        Jedis jedisClient = JedisTool.getJedis();
+        try{
+            internalClearParentAndSubElements(KEY_NODE_USERNODEPRIV + userNodePriv.getNodeId(),
+                    userNodePriv.getId(),CONSTRUCTOR_TYPE_SET,KEY_USERNODEPRIV);
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
+
     //+++++++++++++++++++++ flow runtime related --begin
     public ProcInst findProcInstById(String procInstId){
         Jedis jedisClient = JedisTool.getJedis();
@@ -770,22 +823,22 @@ public class JedisService extends BaseService {
 
     // parentKey can be in or nn , childType must be in
     private void internalClearParentAndSubElements(Pipeline pipeline,String parentKey,String parentValue,
-                                                   String constructorType,String childType){
+                                                   String constructorType,String childKey){
         pipeline.multi();
         if(constructorType.equals(CONSTRUCTOR_TYPE_SET)){
             pipeline.srem(parentKey,parentValue);
         }else if(constructorType.equals(CONSTRUCTOR_TYPE_ZSET)){
             pipeline.zrem(parentKey,parentValue);
         }
-        pipeline.del(childType + parentValue);
+        pipeline.del(childKey + parentValue);
         pipeline.exec();
     }
     private void internalClearParentAndSubElements(String parentKey,String parentValue,
-                                                   String constructorType,String childType){
+                                                   String constructorType,String childKey){
         Jedis jedisClient = JedisTool.getJedis();
         try{
             Pipeline pipeline = jedisClient.pipelined();
-            internalClearParentAndSubElements(pipeline,parentKey,parentValue,constructorType,childType);
+            internalClearParentAndSubElements(pipeline,parentKey,parentValue,constructorType,childKey);
         }catch(Exception e){
             e.printStackTrace();
             throw new JedisRuntimeException(e);
@@ -794,7 +847,7 @@ public class JedisService extends BaseService {
         }
     }
 
-    private void internalClearAllParentAndSubElements(String parentKey,String constructorType,String childType){
+    private void internalClearAllParentAndSubElements(String parentKey,String constructorType,String childKey){
         Jedis jedisClient = JedisTool.getJedis();
         try{
             Set<String> parentKeySets = null;
@@ -809,8 +862,8 @@ public class JedisService extends BaseService {
             Pipeline pipeline = jedisClient.pipelined();
             pipeline.multi();
             pipeline.del(parentKey);
-            for(String childKey : parentKeySets){
-                pipeline.del(childType + childKey);
+            for(String childKeyValue : parentKeySets){
+                pipeline.del(childKey + childKeyValue);
             }
             pipeline.exec();
             pipeline.sync();
@@ -825,25 +878,25 @@ public class JedisService extends BaseService {
 
     // parentKey can be in or nn , childType must be in
     private <T> void internalAddParentAndSubElements(Pipeline pipeline,String parentKey,String[] parentValue,
-                                                     String constructorType,String childType,T t){
+                                                     String constructorType,String childKey,T t){
         pipeline.multi();
         if(constructorType.equals(CONSTRUCTOR_TYPE_SET)){
             pipeline.sadd(parentKey,parentValue[0]);
         }else if(constructorType.equals(CONSTRUCTOR_TYPE_ZSET)){
             pipeline.zadd(parentKey,Double.parseDouble(parentValue[1]),parentValue[0]);
         }
-        pipeline.del(childType);
+        pipeline.del(childKey);
         Map<String,String> childMap = CommonUtils.redisConvert(t);
-        pipeline.hmset(childType,childMap);
+        pipeline.hmset(childKey,childMap);
         pipeline.exec();
     }
 
     private <T> void internalAddParentAndSubElements(String parentKey,String[] parentValue,
-                                                     String constructorType,String childType,T t){
+                                                     String constructorType,String childKey,T t){
         Jedis jedisClient = JedisTool.getJedis();
         try{
             Pipeline pipeline = jedisClient.pipelined();
-            internalAddParentAndSubElements(pipeline,parentKey,parentValue,constructorType,childType,t);
+            internalAddParentAndSubElements(pipeline,parentKey,parentValue,constructorType,childKey,t);
         }catch(Exception e){
             e.printStackTrace();
             throw new JedisRuntimeException(e);

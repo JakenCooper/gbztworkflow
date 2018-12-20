@@ -15,14 +15,20 @@ import com.gbzt.gbztworkflow.modules.workflowengine.dao.ProcInstDao;
 import com.gbzt.gbztworkflow.utils.CommonUtils;
 import com.gbzt.gbztworkflow.utils.LogUtils;
 import com.gbzt.gbztworkflow.utils.SimpleCache;
-import net.sf.json.JSON;
+import net.sf.ezmorph.Morpher;
+import net.sf.ezmorph.MorpherRegistry;
+import net.sf.ezmorph.bean.BeanMorpher;
+import net.sf.ezmorph.bean.MorphDynaBean;
 import net.sf.json.JSONObject;
+import net.sf.json.JsonConfig;
+import net.sf.json.util.NewBeanInstanceStrategy;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 @Service
@@ -279,13 +285,13 @@ public class DefinationCacheService extends BaseService {
 
     private void refreshDetailDefination(String flowId){
         String loggerType = LOGGER_TYPE_PREFIX+"refreshDetailDefination";
-        String key = SimpleCache.CACHE_KEY_PREFIX_FLOW_DETAIL+flowId;
+        String key = JedisService.CACHE_KEY_PREFIX_FLOW_DETAIL+flowId;
         jedisService.setCachedString(key,null);
     }
 
     public void generateDetailDefination(String flowId){
         String loggerType = LOGGER_TYPE_PREFIX+"generateDetailDefination";
-        String key = SimpleCache.CACHE_KEY_PREFIX_FLOW_DETAIL+flowId;
+        String key = JedisService.CACHE_KEY_PREFIX_FLOW_DETAIL+flowId;
         if(jedisService.findCachedString(key) != null){
             return ;
         }
@@ -325,5 +331,104 @@ public class DefinationCacheService extends BaseService {
 
         jedisService.setCachedString(key,JSONObject.fromObject(flowInst).toString());
 
+    }
+
+
+    public static void main(String[] args) {
+        Flow flow = new Flow();
+        flow.setId("12321321");
+        flow.setFlowName("我是白痴");
+        flow.setFormKey("/fdasfdsa/fdsafdsa/fdasfdsa");
+        List<Node> allnodes =new ArrayList<Node>();
+        Node node1 = new Node();
+        node1.setId("bcxzvcxz1");
+        node1.setSortNum(3);
+        node1.setBeginNode(true);
+        Node node2 = new Node();
+        node2.setId("bbbbbbbb");
+        node2.setSortNum(2);
+        node2.setBeginNode(true);
+        node2.setBeginNodeStr("true");
+        allnodes.add(node1);
+        allnodes.add(node2);
+        flow.setAllNodes(allnodes);
+        flow.setStartNode(node1);
+        Map<String,Object> argMap = new HashMap<String,Object>();
+        argMap.put("allNodes",Node.class);
+        argMap.put("allNodesInFlow",Node.class);
+        Map<String,Node> beginNodeMap = new HashMap<String,Node>();
+        beginNodeMap.put("fds",node2);
+        flow.setNodeIdMap(beginNodeMap);
+//        argMap.put("nodeIdMap",Map.class);
+
+        String str = JSONObject.fromObject(flow).toString();
+        System.out.println(str);
+        JSONObject obj = JSONObject.fromObject(str);
+//        Flow flow1 = (Flow)JSONObject.toBean(obj,Flow.class,argMap);
+        JsonConfig jsonConfig = new JsonConfig();
+        Map<String,Class> classMap = new HashMap<>();
+        jsonConfig.setRootClass(Flow.class);
+        classMap.put("allNodes",Node.class);
+        classMap.put("allNodesInFlow",Node.class);
+        jsonConfig.setClassMap(classMap);
+
+//        jsonConfig.setNewBeanInstanceStrategy(new NewBeanInstanceStrategy() {
+//            @Override
+//            public Object newInstance(Class target, JSONObject source)
+//                    throws InstantiationException, IllegalAccessException,
+//                    SecurityException, NoSuchMethodException, InvocationTargetException {
+//                System.out.println("target ============"+target.getName());
+//                if( target != null ){
+//                    if(target.getName().equals(Line.class.getName())){
+//                        return new Line();
+//                    }
+//                    if(target.getName().equals(Map.class.getName())){
+//                        return new HashMap();
+//                    }
+//                    return NewBeanInstanceStrategy.DEFAULT.newInstance(target, source);
+//                }
+//
+//                return null;
+//            }
+//        });
+
+        Flow flow1 = (Flow)JSONObject.toBean(obj,jsonConfig);
+        System.out.println(flow1.getId());
+        System.out.println(flow1.getFlowName());
+        System.out.println(flow1.getFormKey());
+        System.out.println(flow1.getStartNode().getId());
+        for(Node testnode : flow1.getAllNodes()){
+            System.out.println(testnode.getId());
+            System.out.println(testnode.getSortNum());
+            System.out.println(testnode.isBeginNode());
+            System.out.println("---------------");
+        }
+        Map<String,Node> nodeIdMap = flow1.getNodeIdMap();
+        Iterator<String> nodeIdIterator = nodeIdMap.keySet().iterator();
+        MorpherRegistry morpherRegistry = new MorpherRegistry();
+        Map<String,Node> outputMap = new HashMap<String,Node>();
+        Morpher dynaMorpher = new BeanMorpher(Node.class,morpherRegistry,true);
+        morpherRegistry.registerMorpher(dynaMorpher);
+        while(nodeIdIterator.hasNext()){
+            String nodeIdtmp = nodeIdIterator.next();
+            Object tempObj = nodeIdMap.get(nodeIdtmp);
+            outputMap.put(nodeIdtmp,(Node)morpherRegistry.morph(Node.class, tempObj));
+
+//            System.out.println(tempObj.getClass().getName());
+//            MorphDynaBean dynaBean = (MorphDynaBean)tempObj;
+//            System.out.println(nodeIdMap.get(nodeIdtmp).getId());
+        }
+        flow1.setNodeIdMap(outputMap);
+        System.out.println("==============================================");
+        Iterator<String> finalIterator = flow1.getNodeIdMap().keySet().iterator();
+        while(finalIterator.hasNext()){
+            String key = finalIterator.next();
+            if("true".equals(flow1.getNodeIdMap().get(key).getBeginNodeStr())){
+                flow1.getNodeIdMap().get(key).setBeginNode(true);
+            }
+            System.out.println(flow1.getNodeIdMap().get(key).getId());
+            System.out.println(flow1.getNodeIdMap().get(key).getSortNum());
+            System.out.println(flow1.getNodeIdMap().get(key).isBeginNode());
+        }
     }
 }
