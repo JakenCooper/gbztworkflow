@@ -47,11 +47,17 @@ public class GetProcHistoric extends EngineBaseExecutor {
         GetProcHistoric.GetProcHistoricArg arg = (GetProcHistoric.GetProcHistoricArg)task.getArgs();
         TaskExecution execution = arg.execution;
         List<Task> finalTasks = new ArrayList<>();
-        // [logic] 默认情况走上面的if条件
+        // [logic] 默认情况走上面的if条件，也就是查询所有去除子任务对应父任务的任务
         if(!execution.childTaskTag){
             // historic runtime infos for proc.
-            finalTasks  = arg.taskDao.findTasksByProcInstIdAndChildTaskTagOrderByCreateTimeMillsDesc(execution.procInstId,false);
+            if(!AppConst.REDIS_SWITCH) {
+                finalTasks = arg.taskDao.findTasksByProcInstIdAndChildTaskTagOrderByCreateTimeMillsDesc(execution.procInstId, false);
+            }else{
+                finalTasks = arg.jedisService.findTaskByProcInstIdAndChildTag(execution.procInstId,false);
+            }
         }else{
+            System.out.println("=============================================== unknown");
+            // TODO 逻辑看不懂了
             Set<String> taskIdFilter = new HashSet<String>();
             List<Task> preTakss = arg.taskDao.findTasksByProcInstIdAndChildTaskTagOrderByCreateTimeDesc(execution.procInstId,false);
             for(Task preTask : preTakss){
@@ -70,7 +76,7 @@ public class GetProcHistoric extends EngineBaseExecutor {
         List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
         for(Task resultTask : finalTasks){
             Map<String,Object> resultMap = new HashMap<String,Object>();
-            Flow flowInst = super.getFlowComplete(arg.definationService,null,resultTask.getFlowId());
+            Flow flowInst = super.getFlowComplete(arg.definationService,arg.definationCacheService,resultTask.getFlowId());
             resultMap.put("taskId",resultTask.getId());
             resultMap.put("flowId",resultTask.getFlowId());
             resultMap.put("flowName",flowInst.getFlowName());

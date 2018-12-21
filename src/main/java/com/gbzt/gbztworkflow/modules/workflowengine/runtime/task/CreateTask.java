@@ -193,6 +193,11 @@ public class CreateTask extends EngineBaseExecutor {
                 arg.histProcDao.save(histProc);
             }else{
                 arg.jedisService.saveHistProc(histProc);
+                if(subTasks.size() > 0){
+                    arg.jedisService.batchSaveUndo(subTasks);
+                }else{
+                    arg.jedisService.saveHistTaskOrUndo(null,taskObj);
+                }
             }
         }
 

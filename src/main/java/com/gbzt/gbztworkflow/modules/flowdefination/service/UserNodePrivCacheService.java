@@ -12,6 +12,7 @@ import com.gbzt.gbztworkflow.utils.CommonUtils;
 import com.gbzt.gbztworkflow.utils.SimpleCache;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
@@ -34,6 +35,8 @@ public class UserNodePrivCacheService extends MetadataService {
 
     @Autowired
     private JedisService jedisService;
+
+    private Logger logger= Logger.getLogger(UserNodePrivCacheService.class);
 
     private class UserOffice{
         private String id;
@@ -293,6 +296,18 @@ public class UserNodePrivCacheService extends MetadataService {
         }
 
         return buildResult(true,"","success");
+    }
+
+    public List<UserTreeInfo> getFromCache(JedisService jedisService , String nodeId){
+        String cacheKey = JedisService.CACHE_KEY_PREFIX_USER_NODE_PRIV + nodeId;
+        String str = jedisService.findCachedString(cacheKey);
+        if(StringUtils.isBlank(str)){
+            logger.warn("cache str empty,nodeid === "+nodeId);
+            return new ArrayList();
+        }
+        JSONObject jsonObject = JSONObject.fromObject(str);
+        List<UserTreeInfo> userTreeInfos = (List<UserTreeInfo>)JSONObject.toBean(jsonObject,List.class);
+        return userTreeInfos;
     }
 
 

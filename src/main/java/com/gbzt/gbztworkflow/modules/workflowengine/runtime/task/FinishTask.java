@@ -181,7 +181,12 @@ public class FinishTask extends EngineBaseExecutor {
             addHistTask(taskObj,arg.histTaskDao,arg.jedisService,execution);
             // [logic] 每次完成子任务时，检测是否所有子任务都已经完成，如果所有子任务都已经完成，则将父任务标记为完成，
             //  顺便完成其他逻辑处理，例如创建histproc
-            List<Task> finalSubTasks = arg.taskDao.findTasksByParentTaskId(taskId);
+            List<Task> finalSubTasks = null;
+            if(!AppConst.REDIS_SWITCH){
+                finalSubTasks = arg.taskDao.findTasksByParentTaskId(taskId);
+            }else{
+                finalSubTasks = arg.jedisService.findSubTaskByTaskId(taskObj.getProcInstId(),taskObj.getId());
+            }
             boolean allFinished = true;
             for(Task finalTask : finalSubTasks){
                 if(!finalTask.isFinishTag()){
@@ -190,7 +195,12 @@ public class FinishTask extends EngineBaseExecutor {
                 }
             }
             if(allFinished){
-                Task parentTask = arg.taskDao.findOne(taskObj.getParentTaskId());
+                Task parentTask = null;
+                if(AppConst.REDIS_SWITCH){
+                    parentTask = arg.taskDao.findOne(taskObj.getParentTaskId());
+                }else{
+                    parentTask = arg.jedisService.findTaskById(taskObj.getParentTaskId());
+                }
                 execution.taskId = parentTask.getId();
                 // [logic] 对创建多实例下一步任务的必要属性进行设置 -- begin
                 execution.passUser = parentTask.getCreateUser();
@@ -224,18 +234,24 @@ public class FinishTask extends EngineBaseExecutor {
             taskDao.save(taskObj);
         }else{
             jedisService.updateTask(taskObj);
+            jedisService.delUndoWhenFinishTask(execution.passUser,taskObj.getProcInstId(),taskObj.getId());
         }
     }
 
     private void addHistTask(Task taskObj,HistTaskDao histTaskDao,JedisService jedisService,TaskExecution execution){
-        histTaskDao.deleteHistTaskByProcInstIdAndUserId(taskObj.getProcInstId(),execution.passUser);
         HistTask histTask = new HistTask();
-        histTask.genBaseVariables();;
+        histTask.genBaseVariables();
         histTask.setId(CommonUtils.genUUid());
         histTask.setTaskId(taskObj.getId());
         histTask.setProcInstId(taskObj.getProcInstId());
         histTask.setUserId(execution.passUser);
-        histTaskDao.save(histTask);
+        if(!AppConst.REDIS_SWITCH) {
+            histTaskDao.deleteHistTaskByProcInstIdAndUserId(taskObj.getProcInstId(), execution.passUser);
+            histTaskDao.save(histTask);
+        }else{
+            jedisService.delHistTaskByUserIdAndProcInstId(histTask.getUserId(),histTask.getProcInstId());
+            jedisService.saveHistTaskOrUndo(histTask,null);
+        }
     }
 
     private void addVariables(FinishTask.FinishTaskArg arg){
@@ -269,7 +285,11 @@ public class FinishTask extends EngineBaseExecutor {
                 taskVariables.setCreateUser(execution.passUser);
                 variables.add(taskVariables);
             }
-            arg.taskVariableDao.save(variables);
+            if(!AppConst.REDIS_SWITCH) {
+                arg.taskVariableDao.save(variables);
+            }else{
+                arg.jedisService.saveTaskVariables(variables);
+            }
         }
     }
 

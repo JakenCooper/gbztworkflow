@@ -14,6 +14,7 @@ import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationCacheService;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationService;
+import com.gbzt.gbztworkflow.modules.flowdefination.service.UserNodePrivCacheService;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.UserNodePrivService;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.UserTreeInfo;
 import com.gbzt.gbztworkflow.modules.redis.service.JedisService;
@@ -76,6 +77,8 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
     private CommonFileDao commonFileDao;
     @Autowired
     private JedisService jedisService;
+    @Autowired
+    private UserNodePrivCacheService nodeUserPrivCacheService;
 
 
     /**
@@ -98,6 +101,7 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
         targetBaseArg.definationService = this.definationService;
         targetBaseArg.nodeUserPrivService = this.nodeUserPrivService;
         targetBaseArg.definationCacheService = this.definationCacheService;
+        targetBaseArg.nodeUserPrivCacheService = this.nodeUserPrivCacheService;
 
         targetBaseArg.procInstDao = this.procInstDao;
         targetBaseArg.taskDao = this.taskDao;

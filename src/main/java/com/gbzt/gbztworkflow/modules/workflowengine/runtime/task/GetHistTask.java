@@ -91,98 +91,175 @@ public class GetHistTask extends EngineBaseExecutor {
                 } else {
                     continue;
                 }
-                List<TaskVariables> taskVariablesList = arg.taskVariableDao.findTaskVariablesByTypeAndKeyAndValue(varType,realKey,argValue);
+                List<TaskVariables> taskVariablesList = null;
+                if(!AppConst.REDIS_SWITCH) {
+                    taskVariablesList = arg.taskVariableDao.findTaskVariablesByTypeAndKeyAndValue(varType, realKey, argValue);
+                }else{
+                    taskVariablesList = arg.jedisService.findTaskVariablesByTypeAndKeyAndValue(varType,realKey,argValue);
+                }
                 oriTaskVariables.addAll(taskVariablesList);
             }
         }
 
 
-        // TODO wrong usage... must use join search !
-        List<HistTask> histTasks = arg.histTaskDao.findHistTasksByUserId(execution.passUser);
-        if(isBlank(histTasks)){
-            arg.taskModel.setTotalPage(0);
-            arg.taskModel.setPageNum(pageNum+1);
-            arg.taskModel.setPageSize(pageSize);
-            arg.taskModel.setTotalCount(0l);
-            arg.taskModel.setExecResult(CommonUtils.buildResult(true,"",new ArrayList<Map<String,Object>>()));
-            task.setExecutedResult(arg.taskModel);
-            return "success";
-        }
-        final List<String> taskIds = new ArrayList<String>();
-        for(HistTask histTask : histTasks){
-            taskIds.add(histTask.getTaskId());
-        }
+        if(!AppConst.REDIS_SWITCH) {
+            // TODO wrong usage... must use join search !
+            List<HistTask> histTasks = arg.histTaskDao.findHistTasksByUserId(execution.passUser);
+            if (isBlank(histTasks)) {
+                arg.taskModel.setTotalPage(0);
+                arg.taskModel.setPageNum(pageNum + 1);
+                arg.taskModel.setPageSize(pageSize);
+                arg.taskModel.setTotalCount(0l);
+                arg.taskModel.setExecResult(CommonUtils.buildResult(true, "", new ArrayList<Map<String, Object>>()));
+                task.setExecutedResult(arg.taskModel);
+                return "success";
+            }
+            final List<String> taskIds = new ArrayList<String>();
+            for (HistTask histTask : histTasks) {
+                taskIds.add(histTask.getTaskId());
+            }
 
-        Sort sort = new Sort(Sort.Direction.DESC,"createTime");
-        Specification<Task> specification = new Specification<Task>() {
-            @Override
-            public Predicate toPredicate(Root<Task> root, CriteriaQuery<?> criteriaQuery, CriteriaBuilder criteriaBuilder) {
-                List<Predicate> predicates = new ArrayList<Predicate>();
-                CriteriaBuilder.In<Object> in = criteriaBuilder.in(root.get("id"));
-                for (String taskId : taskIds) {
-                    in.value(taskId);
+            Sort sort = new Sort(Sort.Direction.DESC, "createTime");
+            Specification<Task> specification = new Specification<Task>() {
+                @Override
+                public Predicate toPredicate(Root<Task> root, CriteriaQuery<?> criteriaQuery, CriteriaBuilder criteriaBuilder) {
+                    List<Predicate> predicates = new ArrayList<Predicate>();
+                    CriteriaBuilder.In<Object> in = criteriaBuilder.in(root.get("id"));
+                    for (String taskId : taskIds) {
+                        in.value(taskId);
+                    }
+                    predicates.add(in);
+
+                    if (oriTaskVariables.size() > 0) {
+                        // 按照变量类型过滤相关属性(流程类型必须按照流程实例id进行过滤——【【【【【因为不可能每一个task都提交任务变量！！！！！】】】】)
+                        // 任务类型就按照任务id进行过滤，其含义是精确过滤某些任务
+                        if (typeArr[0].equals(TaskVariables.VARS_TYPE_PROC)) {
+                            Set<String> procInstIds = new HashSet<String>();
+                            for (TaskVariables tmpTaskVariable : oriTaskVariables) {
+                                procInstIds.add(tmpTaskVariable.getProcInstId());
+                            }
+                            Expression<String> inexpression = root.<String>get("procInstId");
+                            predicates.add(inexpression.in(procInstIds));
+                        } else if (typeArr[0].equals(TaskVariables.VARS_TYPE_TASK)) {
+                            Set<String> taskIds = new HashSet<String>();
+                            for (TaskVariables tmpTaskVariable : oriTaskVariables) {
+                                taskIds.add(tmpTaskVariable.getTaskId());
+                            }
+                            Expression<String> inexpression = root.<String>get("id");
+                            predicates.add(inexpression.in(taskIds));
+                        }
+                    }
+
+                    Predicate[] predicateArray = new Predicate[predicates.size()];
+                    return criteriaBuilder.and(predicates.toArray(predicateArray));
                 }
-                predicates.add(in);
+            };
+            Pageable pageable = new PageRequest(pageNum, pageSize, sort);
+            Page<Task> pageResult = arg.taskDao.findAll(specification, pageable);
+            List<Map<String, Object>> resultList = new ArrayList<Map<String, Object>>();
 
-                if(oriTaskVariables.size() > 0){
-                    // 按照变量类型过滤相关属性(流程类型必须按照流程实例id进行过滤——【【【【【因为不可能每一个task都提交任务变量！！！！！】】】】)
-                    // 任务类型就按照任务id进行过滤，其含义是精确过滤某些任务
-                    if(typeArr[0].equals(TaskVariables.VARS_TYPE_PROC)){
-                        Set<String> procInstIds = new HashSet<String>();
-                        for(TaskVariables tmpTaskVariable : oriTaskVariables){
-                            procInstIds.add(tmpTaskVariable.getProcInstId());
-                        }
-                        Expression<String> inexpression = root.<String>get("procInstId");
-                        predicates.add(inexpression.in(procInstIds));
-                    }else if(typeArr[0].equals(TaskVariables.VARS_TYPE_TASK)){
-                        Set<String> taskIds = new HashSet<String>();
-                        for(TaskVariables tmpTaskVariable : oriTaskVariables){
-                            taskIds.add(tmpTaskVariable.getTaskId());
-                        }
-                        Expression<String> inexpression = root.<String>get("id");
-                        predicates.add(inexpression.in(taskIds));
+            arg.taskModel.setTotalPage(pageResult.getTotalPages());
+            arg.taskModel.setPageNum(pageNum + 1);
+            arg.taskModel.setPageSize(pageSize);
+            arg.taskModel.setTotalCount(pageResult.getTotalElements());
+            Integer currentIdx = 0;
+            for (Task resultTask : pageResult.getContent()) {
+                Map<String, Object> resultMap = new HashMap<String, Object>();
+                Flow flowInst = super.getFlowComplete(arg.definationService, arg.definationCacheService, resultTask.getFlowId());
+                Task lastTask = arg.taskDao.findFirstByProcInstIdOrderByCreateTimeDesc(resultTask.getProcInstId());
+                resultMap.put("taskId", resultTask.getId());
+                resultMap.put("flowId", resultTask.getFlowId());
+                resultMap.put("flowName", flowInst.getFlowName());
+                resultMap.put("assignUser", resultTask.getAssignUser());
+                resultMap.put("procInstId", resultTask.getProcInstId());
+                resultMap.put("nodeId", resultTask.getNodeId());
+                try {
+                    resultMap.put("nodeName", flowInst.getNodeIdMap().get(lastTask.getNodeId()).getName());
+                } catch (Exception e) {
+                    resultMap.put("nodeName", "空");
+                }
+                resultMap.put("nodeDefId", resultTask.getNodeDefId());
+                resultMap.put("bussId", resultTask.getBussId());
+                resultMap.put("bussTable", resultTask.getBussTable());
+                resultMap.put("formKey", flowInst.getFormKey());
+                resultMap.put("description", resultTask.getDescription());
+                resultMap.put("startTime", resultTask.getCreateTime());
+                resultMap.put("endTime", resultTask.getFinishTime());
+                resultList.add(resultMap);
+                if(++currentIdx > pageSize){
+                    break;
+                }
+            }
+            arg.taskModel.setExecResult(CommonUtils.buildResult(true, "", resultList));
+            task.setExecutedResult(arg.taskModel);
+        }else{
+            Set<String> procInstIdFilterSet = new HashSet<String>();
+            Set<String> taskIdFilterSet = new HashSet<String>();
+
+            if(isNotBlank(oriTaskVariables)){
+                if(TaskVariables.VARS_TYPE_PROC.equals(typeArr[0])){
+                    for(TaskVariables taskVariables : oriTaskVariables){
+                        procInstIdFilterSet.add(taskVariables.getProcInstId());
+                    }
+                }else if(TaskVariables.VARS_TYPE_TASK.equals(typeArr[0])){
+                    for(TaskVariables taskVariables : oriTaskVariables){
+                        taskIdFilterSet.add(taskVariables.getTaskId());
                     }
                 }
-
-                Predicate[] predicateArray = new Predicate[predicates.size()];
-                return criteriaBuilder.and(predicates.toArray(predicateArray));
             }
-        };
-        Pageable pageable = new PageRequest(pageNum,pageSize,sort);
-        Page<Task> pageResult = arg.taskDao.findAll(specification,pageable);
-        List<Map<String,Object>> resultList = new ArrayList<Map<String,Object>>();
 
-        arg.taskModel.setTotalPage(pageResult.getTotalPages());;
-        arg.taskModel.setPageNum(pageNum+1);
-        arg.taskModel.setPageSize(pageSize);
-        arg.taskModel.setTotalCount(pageResult.getTotalElements());
-        for(Task resultTask : pageResult.getContent()){
-            // TODO fetch variables for proc and task (cache)
-            Map<String,Object> resultMap = new HashMap<String,Object>();
-            Flow flowInst = super.getFlowComplete(arg.definationService,null,resultTask.getFlowId());
-            Task lastTask = arg.taskDao.findFirstByProcInstIdOrderByCreateTimeDesc(resultTask.getProcInstId());
-            resultMap.put("taskId",resultTask.getId());
-            resultMap.put("flowId",resultTask.getFlowId());
-            resultMap.put("flowName",flowInst.getFlowName());
-            resultMap.put("assignUser",resultTask.getAssignUser());
-            resultMap.put("procInstId",resultTask.getProcInstId());
-            resultMap.put("nodeId",resultTask.getNodeId());
-            try {
-                resultMap.put("nodeName",flowInst.getNodeIdMap().get(lastTask.getNodeId()).getName());
-            } catch (Exception e) {
-                resultMap.put("nodeName","空");
+            List<String> taskIds = arg.jedisService.findTaskInHistTaskByUserId(execution.passUser,
+                    typeArr[0],procInstIdFilterSet,taskIdFilterSet);
+            if(isBlank(taskIds)){
+                arg.taskModel.setTotalPage(0);
+                arg.taskModel.setPageNum(pageNum + 1);
+                arg.taskModel.setPageSize(pageSize);
+                arg.taskModel.setTotalCount(0l);
+                arg.taskModel.setExecResult(CommonUtils.buildResult(true, "", new ArrayList<Map<String, Object>>()));
+                task.setExecutedResult(arg.taskModel);
+                return "success";
             }
-            resultMap.put("nodeDefId",resultTask.getNodeDefId());
-            resultMap.put("bussId",resultTask.getBussId());
-            resultMap.put("bussTable",resultTask.getBussTable());
-            resultMap.put("formKey",flowInst.getFormKey());
-            resultMap.put("description",resultTask.getDescription());
-            resultMap.put("startTime",resultTask.getCreateTime());
-            resultMap.put("endTime",resultTask.getFinishTime());
-            resultList.add(resultMap);
+
+            List<Task> taskList = arg.jedisService.findTaskInIds(taskIds);
+            List<Map<String, Object>> resultList = new ArrayList<Map<String, Object>>();
+            arg.taskModel.setTotalPage(taskList.size()%pageSize == 0?taskList.size()/pageSize:taskList.size()/pageSize+1);
+            arg.taskModel.setPageNum(pageNum + 1);
+            arg.taskModel.setPageSize(pageSize);
+            arg.taskModel.setTotalCount(new Long(taskList.size()));
+
+            Integer currentIdx = 0;
+            for (Task resultTask : taskList) {
+                Map<String, Object> resultMap = new HashMap<String, Object>();
+                Flow flowInst = super.getFlowComplete(arg.definationService, arg.definationCacheService, resultTask.getFlowId());
+//                Task lastTask = arg.taskDao.findFirstByProcInstIdOrderByCreateTimeDesc(resultTask.getProcInstId());
+                resultMap.put("taskId", resultTask.getId());
+                resultMap.put("flowId", resultTask.getFlowId());
+                resultMap.put("flowName", flowInst.getFlowName());
+                resultMap.put("assignUser", resultTask.getAssignUser());
+                resultMap.put("procInstId", resultTask.getProcInstId());
+                resultMap.put("nodeId", resultTask.getNodeId());
+//                try {
+//                    resultMap.put("nodeName", flowInst.getNodeIdMap().get(lastTask.getNodeId()).getName());
+//                } catch (Exception e) {
+//                    resultMap.put("nodeName", "空");
+//                }
+                resultMap.put("nodeMap","空");
+                resultMap.put("nodeDefId", resultTask.getNodeDefId());
+                resultMap.put("bussId", resultTask.getBussId());
+                resultMap.put("bussTable", resultTask.getBussTable());
+                resultMap.put("formKey", flowInst.getFormKey());
+                resultMap.put("description", resultTask.getDescription());
+                resultMap.put("startTime", resultTask.getCreateTime());
+                resultMap.put("endTime", resultTask.getFinishTime());
+                resultList.add(resultMap);
+                if(++currentIdx > pageSize){
+                    break;
+                }
+            }
+            arg.taskModel.setExecResult(CommonUtils.buildResult(true, "", resultList));
+            task.setExecutedResult(arg.taskModel);
+
         }
-        arg.taskModel.setExecResult(CommonUtils.buildResult(true,"",resultList));
-        task.setExecutedResult(arg.taskModel);
         return "success";
 
     }

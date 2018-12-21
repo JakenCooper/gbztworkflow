@@ -47,6 +47,13 @@ public class GetUserNodeData extends EngineBaseExecutor {
     public String executeEngineTask(EngineTask task) throws EngineRuntimeException {
         GetUserNodeData.GetUserNodeDataArg  arg = (GetUserNodeData.GetUserNodeDataArg)task.getArgs();
         TaskExecution execution = arg.execution;
+
+        if(AppConst.REDIS_SWITCH){
+            List<UserTreeInfo> cacheinfos = arg.nodeUserPrivCacheService.getFromCache(arg.jedisService,execution.nodeId);
+            task.setExecutedResult(cacheinfos);
+            return "success";
+        }
+
         List<UserTreeInfo> cacheinfos = (List<UserTreeInfo>)SimpleCache.getFromCache(JedisService.CACHE_KEY_PREFIX_USER_NODE_PRIV
                 +execution.nodeId);
         if(isNotBlank(cacheinfos)){
@@ -59,19 +66,10 @@ public class GetUserNodeData extends EngineBaseExecutor {
         
         UserNodePriv privindb = arg.nodeUserPrivService.findUseroneNodePrivsByNodeId(execution.nodeId);
         if("".equals(privindb) || privindb == null){
-//            task.setExecutedResult(new UserTreeInfo());
             task.setExecutedResult(new ArrayList<UserTreeInfo>());
             return "success";
         }
 
-      //  List<UserNodePriv> privindb = arg.userNodePrivService.findUserNodePrivsByNodeId(execution.nodeId);
-       /* if(isBlank(privindb)){
-            task.setExecutedResult(new ArrayList<UserTreeInfo>());
-            return "success";
-        }*/
-
-        // use nodeType of first node as nodeType of root node.
-        //userNodePriv.setNodeType(privindb.get(0).getNodeType());
         userNodePriv.setNodeType(privindb.getNodeType());
         // construct loginNames and use  this list to filter users.
         String names = privindb.getLoginName();
@@ -82,11 +80,6 @@ public class GetUserNodeData extends EngineBaseExecutor {
                 loginNames.add(arr[i]);
             }
         }
-
-      /*  List<String> loginNames = new ArrayList<String>();
-        for(UserNodePriv tempPriv : privindb){
-            loginNames.add(tempPriv.getLoginName());
-        }*/
         userNodePriv.setLoginNames(loginNames);
         List<UserTreeInfo> resultTreeInfos =arg.nodeUserPrivService.getAllUserInfo(userNodePriv);
         task.setExecutedResult(resultTreeInfos);

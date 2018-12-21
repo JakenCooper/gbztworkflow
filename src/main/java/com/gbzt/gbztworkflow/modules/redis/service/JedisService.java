@@ -4,9 +4,7 @@ import com.gbzt.gbztworkflow.modules.base.BaseService;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.*;
 import com.gbzt.gbztworkflow.modules.redis.exception.JedisRuntimeException;
 import com.gbzt.gbztworkflow.modules.redis.pool.JedisTool;
-import com.gbzt.gbztworkflow.modules.workflowengine.pojo.HistProc;
-import com.gbzt.gbztworkflow.modules.workflowengine.pojo.ProcInst;
-import com.gbzt.gbztworkflow.modules.workflowengine.pojo.Task;
+import com.gbzt.gbztworkflow.modules.workflowengine.pojo.*;
 import com.gbzt.gbztworkflow.utils.CommonUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -65,6 +63,17 @@ public class JedisService extends BaseService {
     private static String KEY_PROCINST_HISTPROC = "procinst!histproc:";
     //ns:[histprocid],key:hash,type:hash
     private static String KEY_HISTPROC = "histproc:";
+
+    //ns:[userid],key:[procinstid]![taskid],type:zset(time score)
+    private static String KEY_USER_HISTTASK_UNDO = "histtask_undo:";
+    //ns:[userid],key:[procinstid]![taskid],type:zset(time score)
+    private static String KEY_USER_HISTTASK_DONE = "histtask_done:";
+    //ns:[none],key:[procinstid]![varkey]![varval]![createtime],type:set
+    private static String KEY_VARIABLES_PROCINST = "variables!procinst:";
+    //ns:[none],key:[taskid]![varkey]![varval]![createtime],type:set
+    private static String KEY_VARIABLES_TASK = "variables!task:";
+
+
     //+++++++++++++++++++++ flow related --begin
     /***
      * @interface
@@ -789,6 +798,69 @@ public class JedisService extends BaseService {
         }
     }
 
+    public List<Task> findTaskInIds(List<String> taskIds){
+        Jedis jedisClient = JedisTool.getJedis();
+        List<Task> tasks = new ArrayList<Task>();
+        try{
+            Pipeline pipeline = jedisClient.pipelined();
+            for(String taskId : taskIds){
+                pipeline.hgetAll(KEY_TASK + taskId);
+            }
+            List<Object> searchResult = pipeline.syncAndReturnAll();
+            if(isBlank(searchResult)){
+                return tasks;
+            }
+            for(Object oriObj : searchResult){
+                Map<String,String> taskMap = (Map<String,String>)oriObj;
+                Task task = new Task();
+                CommonUtils.redisConvert(task,taskMap);
+                tasks.add(task);
+            }
+            return tasks;
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
+
+    // childTag : true:all parent task is blank task ; false: all tasks expect those child tasks' parent tasks
+    public List<Task> findTaskByProcInstIdAndChildTag(String procInstId,boolean childTag){
+        Jedis jedisClient = JedisTool.getJedis();
+        List<Task> resultTasks = new ArrayList<Task>();
+        try{
+            Set<String> oriTaskIds = null;
+            if(!childTag){
+                oriTaskIds = jedisClient.zrevrange(KEY_PROCINST_TASK + procInstId , 0 , Integer.MAX_VALUE);
+            }
+            Iterator<String> taskIdIter = oriTaskIds.iterator();
+            while(taskIdIter.hasNext()){
+                String validatedTaskId = taskIdIter.next();
+                if(validatedTaskId.contains("[empty]")){
+                    taskIdIter.remove();
+                }
+            }
+            Pipeline pipeline = jedisClient.pipelined();
+            for(String taskId : oriTaskIds){
+                pipeline.hgetAll(KEY_TASK + taskId);
+            }
+            List<Object> scanResult = pipeline.syncAndReturnAll();
+            for(Object scanObj : scanResult){
+                Map<String,String> taskMap = (Map<String,String>)scanObj;
+                Task task = new Task();
+                CommonUtils.redisConvert(task,taskMap);
+                resultTasks.add(task);
+            }
+            return resultTasks;
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
+
     public List<Task> findSubTaskByTaskId(String procInstId,String taskId){
         Jedis jedisClient = JedisTool.getJedis();
         List<Task> tasks = new ArrayList<Task>();
@@ -855,6 +927,25 @@ public class JedisService extends BaseService {
         saveTask(tasks);
     }
 
+    public void delTaskByTaskIdAndSubTaskIds(Task parentTask,List<Task> subTasks){
+        Jedis jedisClient = JedisTool.getJedis();
+        try{
+            Pipeline pipeline = jedisClient.pipelined();
+            pipeline.multi();
+            pipeline.zrem(KEY_PROCINST_TASK + parentTask.getProcInstId(),parentTask.getId()+"![empty]");
+            pipeline.del(KEY_TASK + parentTask.getId());
+            for(Task subTask : subTasks){
+                pipeline.zrem(KEY_PROCINST_TASK + parentTask.getProcInstId(),subTask.getId()+"!"+parentTask.getId());
+                pipeline.del(KEY_TASK + subTask.getId());
+            }
+            pipeline.exec();
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }    }
+
     public void updateTask(Task task){
         Jedis jedisClient = JedisTool.getJedis();
         try{
@@ -872,6 +963,220 @@ public class JedisService extends BaseService {
         }
     }
 
+
+    public List<String> findTaskInHistTaskByUserId(String userId,String varType,Set<String> procInstIdSet,Set<String> taskIdSet){
+        Jedis jedisClient = JedisTool.getJedis();
+        List<String> resultList = new ArrayList<String>();
+        try{
+            Set<String> searchResult = jedisClient.zrevrange(KEY_USER_HISTTASK_DONE + userId,  0 ,Integer.MAX_VALUE);
+            for(String searchRow : searchResult){
+                String[] rowArr = searchRow.split("!");
+                if(StringUtils.isNotBlank(varType) && varType.equals(TaskVariables.VARS_TYPE_PROC)){
+                    if(!procInstIdSet.contains(rowArr[0])){
+                        continue;
+                    }
+                }else if(StringUtils.isNotBlank(varType) && varType.equals(TaskVariables.VARS_TYPE_TASK)){
+                    if(!taskIdSet.contains(rowArr[1])){
+                        continue;
+                    }
+                }
+                resultList.add(rowArr[1]);
+            }
+            return resultList;
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
+
+    public List<String> findUndoTaskByUserId(String userId,String varType,Set<String> procInstIdSet,Set<String> taskIdSet){
+        Jedis jedisClient = JedisTool.getJedis();
+        List<String> resultList = new ArrayList<String>();
+        try{
+            Set<String> searchResult = jedisClient.zrevrange(KEY_USER_HISTTASK_UNDO + userId,  0 ,Integer.MAX_VALUE);
+            for(String searchRow : searchResult){
+                String[] rowArr = searchRow.split("!");
+                if(StringUtils.isNotBlank(varType) && varType.equals(TaskVariables.VARS_TYPE_PROC)){
+                    if(!procInstIdSet.contains(rowArr[0])){
+                        continue;
+                    }
+                }else if(StringUtils.isNotBlank(varType) && varType.equals(TaskVariables.VARS_TYPE_TASK)){
+                    if(!taskIdSet.contains(rowArr[1])){
+                        continue;
+                    }
+                }
+                resultList.add(rowArr[1]);
+            }
+            return resultList;
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
+
+    public void delUndoWhenFinishTask(String userId,String procInstId,String taskId){
+        Jedis jedisClient = JedisTool.getJedis();
+        try{
+            jedisClient.zrem(KEY_USER_HISTTASK_UNDO + userId,procInstId+"!"+taskId);
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
+
+    public void delHistTaskByUserIdAndProcInstId(String userId,String procInstId){
+        Jedis jedisClient = JedisTool.getJedis();
+        try{
+            List<Object> scanResult = internalScanValueInConstructor(jedisClient,CONSTRUCTOR_TYPE_ZSET,
+                    KEY_USER_HISTTASK_DONE + userId,procInstId+"!*");
+            if(isBlank(scanResult)){
+                return ;
+            }
+            for(Object eachRow : scanResult){
+                String key = ((String[])eachRow)[0];
+                jedisClient.zrem(KEY_USER_HISTTASK_DONE + userId,key);
+            }
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
+
+    //undo:assignUser
+    public void saveHistTaskOrUndo(HistTask histTask,Task task){
+        Jedis jedisClient = JedisTool.getJedis();
+        try{
+            if(histTask != null){
+                jedisClient.zadd(KEY_USER_HISTTASK_DONE + histTask.getUserId(),CommonUtils.getCurrentTimeMillsDouble(),
+                        histTask.getProcInstId()+"!"+histTask.getTaskId());
+            }else{
+                jedisClient.zadd(KEY_USER_HISTTASK_UNDO + task.getAssignUser(),CommonUtils.getCurrentTimeMillsDouble(),
+                        task.getProcInstId()+"!"+task.getId());
+            }
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
+
+    public void batchSaveUndo(List<Task> tasks){
+        Jedis jedisClient = JedisTool.getJedis();
+        try{
+            Pipeline pipeline = jedisClient.pipelined();
+            pipeline.multi();
+            for(Task task : tasks){
+                pipeline.zadd(KEY_USER_HISTTASK_UNDO + task.getAssignUser(),CommonUtils.getCurrentTimeMillsDouble(),
+                        task.getProcInstId()+"!"+task.getId());
+            }
+            pipeline.exec();
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
+
+    //most useless attribute: variablesid
+    public void saveTaskVariables(List<TaskVariables> taskVariablesList){
+        Jedis jedisClient = JedisTool.getJedis();
+        try{
+            Pipeline pipeline = jedisClient.pipelined();
+            pipeline.multi();
+            for(TaskVariables taskVariables : taskVariablesList) {
+                if (TaskVariables.VARS_TYPE_PROC.equals(taskVariables.getType())) {
+                    jedisClient.sadd(KEY_VARIABLES_PROCINST, taskVariables.getProcInstId()
+                            + "!" + taskVariables.getKey() + "!" + taskVariables.getValue() + "!" + CommonUtils.getCurrentTimeMillsString());
+                } else if (TaskVariables.VARS_TYPE_TASK.equals(taskVariables.getType())) {
+                    jedisClient.sadd(KEY_VARIABLES_TASK, taskVariables.getProcInstId()
+                            + "!" + taskVariables.getKey() + "!" + taskVariables.getValue() + "!" + CommonUtils.getCurrentTimeMillsString());
+                }
+            }
+            pipeline.exec();
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
+
+    public List<TaskVariables> findTaskVariablesByTypeAndKeyAndValue(String type,String key,String value){
+        Jedis jedisClient = JedisTool.getJedis();
+        List<TaskVariables> taskVariablesList = new ArrayList<TaskVariables>();
+        try{
+            if(type.equals(TaskVariables.VARS_TYPE_PROC)){
+                List<Object> scanResult = internalScanValueInConstructor(jedisClient,CONSTRUCTOR_TYPE_SET,
+                        KEY_VARIABLES_PROCINST,"*!"+key+"!"+value+"!*");
+                for(Object obj : scanResult){
+                    String singleRow = (String)obj;
+                    String[] rowArray = singleRow.split("!");
+                    TaskVariables taskVariables = new TaskVariables();
+                    taskVariables.setId(CommonUtils.genUUid());
+                    taskVariables.setProcInstId(rowArray[0]);
+                    taskVariables.setKey(rowArray[1]);
+                    taskVariables.setValue(rowArray[2]);
+                    taskVariables.setType(TaskVariables.VARS_TYPE_PROC);
+                    taskVariablesList.add(taskVariables);
+                }
+            }else if(type.equals(TaskVariables.VARS_TYPE_TASK)){
+                List<Object> scanResult = internalScanValueInConstructor(jedisClient,CONSTRUCTOR_TYPE_SET,
+                        KEY_VARIABLES_TASK,"*!"+key+"!"+value+"!*");
+                for(Object obj : scanResult){
+                    String singleRow = (String)obj;
+                    String[] rowArray = singleRow.split("!");
+                    TaskVariables taskVariables = new TaskVariables();
+                    taskVariables.setId(CommonUtils.genUUid());
+                    taskVariables.setTaskId(rowArray[0]);
+                    taskVariables.setKey(rowArray[1]);
+                    taskVariables.setValue(rowArray[2]);
+                    taskVariables.setType(TaskVariables.VARS_TYPE_TASK);
+                    taskVariablesList.add(taskVariables);
+                }
+            }
+            return taskVariablesList;
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
+
+    public List<HistProc> findHistProcByProcInstId(String procInstId){
+        Jedis jedisClient = JedisTool.getJedis();
+        List<HistProc> histProcList = new ArrayList<HistProc>();
+        try{
+            Set<String> middleProcHint = jedisClient.zrevrange(KEY_PROCINST_HISTPROC + procInstId , 0 ,Integer.MAX_VALUE);
+            for(String middleProc : middleProcHint){
+                String[] rowArr = middleProc.split("!");
+                HistProc histProc = new HistProc();
+                histProc.setId(rowArr[0]);
+                histProc.setProcInstId(procInstId);
+                histProc.setTaskId(rowArr[1]);
+                histProc.setUserId(rowArr[2]);
+                histProcList.add(histProc);
+            }
+            return histProcList;
+        }catch(Exception e){
+            e.printStackTrace();
+            throw new JedisRuntimeException(e);
+        }finally {
+            JedisTool.returnJedis(jedisClient);
+        }
+    }
+
+
     public void saveHistProc(HistProc histProc){
         Jedis jedisClient = JedisTool.getJedis();
         try{
@@ -888,6 +1193,37 @@ public class JedisService extends BaseService {
             JedisTool.returnJedis(jedisClient);
         }
     }
+
+    public void delHistProc(HistProc histProc){
+        internalClearParentAndSubElements(KEY_PROCINST_HISTPROC + histProc.getProcInstId(),
+                histProc.getId()+"!"+histProc.getTaskId()+"!"+histProc.getUserId(),
+                CONSTRUCTOR_TYPE_ZSET,KEY_HISTPROC + histProc.getId());
+    }
+
+
+    public void withdrawAllfinishedTaskByProcInstIdAndTaskId(String procInstId,Date finishTime,
+                                                             String operUser, String taskId){
+        Task currentTask = findTaskById(taskId);
+        currentTask.setFinishTag(true);
+        currentTask.setFinishUser(operUser);
+        currentTask.setWithdrawTag(true);
+        currentTask.setWithdrawDescription("收回");
+        currentTask.setFinishTime(finishTime);
+        updateTask(currentTask);
+    }
+
+    public void retreatUnFinishTaskByProcInstIdAndTaskId(String procInstId,Date finishTime,
+                                                             String operUser, String taskId){
+        Task currentTask = findTaskById(taskId);
+        currentTask.setFinishTag(true);
+        currentTask.setFinishUser(operUser);
+        currentTask.setWithdrawTag(true);
+        currentTask.setWithdrawDescription("退回");
+        currentTask.setFinishTime(finishTime);
+        updateTask(currentTask);
+    }
+
+
 
     //--------------------- flow runtime related --begin
 

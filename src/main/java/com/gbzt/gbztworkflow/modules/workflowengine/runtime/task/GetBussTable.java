@@ -37,7 +37,11 @@ public class GetBussTable extends EngineBaseExecutor {
         GetBussTable.GetBussTableArg arg = (GetBussTable.GetBussTableArg)task.getArgs();
         TaskExecution execution = arg.execution;
 
-        task.setExecutedResult(arg.definationService.getAllFlowsForOA(execution.getProcInstId()));
+        if(!AppConst.REDIS_SWITCH) {
+            task.setExecutedResult(arg.definationService.getAllFlowsForOA(execution.getProcInstId()));
+        }else{
+            task.setExecutedResult(arg.definationCacheService.getAllFlowsForOA(execution.getProcInstId()));
+        }
 
         return "success";
     }

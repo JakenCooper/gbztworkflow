@@ -89,27 +89,44 @@ public class RetreatTask extends EngineBaseExecutor {
 
             // [logic] 收回或者退回操作，更新最后一个任务为完成状态，以及更新相关字段
             if(OPER_TYPE_WITHDRAW.equals(execution.retreatOperType)){
-                arg.taskDao.withdrawAllfinishedTaskByProcInstIdAndTaskId(procInstId,new Date(),operUser,lastTask.getId());
+                if(!AppConst.REDIS_SWITCH) {
+                    arg.taskDao.withdrawAllfinishedTaskByProcInstIdAndTaskId(procInstId, new Date(), operUser, lastTask.getId());
+                }else{
+                    arg.jedisService.withdrawAllfinishedTaskByProcInstIdAndTaskId(procInstId, new Date(), operUser, lastTask.getId());
+                }
                 //  [logic][多实例]  对于多实例任务的收回操作，采用暴力的方式：
                 // 1. 将多实例子任务和父任务全部删除
                 // 2.将提交多实例用户的最后一个任务更新成已完成，以及收回标记设置为true
                 // 3.删除最新一条histproc，也同时删除taskproc（因为会导致已办数据查询不准确），然后再创建任务——因为taskid不同所以必须这样处理
                 if(arg.multiInstanceTag){
                     List<Task> subTasks = arg.taskDao.findTasksByParentTaskId(lastTask.getId());
-                    arg.taskDao.delete(subTasks);
-                    arg.taskDao.delete(lastTask);
+                    if(!AppConst.REDIS_SWITCH) {
+                        arg.taskDao.delete(subTasks);
+                        arg.taskDao.delete(lastTask);
+                    }else{
+                        arg.jedisService.delTaskByTaskIdAndSubTaskIds(lastTask,subTasks);
+                    }
                     secondLastTask.setFinishTag(true);
                     secondLastTask.setFinishUser(secondLastTask.getAssignUser());
                     secondLastTask.setWithdrawTag(true);
                     secondLastTask.setWithdrawDescription("收回");
-                    arg.taskDao.save(secondLastTask);
-                    arg.histProcDao.delete(arg.lastHistProc);
+                    if(!AppConst.REDIS_SWITCH) {
+                        arg.taskDao.save(secondLastTask);
+                        arg.histProcDao.delete(arg.lastHistProc);
+                    }else{
+                        arg.jedisService.updateTask(secondLastTask);
+                        arg.jedisService.delHistProc(arg.lastHistProc);
+                    }
                     createTaskAfterAll(arg,secondLastTask);
                     task.setExecutedResult("success");
                     return "success";
                 }
             }else{
-                arg.taskDao.retreatUnFinishTaskByProcInstIdAndTaskId(procInstId,new Date(),operUser,lastTask.getId());
+                if(!AppConst.REDIS_SWITCH) {
+                    arg.taskDao.retreatUnFinishTaskByProcInstIdAndTaskId(procInstId, new Date(), operUser, lastTask.getId());
+                }else{
+                    arg.jedisService.retreatUnFinishTaskByProcInstIdAndTaskId(procInstId, new Date(), operUser, lastTask.getId());
+                }
             }
 
             // [logic] 在退回操作时创建最后一个任务的已办事务，对于收回操作因为已经在FinishTask的时候创建过histtask，所以此处不用创建
@@ -118,7 +135,11 @@ public class RetreatTask extends EngineBaseExecutor {
             }
             createTaskAfterAll(arg,secondLastTask);
 
-            arg.histProcDao.delete(arg.lastHistProc);
+            if(!AppConst.REDIS_SWITCH) {
+                arg.histProcDao.delete(arg.lastHistProc);
+            }else{
+                arg.jedisService.delHistProc(arg.lastHistProc);
+            }
             task.setExecutedResult("success");
         }
         return "success";
@@ -166,18 +187,28 @@ public class RetreatTask extends EngineBaseExecutor {
     private boolean canWithdrawOrRetreat(RetreatTask.RetreatTaskArg arg){
         String loggerType = LOGGER_TYPE_PREFIX+"canWithdrawOrRetreat";
         TaskExecution execution = arg.execution;
-        List<HistProc> histProcs = arg.histProcDao.findHistProcsByProcInstIdOrderByCreateTimeMillsAsc(execution.procInstId);
+        List<HistProc> histProcs = null;
+        if(!AppConst.REDIS_SWITCH) {
+            histProcs = arg.histProcDao.findHistProcsByProcInstIdOrderByCreateTimeMillsAsc(execution.procInstId);
+        }else{
+            histProcs = arg.jedisService.findHistProcByProcInstId(execution.procInstId);
+        }
         // 如果当前流程的 prochist 数量不足2，就完全没有收回或者退回的可能
         if(histProcs == null || histProcs.size() < 2){
             logger.warn(LogUtils.getMessage(loggerType,"Proc【"+execution.procInstId+"】find no histproc or histproc size lt 2"));
             return false;
         }
-        ProcInst procInst = arg.procInstDao.findOne(execution.procInstId);
+        ProcInst procInst = null;
+        if(!AppConst.REDIS_SWITCH) {
+            procInst = arg.procInstDao.findOne(execution.procInstId);
+        }else{
+            procInst = arg.jedisService.findProcInstById(execution.procInstId);
+        }
         HistProc lastHistProc = histProcs.get(histProcs.size()-1);
         HistProc secondLastHistProc = histProcs.get(histProcs.size()-2);
 
         //zhangys
-        Flow flowInst = super.getFlowComplete(arg.definationService,null,procInst.getFlowId());
+        Flow flowInst = super.getFlowComplete(arg.definationService,arg.definationCacheService,procInst.getFlowId());
         Node secondLastNode = flowInst.getNodeIdMap().get(secondLastHistProc.getNodeId());
         Node lastNode  = flowInst.getNodeIdMap().get(lastHistProc.getNodeId());
         Line line = flowInst.getLineMap().get(secondLastNode.getId()+","+lastNode.getId());
@@ -189,9 +220,19 @@ public class RetreatTask extends EngineBaseExecutor {
             logger.warn(LogUtils.getMessage(loggerType,"Proc【"+execution.procInstId+",withdraw: 】can not detect related line."));
             return false;
         }
-        Task lastTaskObj = arg.taskDao.findOne(lastHistProc.getTaskId());
-        Task secondLastTaskObj = arg.taskDao.findOne(secondLastHistProc.getTaskId());
-        Task thisTaskObj = arg.taskDao.findOne(execution.taskId);
+        Task lastTaskObj = null;
+        Task secondLastTaskObj =null;
+        Task thisTaskObj = null;
+        if(!AppConst.REDIS_SWITCH) {
+            lastTaskObj = arg.taskDao.findOne(lastHistProc.getTaskId());
+            secondLastTaskObj = arg.taskDao.findOne(secondLastHistProc.getTaskId());
+            thisTaskObj = arg.taskDao.findOne(execution.taskId);
+        }else{
+            lastTaskObj = arg.jedisService.findTaskById(lastHistProc.getTaskId());
+            secondLastTaskObj = arg.jedisService.findTaskById(secondLastHistProc.getTaskId());
+            thisTaskObj = arg.jedisService.findTaskById(execution.taskId);
+        }
+
         arg.lastTaskObj = lastTaskObj;
         arg.secondLastTaskObj = secondLastTaskObj;
         arg.thisTaskObj = thisTaskObj;

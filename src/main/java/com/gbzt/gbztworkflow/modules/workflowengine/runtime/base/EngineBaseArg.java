@@ -6,6 +6,7 @@ import com.gbzt.gbztworkflow.modules.flowdefination.dao.LineDao;
 import com.gbzt.gbztworkflow.modules.flowdefination.dao.NodeDao;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationCacheService;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationService;
+import com.gbzt.gbztworkflow.modules.flowdefination.service.UserNodePrivCacheService;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.UserNodePrivService;
 import com.gbzt.gbztworkflow.modules.redis.service.JedisService;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.*;
@@ -21,6 +22,7 @@ public class EngineBaseArg  implements IEngineArg{
     public DefinationService definationService;
     public UserNodePrivService nodeUserPrivService;
     public DefinationCacheService definationCacheService;
+    public UserNodePrivCacheService nodeUserPrivCacheService;
     /**流程定义相关-- end */
 
     /**流程流转相关-- begin */
@@ -44,6 +46,7 @@ public class EngineBaseArg  implements IEngineArg{
         this.definationService = targetArg.definationService;
         this.nodeUserPrivService = targetArg.nodeUserPrivService;
         this.definationCacheService = targetArg.definationCacheService;
+        this.nodeUserPrivCacheService = targetArg.nodeUserPrivCacheService;
 
         this.procInstDao = targetArg.procInstDao;
         this.taskDao = targetArg.taskDao;
@@ -51,6 +54,7 @@ public class EngineBaseArg  implements IEngineArg{
         this.histTaskDao = targetArg.histTaskDao;
         this.histProcDao = targetArg.histProcDao;
         this.jedisService = targetArg.jedisService;
+
 
         this.ad = targetArg.ad;
     }
