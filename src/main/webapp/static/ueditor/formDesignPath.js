@@ -1,5 +1,4 @@
-//var adminPath = 'http://10.6.97.10:8666/gw';
-var adminPath = 'http://192.168.1.19:8666/gw';
+var adminPath = 'http://10.18.198.183:8666/gw';
 
 
 

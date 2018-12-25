@@ -1,6 +1,5 @@
 package com.gbzt.gbztworkflow.modules.flowruntime.model;
 
-import javax.persistence.Column;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.HashSet;
@@ -57,6 +56,17 @@ public class TaskModel extends BaseModel implements Serializable {
     /*end*/
     //查询开始节点名称
     private String startNodesName;
+    /* 是否为暂存 start*/
+    private boolean tempSaveTag = false;
+    /* 是否为暂存 end*/
+	
+    public boolean isTempSaveTag() {
+        return tempSaveTag;
+    }
+
+    public void setTempSaveTag(boolean tempSaveTag) {
+        this.tempSaveTag = tempSaveTag;
+    }
 
     public String getStartNodesName() {
         return startNodesName;

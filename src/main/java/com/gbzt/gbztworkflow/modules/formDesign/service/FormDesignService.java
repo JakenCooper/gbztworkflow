@@ -500,7 +500,7 @@ public class FormDesignService {
                     }
                     String titleStyle="";
                     if("title".equals(name)){
-                         titleStyle="width:96%;font-family:SimHei;font-size:16px;text-align:center;";
+                         titleStyle="width:96%;font-family:SimHei;font-size:32px;text-align:center;";
                     }
                     element.attr("style",style+titleStyle);
                     element.removeAttr("readonly");
@@ -656,11 +656,11 @@ public class FormDesignService {
 
 
         //table添加样式
-        Elements tableElements=doc.getElementsByTag(HtmlConstant.TABLE_AREA_TAG);
+    /*    Elements tableElements=doc.getElementsByTag(HtmlConstant.TABLE_AREA_TAG);
         for(int i=0;i<tableElements.size();i++){
             Element element=tableElements.get(i);
             element.addClass("table table-bordered table-condensed");
-        }
+        }*/
         String jspCode=doc.outerHtml();
         for (String key : nodesMap.keySet()) {
             if(StringUtils.isNotBlank(key)){
@@ -680,10 +680,18 @@ public class FormDesignService {
         Document bodyCode = Jsoup.parseBodyFragment(jspCode);
 
         Element body = bodyCode.body();
+        Node node= nodeDao.findNodeByFlowIdAndBeginNode(currentFlowId,true);
+
         //只保留body标签中的数据
         jspCode=body.outerHtml().replace("<body>","").replace("</body>","").replaceAll("\\{\\|\\-","").replaceAll("-\\|}","");
         if(jspCode.contains("${selectTree}")){
-            jspCode=jspCode.replace("${selectTree}",HtmlConstant.TREE_SELECT_TAG);
+            String startWhen="\n\r\t\t##start_:when test=\"${'"+node.getName()+"'==taskName"+"}\"_###end\n\r";
+            String endWhen="\n\r\t\t##end_c:when_###end\n\r";
+            String otherwiseStart="\n\r\t\t##start_:otherwise _###end\n\r";
+            String otherwiseEnd="\n\r\t\t##end_c:otherwise _###end\n\r";
+            String treeCode="##chooseStart\t\t\t" + startWhen+"\r\n"+HtmlConstant.TREE_SELECT_TAG+endWhen+"\r\n"+
+                    otherwiseStart+"\n\r"+HtmlConstant.TREE_SELECT_VIEW_TAG+"\n\r"+otherwiseEnd+"##chooseEnd";
+            jspCode=jspCode.replace("${selectTree}",treeCode);
         }
         if(jspCode.contains("##chooseStart")){
             jspCode=jspCode.replaceAll("##chooseStart","<c:choose>");
@@ -695,7 +703,13 @@ public class FormDesignService {
             jspCode=jspCode.replace("${readonly}","true");
         }
         if(jspCode.contains("${timeSelect}")){
-            jspCode=jspCode.replace("${timeSelect}",HtmlConstant.TIME_SELECT_TAG);
+            String startWhen="\n\r\t\t##start_:when test=\"${'"+node.getName()+"'==taskName"+"}\"_###end\n\r";
+            String endWhen="\n\r\t\t##end_c:when_###end\n\r";
+            String otherwiseStart="\n\r\t\t##start_:otherwise _###end\n\r";
+            String otherwiseEnd="\n\r\t\t##end_c:otherwise _###end\n\r";
+            String timeCode="##chooseStart\t\t\t" + startWhen+"\r\n"+HtmlConstant.TIME_SELECT_TAG+endWhen+"\r\n"+
+                    otherwiseStart+"\n\r"+HtmlConstant.TIME_SELECT_VIEW_TAG+"\n\r"+otherwiseEnd+"##chooseEnd";
+            jspCode=jspCode.replace("${timeSelect}",timeCode);
         }
         if(jspCode.contains("${checkState}")){
             jspCode=jspCode.replace("${checkState}","checked=\"checked\"");
@@ -704,12 +718,26 @@ public class FormDesignService {
             jspCode=jspCode.replace("${selectstate}","selected=\"selected\"");
         }
         //add by ym  default time and dafaule user
+
         if(jspCode.contains("${defultUser}")){
-            jspCode=jspCode.replace("${defultUser}",HtmlConstant.DEFULT_USER_TAG);
+            String startWhen="\n\r\t\t##start_:when test=\"${'"+node.getName()+"'==taskName"+"}\"_###end\n\r";
+            String endWhen="\n\r\t\t##end_c:when_###end\n\r";
+            String otherwiseStart="\n\r\t\t##start_:otherwise _###end\n\r";
+            String otherwiseEnd="\n\r\t\t##end_c:otherwise _###end\n\r";
+            String userCode="##chooseStart\t\t\t" + startWhen+"\r\n"+HtmlConstant.DEFULT_USER_TAG+endWhen+"\r\n"+
+                    otherwiseStart+"\n\r"+HtmlConstant.DEFULT_USER_VIEW_TAG+"\n\r"+otherwiseEnd+"##chooseEnd";
+            jspCode=jspCode.replace("${defultUser}",userCode);
         }
         if(jspCode.contains("${dafultTime}")){
-            jspCode=jspCode.replace("${dafultTime}",HtmlConstant.DEFULT_TIME_TAG);
+            String startWhen="\n\r\t\t##start_:when test=\"${'"+node.getName()+"'==taskName"+"}\"_###end\n\r";
+            String endWhen="\n\r\t\t##end_c:when_###end\n\r";
+            String otherwiseStart="\n\r\t\t##start_:otherwise _###end\n\r";
+            String otherwiseEnd="\n\r\t\t##end_c:otherwise _###end\n\r";
+            String timeCode="##chooseStart\t\t\t" + startWhen+"\r\n"+HtmlConstant.DEFULT_TIME_TAG+endWhen+"\r\n"+
+                    otherwiseStart+"\n\r"+HtmlConstant.DEFULT_TIME_VIEW_TAG+"\n\r"+otherwiseEnd+"##chooseEnd";
+            jspCode=jspCode.replace("${dafultTime}",timeCode);
         }
+        jspCode=jspCode.replaceAll("##start_","<c").replaceAll("##end_","</").replaceAll("_###end",">").replaceAll("##chooseStart","<c:choose>").replaceAll("##chooseEnd","</c:choose>").replaceAll("foreach","forEach");
         long endTime = System.currentTimeMillis(); //获取结束时间
 
         System.out.println("程序运行时间：" + (endTime - startTime) + "ms");

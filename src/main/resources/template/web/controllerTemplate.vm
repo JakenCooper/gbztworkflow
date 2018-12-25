@@ -43,6 +43,8 @@ public class ${EntityName}Controller extends BaseController {
     private ${EntityName}Service ${entityName}Service;
     @Autowired
     private ActTaskService actTaskService;
+    @Autowired
+    private UploadToStoreService uploadToStoreService;
     
     @ModelAttribute
     public ${EntityName} get(@RequestParam(required=false) String id) {
@@ -71,6 +73,7 @@ public class ${EntityName}Controller extends BaseController {
             ${entityName}.getAct().setProcDefKey("${map.flowName}");// 流程名,从数据库查
             ${entityName}.getAct().setTaskDefKey("audit-1");
         }
+        String isView = request.getParameter("isView");
         model.addAttribute("uuid", IdGen.uuid());
         String view = null;
         if(StringUtils.isBlank(${entityName}.getId())){
@@ -104,6 +107,9 @@ public class ${EntityName}Controller extends BaseController {
             model.addAttribute("filepathlist", "nofile");
             model.addAttribute("filenamelist", "nofile");
             model.addAttribute("dowmloadfile", "nofile");
+            if ("yes".equals(isView)) {
+                return "modules/${package}/${entityName}View";
+            }
             if(StringUtils.isBlank(${entityName}.getAct().getTaskId())){
                 return "modules/${package}/${entityName}Form";
             }
@@ -135,12 +141,25 @@ public class ${EntityName}Controller extends BaseController {
 
     @RequestMapping("save")
     public String save(@RequestParam("file") MultipartFile[] files,${EntityName} ${entityName}, Model model, HttpServletRequest request, HttpServletResponse response,RedirectAttributes redirectAttributes){
+		${entityName}.getAct().setTempSaveTag(Boolean.parseBoolean(request.getParameter("isTemporarySave")));
         String fileJsonInfo=request.getParameter("fileJsonInfo");
         ${EntityName} ${entityName}Clone = null;
         try {
             ${entityName}Clone = (${EntityName}) ${entityName}.clone();
         } catch (CloneNotSupportedException e1) {
             e1.printStackTrace();
+        }
+        String defultUser=request.getParameter("defultUser");
+        String dafultTime=request.getParameter("dafultTime");
+        String timeSelect=request.getParameter("timeSelect");
+        if(StringUtils.isNotBlank(defultUser)){
+            ${entityName}.setDefultUser(defultUser);
+        }
+        if(StringUtils.isNotBlank(dafultTime)){
+            ${entityName}.setDafultTime(dafultTime);
+        }
+        if(StringUtils.isNotBlank(timeSelect)){
+            ${entityName}.setTimeSelect(timeSelect);
         }
 
         if (!beanValidator(model, ${entityName}Clone)){
@@ -163,7 +182,8 @@ public class ${EntityName}Controller extends BaseController {
             switch (${entityName}Clone.getAct().getFlagTrans()) {
                 case "yes":
                     ${EntityName} ${entityName}1 = ${entityName}Service.saveNew(${entityName}Clone,"yes");
-                    if(StringUtils.isNotBlank(fileJsonInfo)){
+	                uploadToStoreService.uploadFileToOfficeStore(files,${entityName}Clone.getProcInsId(),"${entityName_CN}");
+	                if(StringUtils.isNotBlank(fileJsonInfo)){
                         uploadFile(fileJsonInfo,${entityName}1);
                     }
                     model.addAttribute("message", "流程处理成功！");
@@ -173,11 +193,11 @@ public class ${EntityName}Controller extends BaseController {
                     }
                         return "redirect:"+Global.getAdminPath()+"/act/task/todo?messagetag=1";
                         // return form(${entityName}Clone, model,request,response);
-            default:
-                ${entityName}Service.saveNew(${entityName}Clone,"no");
-                model.addAttribute("message", "流程处理成功");
-                return "success";
-            }
+	            default:
+	                ${entityName}Service.saveNew(${entityName}Clone,"no");
+	                model.addAttribute("message", "流程处理成功");
+	                return "success";
+	            }
         }catch(Exception e){
             model.addAttribute("workFlowObject", ${entityName}Clone);
             model.addAttribute("message", "流程处理失败");

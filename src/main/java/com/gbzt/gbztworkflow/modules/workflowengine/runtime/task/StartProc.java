@@ -115,6 +115,11 @@ public class StartProc extends EngineBaseExecutor {
                 throw e;
             }
 
+            if(execution.isTempSaveTag()){ // 暂存
+                task.setExecutedResult(procInst.getId());
+                return "success";
+            }
+
             // 测试事务是否能够正确回滚，结果可行
 //            if(execution.passUser.equals("admin")){
 //                throw new RuntimeException("test!....");

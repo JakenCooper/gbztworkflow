@@ -131,48 +131,6 @@
             var office_id="";
             selectAudit(procdefid,procDefKey,taskdefkey,taskkey,labelName,procInsId,office_id);
         }
-        ## 新增方法 
-        
-        function  uploadToOfficeStore() {
-            showFileNames();
-            var formData = new FormData();
-            for(var i=0;i<document.getElementById("file").files.length;i++){
-                formData.append("file",$("#file")[0].files[i]);
-            }
-            formData.append("userName","${fnsloginName}");
-            $.ajax({
-                type:"POST",
-                url: "${ctx}/getToken",
-                async: false,
-                cache: false,
-                success: function(msg) {
-                    var obj = eval('(' + msg + ')');
-                    var token=obj.value;
-                    formData.append("token",token);
-                    $.ajax({
-                        type:"POST",
-                        url: DocStorePath + "upload/createFile.do",
-                        async: false,
-                        cache: false,
-                        processData:false,
-                        mimeType:"multipart/form-data",
-                        contentType: false, //不设置内容类型
-                        data:formData,
-                        success: function(result) {
-                            var jsonObj=JSON.parse(result);
-                            $("#fileJsonInfo").val( JSON.stringify(jsonObj.value));
-                        },
-                        error:function () {
-                            return null;
-                        }
-                    });
-                },
-                error:function () {
-                    alert("请求失败！");
-                    return null;
-                }
-            });
-        }        
         function setSendRegionHeight(){ // 将左侧发送区域的高度设定为右侧右侧表单高度
             var height = $('#inputForm table tbody').height() - 83;
             $('#fasongPanel table.table td #tree').height(height);
@@ -195,6 +153,11 @@
                     $(ele).remove();
                 }
             });
+        }
+        // 暂存方法
+        function temporarySave(yes){
+            $('#isTemporarySave').val('true');
+            submitForm(yes);
         }
     </script>
     <script type="text/javascript">
@@ -268,7 +231,7 @@
             $("#secrets").removeClass("required");
             $("#referenceNum").removeClass("required");
             $("#fileType").removeClass("required");
-            document.getElementById("inputForm").action="${ctx}/commonly_text_all/commonlyText/downLoad?type=1";
+            document.getElementById("inputForm").action="${ctx}/${map.package}/${map.entityName}/downLoad?type=1";
             $("#inputForm").submit();
             $("#fileTitle").addClass("required");
             $("#secrets").addClass("required");
@@ -361,8 +324,28 @@
     <%--暂存 编辑正文 返回 流转历史--%>
     <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="返  回" onclick="refreshList()"/>&nbsp;
     <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="暂  存" onclick=""/>&nbsp;
-    <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="编辑正文" onclick=""/>&nbsp;
-    <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="监  控" onclick="history('${${entityName}.act.procInsId}');"/>&nbsp;
+        <c:if test="\\${empty ${entityName}.textType}">
+            <div class="dropdown" style="float: right;margin-left: 10px;">
+                <button type="button" class="btn" id="dropdownMenu1" style="background: #25669A; color: white;"
+                        data-toggle="dropdown">
+                    编辑正文 <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu"
+                    aria-labelledby="dropdownMenu1">
+                    <li role="presentation"><a id="openDoc" role="menuitem"
+                                               tabindex="-1" href="#" onclick="operDoc(0,1,'textAddr','cacheAddr','textContent','${ctx}','${pageContext.request.contextPath}',DocStorePath)">打开word</a></li>
+                        <%--<li role="presentation"><a id="openExcel" role="menuitem"--%>
+                        <%--tabindex="-1" href="#" onclick="operDoc(1,1,'textAddr','cacheAddr','textContent','${ctx}','${pageContext.request.contextPath}',DocStorePath)">打开excel</a></li>--%>
+                        <%--<li role="presentation"><a id="openEdit" role="menuitem"--%>
+                        <%--tabindex="-1" href="#" onclick="operDoc(2,1,'textAddr','cacheAddr','textContent','${ctx}','${pageContext.request.contextPath}',DocStorePath)">打开富文本</a></li>--%>
+                </ul>
+            </div>
+        </c:if>
+        <c:if test="\\${not empty ${entityName}.textType }">
+            <input id="assignButton" class="btn" type="button" value="查看正文" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;"
+                   onclick="seeDoc($('#textType').val(),3,'textAddr','','textContent','${ctx}','${pageContext.request.contextPath}',DocStorePath)"/>&nbsp;
+        </c:if>    
+	<input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="监  控" onclick="history('${${entityName}.act.procInsId}');"/>&nbsp;
     <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="发  送" onclick="submitForm('yes')"/>&nbsp;
 </div>
 <div id="containerDIV" style="margin: 0 auto;width: 773px">
@@ -389,6 +372,14 @@
         <input type="hidden" id="cacheTypeDoc"/><!-- word历史缓存文件类型 -->
         <input type="hidden" id="cacheTypeExcel"/><!-- Excel历史缓存文件类型 -->
         <input type="hidden" id="cacheCountDoc"/><!-- doc历史缓存字数 -->
+
+        <input type="hidden" id="isTemporarySave" value="false" name="isTemporarySave"/>
+
+        <form:hidden id="textAddr" path="textAddr" htmlEscape="false"/>
+        <form:hidden id="textType" path="textType" htmlEscape="false"/>
+        <form:hidden id="textContent" path="textContent" htmlEscape="false"/>
+        <form:hidden id="textRealurl" path="textRealurl" htmlEscape="false"/>
+        <form:hidden id="wordsCount" path="wordsCount" htmlEscape="false"/>
 
         <!-- 查询条件 -->
         <input name="procDefKey_s" type="hidden" value="${procDefKey_s}"/>

@@ -20,8 +20,7 @@
     <script type="text/javascript">
         var alert_tag = true;
         // var adminPath = 'http://localhost:8080/gbztworkflow';
-        //var adminPath = 'http://10.18.198.183:8080/gbztworkflow';
-        var adminPath = 'http://10.6.97.10:8666/gw';
+        var adminPath = 'http://10.18.198.183:8080/gbztworkflow';
     </script>
 </head>
 <body>
@@ -32,7 +31,7 @@
                 <h2 class="navbar-text">国博政通工作流引擎 </h2>
             </div>
             <div class="pull-right navbar-text">
-                <%--&nbsp;&nbsp;<strong> [ 囍 ]  ╮(￣▽￣| ")╭  [ 囍 ]</strong>--%>
+                &nbsp;&nbsp;<strong> [ 囍 ]  ╮(￣▽￣| ")╭  [ 囍 ]</strong>
             </div>
         </section>
     </nav>

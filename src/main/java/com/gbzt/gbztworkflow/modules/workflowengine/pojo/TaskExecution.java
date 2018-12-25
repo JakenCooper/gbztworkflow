@@ -15,6 +15,7 @@ public class TaskExecution {
     public String formKey;
     public String passStr;
     public String passUser; // -- common
+    private boolean tempSaveTag = false;
 
     //[createtask]
     public String procInstId;
@@ -318,5 +319,13 @@ public class TaskExecution {
 
     public void setTotalPage(Integer totalPage) {
         this.totalPage = totalPage;
+    }
+
+    public boolean isTempSaveTag() {
+        return tempSaveTag;
+    }
+
+    public void setTempSaveTag(boolean tempSaveTag) {
+        this.tempSaveTag = tempSaveTag;
     }
 }

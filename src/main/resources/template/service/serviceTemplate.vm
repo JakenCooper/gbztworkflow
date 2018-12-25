@@ -109,6 +109,7 @@ public class ${EntityName}Service  extends CrudService<${EntityName}Dao, ${Entit
                 ${entityName}.getAct().setArgMap(argMap);
             
                 String procInsId = null;
+				// 起草暂存在后台接口处进行特殊处理; 其余暂存直接存入业务表,不进行处理
                 try {
                     procInsId = actTaskService.startProcess(${entityName}.getAct());
                 } catch (Exception e1) {
@@ -130,6 +131,9 @@ public class ${EntityName}Service  extends CrudService<${EntityName}Dao, ${Entit
                 ${EntityName} ${entityName}Original = get(${entityName}.getId());
                 ${entityName}.preUpdate();
                 update(${entityName});
+                if(${entityName}.getAct().getTempSaveTag()){
+                    return ${entityName};
+                }
             
                 @SuppressWarnings("unused")
                 //unused only in template,should be handled correctly during actual business.

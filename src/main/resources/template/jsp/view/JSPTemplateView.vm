@@ -359,7 +359,13 @@
     <%--暂存 编辑正文 返回 流转历史--%>
     <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="返  回" onclick="refreshList()"/>&nbsp;
     <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="暂  存" onclick=""/>&nbsp;
-    <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="查看正文" onclick=""/>&nbsp;
+    <c:if test="${not empty ${entityName}.textType }">
+        <input id="assignButton" class="btn" type="button" value="查看正文" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;"
+               onclick="seeDoc($('#textType').val(),3,'textAddr','','textContent','${ctx}','${pageContext.request.contextPath}',DocStorePath)"/>&nbsp;
+    </c:if>
+    <c:if test="${empty ${entityName}.textType }">
+        <input id="assignButton" class="btn" type="button" style="background: #F3F3F3; color: black;" value="无正文" disabled="disabled"/>&nbsp;
+    </c:if>
     <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" id="btn-withdraw" class="btn" type="button" value="收  回" onclick="withdrawOrRetreatOper('withdraw')"/>&nbsp;
     <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="监  控" onclick="history('${${entityName}.act.procInsId}');"/>&nbsp;
 </div>

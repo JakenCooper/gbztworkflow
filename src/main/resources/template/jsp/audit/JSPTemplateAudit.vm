@@ -374,7 +374,27 @@
     <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="返  回" onclick="refreshList()"/>&nbsp;
     <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" id="btn-retreat" class="btn" type="button" value="退  回" onclick="withdrawOrRetreatOper('retreat')"/>&nbsp;
     <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="暂  存" onclick=""/>&nbsp;
-    <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="编辑正文" onclick=""/>&nbsp;
+	<c:if test="${empty ${entityName}.textType}">
+            <div class="dropdown" style="float: right;margin-left: 10px;">
+                <button type="button" class="btn" id="dropdownMenu1" style="background: #25669A; color: white;"
+                        data-toggle="dropdown">
+                    编辑正文 <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu"
+                    aria-labelledby="dropdownMenu1">
+                    <li role="presentation"><a id="openDoc" role="menuitem"
+                                               tabindex="-1" href="#" onclick="operDoc(0,1,'textAddr','cacheAddr','textContent','${ctx}','${pageContext.request.contextPath}',DocStorePath)">打开word</a></li>
+                        <%--<li role="presentation"><a id="openExcel" role="menuitem"--%>
+                        <%--tabindex="-1" href="#" onclick="operDoc(1,1,'textAddr','cacheAddr','textContent','${ctx}','${pageContext.request.contextPath}',DocStorePath)">打开excel</a></li>--%>
+                        <%--<li role="presentation"><a id="openEdit" role="menuitem"--%>
+                        <%--tabindex="-1" href="#" onclick="operDoc(2,1,'textAddr','cacheAddr','textContent','${ctx}','${pageContext.request.contextPath}',DocStorePath)">打开富文本</a></li>--%>
+                </ul>
+            </div>
+        </c:if>
+        <c:if test="${not empty ${entityName}.textType }">
+            <input id="assignButton" class="btn" type="button" value="查看正文" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;"
+                   onclick="seeDoc($('#textType').val(),3,'textAddr','','textContent','${ctx}','${pageContext.request.contextPath}',DocStorePath)"/>&nbsp;
+        </c:if>
     <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="监  控" onclick="history('${${entityName}.act.procInsId}');"/>&nbsp;
     <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="发  送" onclick="submitForm('yes')"/>&nbsp;
 </div>
@@ -401,6 +421,12 @@
         <input type="hidden" id="cacheTypeDoc"/><!-- word历史缓存文件类型 -->
         <input type="hidden" id="cacheTypeExcel"/><!-- Excel历史缓存文件类型 -->
         <input type="hidden" id="cacheCountDoc"/><!-- doc历史缓存字数 -->
+
+        <form:hidden id="textAddr" path="textAddr" htmlEscape="false"/>
+        <form:hidden id="textType" path="textType" htmlEscape="false"/>
+        <form:hidden id="textContent" path="textContent" htmlEscape="false"/>
+        <form:hidden id="textRealurl" path="textRealurl" htmlEscape="false"/>
+        <form:hidden id="wordsCount" path="wordsCount" htmlEscape="false"/>
 
         <!-- 查询条件 -->
         <input name="procDefKey_s" type="hidden" value="${procDefKey_s}"/>
