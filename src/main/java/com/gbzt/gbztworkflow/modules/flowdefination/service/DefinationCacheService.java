@@ -95,7 +95,7 @@ public class DefinationCacheService extends BaseService {
         }
         jedisService.saveFlow(flow);
         String[] bussarr = new String[flow.getBussColumns().size()];
-        affairConfiguerService.save(flow.getId(),flow.getBussColumns().toArray(bussarr));
+//        affairConfiguerService.save(flow.getId(),flow.getBussColumns().toArray(bussarr));
 
         refreshDetailDefination(flow.getId());
         return buildResult(true,"保存成功",null);

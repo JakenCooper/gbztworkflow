@@ -1,6 +1,7 @@
 package com.gbzt.gbztworkflow.utils;
 
 import com.gbzt.gbztworkflow.consts.ExecResult;
+import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
 import com.gbzt.gbztworkflow.modules.redis.entity.RedisMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
@@ -253,5 +254,13 @@ public class CommonUtils {
     }
 
     public static void main(String[] args) {
+        Flow flow = new Flow();
+        Map<String,String> flowMap = new HashMap<>();
+        flowMap.put("flowName","testflowName");
+        flowMap.put("delTag","true");
+        flowMap.put("testint","199");
+
+        redisConvert(flow,flowMap);
+        System.out.println(flow.getDelTag()+" --- "+flow.getFlowName()+" +++ "+flow.getTestint());
     }
 }

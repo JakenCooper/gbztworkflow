@@ -1,9 +1,11 @@
 package com.gbzt.gbztworkflow.modules.flowdefination.controller;
 
+import com.gbzt.gbztworkflow.consts.AppConst;
 import com.gbzt.gbztworkflow.consts.ExecResult;
 import com.gbzt.gbztworkflow.modules.base.BaseController;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.UserNodePriv;
+import com.gbzt.gbztworkflow.modules.flowdefination.service.UserNodePrivCacheService;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.UserNodePrivService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +22,8 @@ public class UserNodePrivController extends BaseController {
 
     @Autowired
     private UserNodePrivService nodeUserPrivService;
+    @Autowired
+    private UserNodePrivCacheService nodeUserPrivCacheService;
 
     @RequestMapping(value="/{flowId}/{nodeId}",method = RequestMethod.GET,produces = "application/json;charset=UTF-8")
     public ResponseEntity getTreeData(@PathVariable("flowId") String flowId,@PathVariable("nodeId") String nodeId){
@@ -27,7 +31,13 @@ public class UserNodePrivController extends BaseController {
         Node node = new Node();
         node.setFlowId(flowId);
         node.setId(nodeId);
-        return buildResp(200,nodeUserPrivService.getAllUserInfo(node).result);
+        ExecResult execResult = null;
+        if(!AppConst.REDIS_SWITCH) {
+            execResult = nodeUserPrivService.getAllUserInfo(node);
+        }else{
+            execResult = nodeUserPrivCacheService.getAllUserInfo(node);
+        }
+        return buildResp(200,execResult.result);
     }
 
     /**
@@ -38,14 +48,25 @@ public class UserNodePrivController extends BaseController {
         Node node = new Node();
         node.setFlowId(flowId);
         node.setId(nodeId);
-        return buildResp(200,nodeUserPrivService.getAllUserInfobynodeid(node.getId()).result);
+        ExecResult execResult = null;
+        if(!AppConst.REDIS_SWITCH) {
+            execResult = nodeUserPrivService.getAllUserInfobynodeid(node.getId());
+        }else{
+            execResult = nodeUserPrivCacheService.getAllUserInfobynodeid(node.getId());
+        }
+        return buildResp(200,execResult.result);
     }
     
     
     
     @RequestMapping(value="",method=RequestMethod.POST,produces = "application/json;charset=UTF-8")
     public ResponseEntity saveUserNodePriv(@RequestBody UserNodePriv userNodePriv){
-        ExecResult execResult = nodeUserPrivService.saveUserNodePriv(userNodePriv);
+        ExecResult execResult = null;
+        if(!AppConst.REDIS_SWITCH) {
+            execResult = nodeUserPrivService.saveUserNodePriv(userNodePriv);
+        }else{
+            execResult = nodeUserPrivCacheService.saveUserNodePriv(userNodePriv);
+        }
         if(!execResult.charge){
             return buildResp(201,execResult.message);
         }

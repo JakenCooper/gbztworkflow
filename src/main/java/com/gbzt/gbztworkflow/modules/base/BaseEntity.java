@@ -23,7 +23,7 @@ public class BaseEntity {
     @Column(name="del_tag")
     @org.hibernate.annotations.Type(type="yes_no")
     @RedisMapper
-    private boolean delTag;
+    private Boolean delTag;
     @Column(name="del_reason")
     private String delReason;
     @Column(name="remark")
@@ -75,11 +75,11 @@ public class BaseEntity {
         this.updateUser = updateUser;
     }
 
-    public boolean isDelTag() {
+    public Boolean getDelTag() {
         return delTag;
     }
 
-    public void setDelTag(boolean delTag) {
+    public void setDelTag(Boolean delTag) {
         this.delTag = delTag;
     }
 

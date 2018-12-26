@@ -1,8 +1,10 @@
 package com.gbzt.gbztworkflow.modules.flowdefination.controller;
 
+import com.gbzt.gbztworkflow.consts.AppConst;
 import com.gbzt.gbztworkflow.consts.ExecResult;
 import com.gbzt.gbztworkflow.modules.base.BaseController;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
+import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationCacheService;
 import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -19,10 +21,17 @@ import javax.ws.rs.Path;
 public class NodeController extends BaseController {
     @Autowired
     private DefinationService definationService;
+    @Autowired
+    private DefinationCacheService definationCacheService;
 
     @RequestMapping(value="/{nodeid}",method = RequestMethod.GET,produces = "application/json;charset=UTF-8")
     public ResponseEntity getNodeById(@PathVariable("nodeid") String nodeId){
-        ExecResult execResult = definationService.getNodeById(nodeId);
+        ExecResult execResult = null;
+        if(!AppConst.REDIS_SWITCH) {
+            execResult = definationService.getNodeById(nodeId);
+        }else{
+            execResult = definationCacheService.getNodeById(nodeId);
+        }
         if(!execResult.charge){
             buildResp(400,execResult.message);
         }
@@ -31,7 +40,12 @@ public class NodeController extends BaseController {
 
     @RequestMapping(value="",method = RequestMethod.POST,produces = "application/json;charset=UTF-8")
     public ResponseEntity saveNode(@RequestBody  Node node){
-        ExecResult execResult = definationService.saveNode(node);
+        ExecResult execResult = null;
+        if(!AppConst.REDIS_SWITCH) {
+            execResult = definationService.saveNode(node);
+        }else{
+            execResult = definationCacheService.saveNode(node);
+        }
         return buildResp(execResult.charge == true ? 201:400,execResult.message);
     }
 
@@ -40,13 +54,23 @@ public class NodeController extends BaseController {
     public ResponseEntity delNode(@PathVariable("nodeid") String nodeId){
         Node node = new Node();
         node.setId(nodeId);
-        ExecResult execResult = definationService.delNode(node);
+        ExecResult execResult = null;
+        if(!AppConst.REDIS_SWITCH) {
+            execResult = definationService.delNode(node);
+        }else{
+            execResult = definationCacheService.delNode(node);
+        }
         return buildResp(execResult.charge == true?204:400,execResult.message);
     }
 
     @RequestMapping(value="/{nodeid}",method = RequestMethod.POST,produces = "application/json;charset=UTF-8")
     public ResponseEntity updateNode(@PathVariable("nodeid") String nodeId,@RequestBody Node node){
-        ExecResult execResult = definationService.updateNode(nodeId,node);
+        ExecResult execResult = null;
+        if(!AppConst.REDIS_SWITCH) {
+            execResult = definationService.updateNode(nodeId, node);
+        }else{
+            execResult = definationCacheService.updateNode(nodeId,node);
+        }
         if(!execResult.charge){
             buildResp(400,execResult.message);
         }

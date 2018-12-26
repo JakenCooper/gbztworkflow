@@ -18,6 +18,17 @@ public class Flow extends BaseEntity {
     @Column(name="id")
     @RedisMapper
     private String id;
+    @RedisMapper
+    private Integer testint;
+
+    public Integer getTestint() {
+        return testint;
+    }
+
+    public void setTestint(Integer testint) {
+        this.testint = testint;
+    }
+
     @Column(name="name")
     @RedisMapper
     private String flowName;

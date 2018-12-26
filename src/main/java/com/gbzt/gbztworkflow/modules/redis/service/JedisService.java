@@ -224,7 +224,12 @@ public class JedisService extends BaseService {
      * @specification flowAll:(z,nn) flow:?(h,in)
      */
     public List<Flow> findFlowsByDelTag(boolean delTag){
-        Jedis jedisClient = JedisTool.getJedis();
+        Jedis jedisClient = null;
+        try {
+            jedisClient = JedisTool.getJedis();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         List<Flow> flows = new ArrayList<Flow>();
         try{
             Set<String> flowInfoSet = jedisClient.zrevrange(KEY_ALL_FLOWS , 0,new Long(Integer.MAX_VALUE));
@@ -236,7 +241,7 @@ public class JedisService extends BaseService {
                 }
                 Flow flow = new Flow();
                 flow = CommonUtils.redisConvert(flow,flowMap);
-                if(delTag != flow.isDelTag()){
+                if(delTag != flow.getDelTag()){
                     continue;
                 }
                 flows.add(flow);
