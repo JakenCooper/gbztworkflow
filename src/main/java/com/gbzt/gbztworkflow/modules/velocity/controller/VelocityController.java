@@ -124,7 +124,9 @@ public class VelocityController extends BaseController {
         datas.put("selectTree", HtmlConstant.TREE_SELECT_TAG);
         datas.put("timeSelect",HtmlConstant.TIME_SELECT_TAG);
         datas.put("readonly","readonly");
+        datas.put("flowDefId",flow.getId());
         datas.put("form",formDesign.getJspCode());
+        datas.put("entityName_CN",flow.getModuleNameCn());
         datas.put("formView",formDesign.getJspCodeView());
         // 设置fns标签
         datas.put("fnsloginName","${fns:getUser().loginName}");

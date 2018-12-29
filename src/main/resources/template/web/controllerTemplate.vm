@@ -8,6 +8,7 @@ import com.gbzt.gbztworkflow.modules.flowruntime.model.TaskModel;
 import com.thinkgem.jeesite.common.config.Global;
 import com.thinkgem.jeesite.common.utils.IdGen;
 import org.springframework.beans.factory.annotation.Autowired;
+import com.thinkgem.jeesite.modules.unitofficework.ofsService.UploadToStoreService;
 import org.springframework.stereotype.Controller;
 import com.thinkgem.jeesite.modules.act.entity.TaskSearchArg;
 import net.sf.json.JSONObject;
@@ -156,10 +157,10 @@ public class ${EntityName}Controller extends BaseController {
             ${entityName}.setDefultUser(defultUser);
         }
         if(StringUtils.isNotBlank(dafultTime)){
-            ${entityName}.setDafultTime(dafultTime);
+            ${entityName}.setDefultCreateTime(dafultTime);
         }
         if(StringUtils.isNotBlank(timeSelect)){
-            ${entityName}.setTimeSelect(timeSelect);
+            ${entityName}.setDraftSelectTime(timeSelect);
         }
 
         if (!beanValidator(model, ${entityName}Clone)){

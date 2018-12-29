@@ -91,8 +91,8 @@ public class GetProcHistoric extends EngineBaseExecutor {
             resultMap.put("description",resultTask.getDescription());
             resultMap.put("startTime",resultTask.getCreateTime());
             resultMap.put("endTime",resultTask.getFinishTime());
-            resultMap.put("retreatTag",resultTask.isRetreatTag());
-            resultMap.put("withdrawTag",resultTask.isWithdrawTag());
+            resultMap.put("retreatTag",resultTask.getRetreatTag());
+            resultMap.put("withdrawTag",resultTask.getWithdrawTag());
             resultList.add(resultMap);
         }
         task.setExecutedResult(resultList);

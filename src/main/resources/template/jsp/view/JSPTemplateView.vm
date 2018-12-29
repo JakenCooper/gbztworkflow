@@ -266,6 +266,12 @@
             window.location = '${ctx}/act/task/historic';
         }
 
+        // 暂存方法
+        function temporarySave(yes){
+            $('#isTemporarySave').val('true');
+            submitForm(yes);
+        }
+
         <%--function takeBack(){
             var procInsId="${procInsId}";
             var productTag="${productTag}";
@@ -300,9 +306,8 @@
             });
         }
         function cleanBlankP() { // 清除空P
-            $('#mainView p:contains("br")').remove();
             $('#mainView p').each(function(index,ele){
-                if($(ele).html()=='<br>'){
+                if($(ele).html()==='<br>' || $(ele).html()=='&nbsp; &nbsp;' || $(ele).html()=='   '){
                     $(ele).remove();
                 }
             });
@@ -325,6 +330,15 @@
             font-weight: bold;
             color: #EA5200;
             margin-left: 10px;
+        }
+        #containerDIV #mainView #inputForm table{
+            border: 1px solid;
+        }
+        #containerDIV #mainView #inputForm table tr td{
+            border: 1px solid;
+        }
+        #containerDIV #mainView #inputForm table tr td input,#containerDIV #mainView #inputForm table tr td textarea{
+            padding: 0px;
         }
     </style>
 </head>
@@ -358,19 +372,19 @@
 <div id="newButtonDiv" style="width:543px;margin:0 auto;height:30px;">
     <%--暂存 编辑正文 返回 流转历史--%>
     <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="返  回" onclick="refreshList()"/>&nbsp;
-    <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="暂  存" onclick=""/>&nbsp;
-    <c:if test="${not empty ${entityName}.textType }">
+    <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="暂  存" onclick="temporarySave('yes')"/>&nbsp;
+    <c:if test="${notEmpty} ${entityName}.textType }">
         <input id="assignButton" class="btn" type="button" value="查看正文" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;"
                onclick="seeDoc($('#textType').val(),3,'textAddr','','textContent','${ctx}','${pageContext.request.contextPath}',DocStorePath)"/>&nbsp;
     </c:if>
-    <c:if test="${empty ${entityName}.textType }">
+    <c:if test="${empty} ${entityName}.textType }">
         <input id="assignButton" class="btn" type="button" style="background: #F3F3F3; color: black;" value="无正文" disabled="disabled"/>&nbsp;
     </c:if>
     <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" id="btn-withdraw" class="btn" type="button" value="收  回" onclick="withdrawOrRetreatOper('withdraw')"/>&nbsp;
     <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="监  控" onclick="history('${${entityName}.act.procInsId}');"/>&nbsp;
 </div>
 <div id="containerDIV" style="margin: 0 auto;width: 575px">
-<div id="mainView" style="overflow-y: auto;height:auto;float: left;width: 570px;margin-top: 10px;">
+<div id="mainView" style="height:auto;float: left;width: 570px;margin-top: 10px;">
 	<form:form id="inputForm" modelAttribute="${map.entityName}" name="form"
 			   action="${ctx}/${map.package}/${map.entityName}/" method="post"
 			   class="form-horizontal" enctype="multipart/form-data">
@@ -392,6 +406,10 @@
         <input type="hidden" id="cacheTypeDoc"/><!-- word历史缓存文件类型 -->
         <input type="hidden" id="cacheTypeExcel"/><!-- Excel历史缓存文件类型 -->
         <input type="hidden" id="cacheCountDoc"/><!-- doc历史缓存字数 -->
+
+
+        <input type="hidden" id="isTemporarySave" value="false" name="isTemporarySave"/><!-- 是否暂存 -->
+        <input type="hidden" id="flowDefId" value="${flowDefId}" name="flowDefId"/><!-- 流程id -->
 
         <!-- 查询条件 -->
         <input name="procDefKey_s" type="hidden" value="${procDefKey_s}"/>

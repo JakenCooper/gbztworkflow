@@ -80,6 +80,10 @@ public class VelocityService extends BaseService {
         ctx.put("selectState", datas.get("selectState"));
         ctx.put("selectTree", datas.get("selectTree"));
         ctx.put("timeSelect", datas.get("timeSelect"));
+        ctx.put("notEmpty", "${not empty");
+        ctx.put("empty", "${empty");
+        ctx.put("flowDefId", datas.get("flowDefId"));
+        ctx.put("entityName_CN", datas.get("entityName_CN"));
         ctx.put("readonly", datas.get("readonly"));
         ctx.put("outPrintTest", "${abcd}");
         ctx.put("abcd", "123456");

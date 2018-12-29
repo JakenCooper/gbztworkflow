@@ -142,7 +142,7 @@ public class FinishTask extends EngineBaseExecutor {
                 /****************************************************************************************/
 
                 for(Task subTask : subTasks){
-                    if(!subTask.isFinishTag()){
+                    if(!subTask.getFinishTag()){
                         throw new EngineRuntimeException("at least one sub task not finished..");
                     }
                 }
@@ -189,7 +189,7 @@ public class FinishTask extends EngineBaseExecutor {
             }
             boolean allFinished = true;
             for(Task finalTask : finalSubTasks){
-                if(!finalTask.isFinishTag()){
+                if(!finalTask.getFinishTag()){
                     allFinished = false;
                     break;
                 }

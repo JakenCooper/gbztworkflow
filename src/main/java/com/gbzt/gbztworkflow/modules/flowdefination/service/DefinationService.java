@@ -136,6 +136,7 @@ public class DefinationService extends BaseService {
                 flowMap.put("name",flow.getFlowName());
                 flowMap.put("bussTable",flow.getBussTableName());
                 flowMap.put("formkey",flow.getFormKey());
+                flowMap.put("attachfileTableName",flow.getAttachfileTableName());
                 flowList.add(flowMap);
             }else{
                 if(targetFlow.getId().equals(flow.getId())){
@@ -144,6 +145,7 @@ public class DefinationService extends BaseService {
                     flowMap.put("name",flow.getFlowName());
                     flowMap.put("bussTable",flow.getBussTableName());
                     flowMap.put("formkey",flow.getFormKey());
+                    flowMap.put("attachfileTableName",flow.getAttachfileTableName());
                     flowList.add(flowMap);
                 }
             }
@@ -368,10 +370,10 @@ public class DefinationService extends BaseService {
         Map<String,Node> nodeMap = new HashMap<String,Node>();
         Map<String,Node> nodeIdMap = new HashMap<String,Node>();
         for(Node node : allFlowNode){
-            if(node.isBeginNode()){
+            if(node.getBeginNode()){
                 flowInst.setStartNode(node);
             }
-            if(node.isEndNode()){
+            if(node.getEndNode()){
                 flowInst.setEndNode(node);
             }
             node.setOutLines(lineDao.findLinesByBeginNodeId(node.getId()));

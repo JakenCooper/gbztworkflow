@@ -27,7 +27,7 @@ public class ProcInst extends BaseEntity {
     @Column(name="finish_tag")
     @org.hibernate.annotations.Type(type="yes_no")
     @RedisMapper
-    private boolean finishTag;
+    private Boolean finishTag;
     @Column(name="finish_time")
     @RedisMapper
     private Date finishTime;
@@ -75,11 +75,11 @@ public class ProcInst extends BaseEntity {
         this.bussId = bussId;
     }
 
-    public boolean isFinishTag() {
+    public Boolean getFinishTag() {
         return finishTag;
     }
 
-    public void setFinishTag(boolean finishTag) {
+    public void setFinishTag(Boolean finishTag) {
         this.finishTag = finishTag;
     }
 

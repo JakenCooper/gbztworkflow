@@ -325,6 +325,7 @@ public class JedisService extends BaseService {
                 Map<String,String> objMap = (Map<String,String>)resultList.get(i);
                 CommonUtils.redisConvert(currentNode,objMap);
             }
+            nodes = Node.sortNodes(nodes);
             return nodes;
         }catch(Exception e){
             e.printStackTrace();
@@ -648,10 +649,10 @@ public class JedisService extends BaseService {
             pipeline.del(KEY_LINE + line.getId());
             pipeline.hmset(KEY_LINE + line.getId(),lineMap);
             if(currentLine != null){
-                pipeline.hdel(KEY_FLOW_NODE_LINE , line.getFlowId(),line.getBeginNodeId(),currentLine.getId());
+                pipeline.hdel(KEY_FLOW_NODE_LINE , line.getFlowId()+"!"+line.getBeginNodeId()+"!"+currentLine.getId());
             }
-            pipeline.hdel(KEY_FLOW_NODE_LINE,line.getFlowId() + line.getBeginNodeId() + line.getId());
-            pipeline.hset(KEY_FLOW_NODE_LINE,line.getFlowId() + line.getBeginNodeId() + line.getId(),
+            pipeline.hdel(KEY_FLOW_NODE_LINE,line.getFlowId() +"!"+ line.getBeginNodeId() +"!" + line.getId());
+            pipeline.hset(KEY_FLOW_NODE_LINE,line.getFlowId() +"!"+ line.getBeginNodeId() +"!"+ line.getId(),
                     line.getEndNodeId());
             pipeline.exec();
         }catch(Exception e){
@@ -715,6 +716,9 @@ public class JedisService extends BaseService {
         try{
             List<UserNodePriv> userNodePrivs = internalFindAllSubElements(true,KEY_NODE_USERNODEPRIV + nodeId,
                     null,CONSTRUCTOR_TYPE_SET,KEY_USERNODEPRIV,new UserNodePriv());
+            if(isBlank(userNodePrivs)){
+                return null;
+            }
             return userNodePrivs.get(0);
         }catch(Exception e){
             e.printStackTrace();
@@ -1250,7 +1254,7 @@ public class JedisService extends BaseService {
     // 1. get all data ---- datatag=true , despreate parentValue , child hash part use parent search result
     // 2. get one data(filter) ---- datatag=false , compare parentValue , child hash part use parentValue
     // (attention: only support equal situation! quote parentElement belows.)
-        private <T> List<T> internalFindAllSubElements(Jedis jedisClient,boolean datatag,String parentKey,String parentValue,
+    private <T> List<T> internalFindAllSubElements(Jedis jedisClient,boolean datatag,String parentKey,String parentValue,
                                                    String constructorType,String childKey,T t){
         List<T> resultList = new ArrayList<T>();
         if(!constructorType.equals(CONSTRUCTOR_TYPE_ZSET) && !constructorType.equals(CONSTRUCTOR_TYPE_SET)){
@@ -1269,13 +1273,20 @@ public class JedisService extends BaseService {
                 return resultList;
             }
             for(Object parentElement : parentScanResult){
-                String subKey = ((String[])parentElement)[0];
                 // [!!] use subKey as sub key part.
-                Map<String,String> subMap = jedisClient.hgetAll(childKey + subKey);
-                if(isBlank(subMap)){
+                String subKey = null;
+                if(constructorType.equals(CONSTRUCTOR_TYPE_ZSET)) {
+                    subKey = ((String[]) parentElement)[0];
+
+                }else if(constructorType.equals(CONSTRUCTOR_TYPE_SET)){
+                    subKey = (String)parentElement;
+
+                }
+                Map<String, String> subMap = jedisClient.hgetAll(childKey + subKey);
+                if (isBlank(subMap)) {
                     continue;
                 }
-                t = CommonUtils.redisConvert(t,subMap);
+                t = CommonUtils.redisConvert(t, subMap);
                 resultList.add(t);
             }
         }else{

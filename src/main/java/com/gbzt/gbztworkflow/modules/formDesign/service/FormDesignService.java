@@ -150,7 +150,7 @@ public class FormDesignService {
         Elements selectElements=doc.getElementsByTag(HtmlConstant.SELECT_TAG);
         Elements checkBoxElements=doc.getElementsByAttributeValue("leipiplugins","checkboxs");
         Elements radioElements=doc.getElementsByAttributeValue("leipiplugins","radios");
-
+        Elements tbElements=doc.getElementsByTag(HtmlConstant.TABLE_AREA_TAG);
         Map<String,String> nodesMap=new HashMap<>();
         try {
             /*radio -------------------------------------------------------------start*/
@@ -656,11 +656,11 @@ public class FormDesignService {
 
 
         //table添加样式
-    /*    Elements tableElements=doc.getElementsByTag(HtmlConstant.TABLE_AREA_TAG);
+       Elements tableElements=doc.getElementsByTag(HtmlConstant.TABLE_AREA_TAG);
         for(int i=0;i<tableElements.size();i++){
             Element element=tableElements.get(i);
-            element.addClass("table table-bordered table-condensed");
-        }*/
+            element.removeAttr("class");
+        }
         String jspCode=doc.outerHtml();
         for (String key : nodesMap.keySet()) {
             if(StringUtils.isNotBlank(key)){
@@ -737,7 +737,7 @@ public class FormDesignService {
                     otherwiseStart+"\n\r"+HtmlConstant.DEFULT_TIME_VIEW_TAG+"\n\r"+otherwiseEnd+"##chooseEnd";
             jspCode=jspCode.replace("${dafultTime}",timeCode);
         }
-        jspCode=jspCode.replaceAll("##start_","<c").replaceAll("##end_","</").replaceAll("_###end",">").replaceAll("##chooseStart","<c:choose>").replaceAll("##chooseEnd","</c:choose>").replaceAll("foreach","forEach");
+        jspCode=jspCode.replaceAll("##start_","<c").replaceAll("##end_","</").replaceAll("_###end",">").replaceAll("##chooseStart","<c:choose>").replaceAll("##chooseEnd","</c:choose>").replaceAll("foreach","forEach").replaceAll("<code>","").replaceAll("</code>","");
         long endTime = System.currentTimeMillis(); //获取结束时间
 
         System.out.println("程序运行时间：" + (endTime - startTime) + "ms");
@@ -768,6 +768,20 @@ public class FormDesignService {
         }
         System.out.println(testInfo);
         return testInfo;
+    }
+
+    public String editTableWidth(String content,String width){
+        Document doc= Jsoup.parseBodyFragment(content);
+        Elements tableElements=doc.getElementsByTag(HtmlConstant.TABLE_AREA_TAG);
+        for(int i=0;i<tableElements.size();i++){
+            Element element=tableElements.get(i);
+            element.removeAttr("width");
+            String style=tableElements.attr("style");
+            style=style+"width:"+width+"px;";
+            element.attr("style",style);
+        }
+        content=doc.outerHtml();
+        return content;
     }
 
 }

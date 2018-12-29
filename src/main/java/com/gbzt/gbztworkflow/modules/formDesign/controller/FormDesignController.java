@@ -38,7 +38,14 @@ public class FormDesignController {
         System.out.println("测试一哈");
         return "formDesign/formDesign.jsp";
     }
-
+    @RequestMapping(value = "editTableWidth",produces = "text/javascript;charset=utf-8")
+    @ResponseBody
+    public String editTableWidth(HttpServletRequest request){
+        String tableContent=request.getParameter("tableContent");
+        String tableWidth=request.getParameter("tableWidth");
+        tableContent=formDesignService.editTableWidth(tableContent,tableWidth);
+        return new Gson().toJson(tableContent);
+    }
     @RequestMapping(value = "save")
     @ResponseBody
     public String save(HttpServletRequest request , HttpServletResponse response, HttpSession session) throws ParseException {
@@ -76,7 +83,7 @@ public class FormDesignController {
             formDesign.setFormHtml(parse_form);
         }
         try {
-            formDesignService.save(formDesign);
+            formDesignService.  save(formDesign);
             map.put("success",1);
         }catch (Exception e){
             e.printStackTrace();

@@ -89,6 +89,16 @@ public class Flow extends BaseEntity {
     @Column(name="module_root_path")
     @RedisMapper
     private String moduleRootPath;
+    @Column(name="attachfile_table_name")
+    private String attachfileTableName;
+
+    public String getAttachfileTableName() {
+        return attachfileTableName;
+    }
+
+    public void setAttachfileTableName(String attachfileTableName) {
+        this.attachfileTableName = attachfileTableName;
+    }
 
     public String getBussDbType() {
         return bussDbType;

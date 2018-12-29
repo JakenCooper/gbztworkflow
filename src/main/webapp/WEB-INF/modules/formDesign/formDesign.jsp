@@ -57,6 +57,8 @@
         <button type="button" onclick="leipiFormDesign.exec('file',GetRequest());" class="btn btn-info btn-small">文件选择</button>
         <label><input type="radio" name="mode" value="0"/>紧凑模式</label>
         <label><input type="radio" name="mode" value="1" checked="checked"/>非紧凑模式</label>
+        <input style="width: 55px;margin-left: 5px;" type="number" id="containerWidth"/> px
+        <button type="button" onclick="containerWidthChange();" class="btn btn-info btn-small">修改富文本宽度</button>
        <%-- <button type="button" onclick="leipiFormDesign.exec('progressbar');" class="btn btn-info btn-small">进度条</button>--%>
        <%-- <button type="button" onclick="leipiFormDesign.exec('qrcode');" class="btn btn-info btn-small">二维码</button>--%>
         <div class="alert alert-warning">
@@ -67,13 +69,51 @@
             </div>
         </div>
       <%--  <textarea style="width:100%;height:100%" name="html" id="container"></textarea></form>--%>
-        <div style="margin: 0 auto" width="975px;">
-            <div style="float:left;width:200px;border:1px dashed greenyellow">
+        <div style="width:100%;">
+            <div style="float:left;width:255px;border:1px dashed greenyellow">
                 菜单
             </div>
-            <textarea style="float:left;width:574px" name="html" id="container"></textarea>
-            <div style="float:left;width:200px;border:1px dashed plum">
-                发送树
+            <script type="text/javascript">
+                $(function () {
+                    $('#containerWidth').val($('#container').width()); // 为'#containerWidth'input赋初始值
+                    $('#containerWidth').change(function () {
+                        var width = $(this).val();
+                        if (width > 574 && frequency == 0){
+                            frequency = 1;
+                            if (!confirm('经测试,在1024分辨率下,将富文本宽度设置小于574px才可以正常显示,确定设置吗?')){
+                                return;
+                            }
+                        }
+                        $(container).css({'width':width == 0?$(container).css('width'):width});
+                        var editor = UE.getEditor('container');
+                        editor.container.style.width = width === 0 ? editor.container.style.width : width;
+                        var htmlWidth = $('#container #edui10_iframeholder');
+                        htmlWidth.css({'width':width == 0?$('#container').css('width'):width});
+                        setTableWidth(width == 0?$('#container').css('width'):width-35);
+                    });
+                });
+                var frequency = 0;
+                function containerWidthChange(){ // 点击按钮时,修改
+                    var width = $('#containerWidth').val();
+                    if (width > 574 && frequency == 0){
+                        frequency = 1;
+                        if (!confirm('经测试,在1024分辨率下,将富文本宽度设置小于574px才可以正常显示,确定设置吗?')){
+                            return;
+                        }
+                    }
+                    $('#container').css({'width':width == 0?$('#container').css('width'):width});
+                    var editor = UE.getEditor('container');
+                    editor.container.style.width = width === 0 ? editor.container.style.width : width;
+                    var htmlWidth = $('#container #edui10_iframeholder');
+                    htmlWidth.css({'width':width == 0?$('#container').css('width'):width});
+                    setTableWidth(width == 0?$('#container').css('width'):width-35);
+                }
+            </script>
+            <div id="containerDIV" style="margin: 0 auto;width: 850px;">
+                <textarea style="width:574px;float: left;" name="html" id="container"></textarea>
+                <div style="width:225px;border:1px dashed plum;float: left;">
+                    发送树
+                </div>
             </div>
             <div style="clear:both"></div>
         </div>
@@ -435,6 +475,27 @@
     });
     function setContent(){
         UE.getEditor('container').execCommand('insertHtml', $('#testcon').html());
+    }
+    function setTableWidth(width) {
+        var content=UE.getEditor('container').getContent();
+        // var tableWidth=$("#tableWidth").val();
+        console.log(typeof width);
+        var tableWidth=width;
+        if(tableWidth==""){
+            $.message('请填写宽度');
+            return false;
+        }
+        $.ajax({
+            type: 'POST',
+            url : '${ctx}/formDesign/editTableWidth',
+            dataType : 'json',
+            data : {"tableWidth":tableWidth,"tableContent":content},
+            contentType: "application/x-www-form-urlencoded; charset=utf-8",
+            success : function(data){
+                UE.getEditor('container').setContent("");
+                UE.getEditor('container').execCommand('insertHtml',data);
+            }
+        });
     }
 </script>
 </body>

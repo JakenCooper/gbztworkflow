@@ -37,9 +37,9 @@ public class LineController extends BaseController {
     public ResponseEntity delLine(@RequestBody Line line){
         ExecResult execResult = null;
         if(!AppConst.REDIS_SWITCH) {
-            definationService.delLine(line);
+            execResult = definationService.delLine(line);
         }else{
-            definationCacheService.delLine(line);
+            execResult = definationCacheService.delLine(line);
         }
         return buildResp(execResult.charge == true ? 204:400,execResult.message);
     }

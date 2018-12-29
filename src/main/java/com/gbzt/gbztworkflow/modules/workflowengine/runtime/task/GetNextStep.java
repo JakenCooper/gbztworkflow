@@ -50,10 +50,10 @@ public class GetNextStep extends EngineBaseExecutor {
         }else{
             flowInst = arg.jedisService.findFlowByIdOrName(null,arg.execution.flowName);
         }
+        flowInst = super.getFlowComplete(arg.definationService,arg.definationCacheService,flowInst.getId());
         if(flowInst == null || flowInst.getId() ==null ||flowInst.getStartNode() == null){
             throw new EngineAccessException("flow not exist or no start node.");
         }
-        flowInst = super.getFlowComplete(arg.definationService,arg.definationCacheService,flowInst.getId());
         arg.flowInst = flowInst;
     }
 

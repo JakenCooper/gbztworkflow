@@ -115,7 +115,7 @@ public class StartProc extends EngineBaseExecutor {
                 throw e;
             }
 
-            if(execution.isTempSaveTag()){ // 暂存
+            if(execution.getTempSaveTag()){ // 暂存
                 task.setExecutedResult(procInst.getId());
                 return "success";
             }

@@ -126,6 +126,7 @@ public class DefinationCacheService extends BaseService {
                 flowMap.put("name",flow.getFlowName());
                 flowMap.put("bussTable",flow.getBussTableName());
                 flowMap.put("formkey",flow.getFormKey());
+                flowMap.put("attachfileTableName",flow.getAttachfileTableName());
                 flowList.add(flowMap);
             }else{
                 if(targetFlow.getId().equals(flow.getId())){
@@ -134,6 +135,7 @@ public class DefinationCacheService extends BaseService {
                     flowMap.put("name",flow.getFlowName());
                     flowMap.put("bussTable",flow.getBussTableName());
                     flowMap.put("formkey",flow.getFormKey());
+                    flowMap.put("attachfileTableName",flow.getAttachfileTableName());
                     flowList.add(flowMap);
                 }
             }
@@ -167,7 +169,9 @@ public class DefinationCacheService extends BaseService {
         if(StringUtils.isBlank(flowId)){
             return buildResult(false,"流程id为空",null);
         }
-        return buildResult(true,"",jedisService.findNodeByFlowIdOrderByDefIdDesc(flowId));
+        List<Node> nodes = jedisService.findNodeByFlowIdOrderByDefIdDesc(flowId);
+        nodes = Node.sortNodes(nodes);
+        return buildResult(true,"",nodes);
     }
 
     public Node getNodeByIdSimple(String nodeId){
@@ -306,10 +310,10 @@ public class DefinationCacheService extends BaseService {
         Map<String,Node> nodeMap = new HashMap<String,Node>();
         Map<String,Node> nodeIdMap = new HashMap<String,Node>();
         for(Node node : allFlowNode){
-            if(node.isBeginNode()){
+            if(node.getBeginNode()){
                 flowInst.setStartNode(node);
             }
-            if(node.isEndNode()){
+            if(node.getEndNode()){
                 flowInst.setEndNode(node);
             }
             jedisService.findAndSetNodeWholeAttributes(node);
@@ -460,7 +464,7 @@ public class DefinationCacheService extends BaseService {
         for(Node testnode : flow1.getAllNodes()){
             System.out.println(testnode.getId());
             System.out.println(testnode.getSortNum());
-            System.out.println(testnode.isBeginNode());
+            System.out.println(testnode.getBeginNode());
             System.out.println("---------------");
         }
         Map<String,Node> nodeIdMap = flow1.getNodeIdMap();
@@ -488,7 +492,7 @@ public class DefinationCacheService extends BaseService {
             }
             System.out.println(flow1.getNodeIdMap().get(key).getId());
             System.out.println(flow1.getNodeIdMap().get(key).getSortNum());
-            System.out.println(flow1.getNodeIdMap().get(key).isBeginNode());
+            System.out.println(flow1.getNodeIdMap().get(key).getBeginNode());
         }
         System.out.println(flow1.getBussColumns());
         System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++");
@@ -497,12 +501,12 @@ public class DefinationCacheService extends BaseService {
             List<Line> nextLinesListTmp = tempNode.getOutLines();
             if(nextNodesListTmp != null && nextNodesListTmp.size() > 0){
                 for(Node nn : nextNodesListTmp){
-                    System.out.println(nn.getId()+" --- "+nn.getSortNum()+" -- "+nn.isBeginNode());
+                    System.out.println(nn.getId()+" --- "+nn.getSortNum()+" -- "+nn.getBeginNode());
                 }
             }
             if(nextLinesListTmp != null && nextLinesListTmp.size() > 0){
                 for(Line ll : nextLinesListTmp){
-                    System.out.println(ll.getFlowId()+" --- "+ll.isCanRetreat()+" -- "+ll.isCanWithdraw());
+                    System.out.println(ll.getFlowId()+" --- "+ll.getCanRetreat()+" -- "+ll.getCanWithdraw());
                 }
             }
         }

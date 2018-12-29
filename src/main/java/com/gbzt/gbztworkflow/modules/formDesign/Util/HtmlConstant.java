@@ -21,6 +21,7 @@ public class HtmlConstant {
     public static final String DEFULT_TIME_VIEW_TAG;
     public static final String TIME_SELECT_VIEW_TAG;
     public static final String TREE_SELECT_VIEW_TAG;
+    public static final String TD_TAG;
    static {
        INPUT_TAG="input";
 
@@ -38,11 +39,13 @@ public class HtmlConstant {
 
        FILE_TAG="file";
 
+       TD_TAG="td";
+
        TREE_SELECT_TAG="\t\t\t<sys:treeselect id=\"treeSelect\" name=\"userName\" value=\"${office.primaryPerson.name}\" labelName=\"office.primaryPerson.name\" labelValue=\"${office.primaryPerson.name}\"\n" +
                "title=\"用户\" url=\"/sys/office/treeData?type=3\" allowClear=\"true\" notAllowSelectParent=\"true\"/>";
 
-       TIME_SELECT_TAG="<input name=\"timeSelect\" type=\"text\" readonly=\"readonly\" maxlength=\"20\" class=\"input-medium Wdate \"\n" +
-               "value=\"<fmt:formatDate value=\"${testData.inDate}\" pattern=\"yyyy-MM-dd HH:mm:ss\"/>\"\n" +
+       TIME_SELECT_TAG="<input name=\"timeSelect\" type=\"text\" readonly=\"readonly\"style=\"width\" class=\"input-medium Wdate \"\n" +
+               "value=\"<fmt:formatDate value=\"${testData.inDate}\" pattern=\"yyyy-MM-dd \"/>\"\n" +
                "onclick=\"WdatePicker({dateFmt:'yyyy-MM-dd HH:mm:ss',isShowClear:false});\"/>";
 
        DEFULT_USER_TAG="<input name=\"draftUser\" type=\"text\" readonly=\"readonly\" value=\"${fns:getUser().name}\"/>";

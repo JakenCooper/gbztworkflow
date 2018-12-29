@@ -10,6 +10,7 @@ import com.gbzt.gbztworkflow.modules.flowruntime.model.UserTreeInfo;
 import com.gbzt.gbztworkflow.modules.redis.service.JedisService;
 import com.gbzt.gbztworkflow.utils.CommonUtils;
 import com.gbzt.gbztworkflow.utils.SimpleCache;
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -292,7 +293,7 @@ public class UserNodePrivCacheService extends MetadataService {
         // 【！】构造时使用的是原始的UserNodePriv，因为查询方法中并没有对loginname做特殊处理
         List<UserTreeInfo> infos = getAllUserInfo(userNodePriv);
         if(infos != null && infos.size() > 0){
-            jedisService.setCachedString(cacheKey,JSONObject.fromObject(infos).toString());
+            jedisService.setCachedString(cacheKey,JSONArray.fromObject(infos).toString());
         }
 
         return buildResult(true,"","success");

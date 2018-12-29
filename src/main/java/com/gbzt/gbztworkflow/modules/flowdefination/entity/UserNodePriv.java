@@ -1,6 +1,7 @@
 package com.gbzt.gbztworkflow.modules.flowdefination.entity;
 
 import com.gbzt.gbztworkflow.modules.base.BaseEntity;
+import com.gbzt.gbztworkflow.modules.redis.entity.RedisMapper;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -12,14 +13,19 @@ import java.util.List;
 public class UserNodePriv extends BaseEntity {
     @Id
     @Column(name="id")
+    @RedisMapper
     private String id;
     @Column(name="node_id")
+    @RedisMapper
     private String nodeId;
     @Column(name="login_name")
+    @RedisMapper
     private String loginName;
     @Column(name="flow_id")
+    @RedisMapper
     private String flowId;
     @Column(name="node_type")
+    @RedisMapper
     private String nodeType;
 
     @Transient

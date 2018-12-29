@@ -35,11 +35,11 @@ public class Node extends BaseEntity {
     @Column(name="is_begin_node")
     @org.hibernate.annotations.Type(type="yes_no")
     @RedisMapper
-    private boolean beginNode;
+    private Boolean beginNode;
     @Column(name="is_end_node")
     @org.hibernate.annotations.Type(type="yes_no")
     @RedisMapper
-    private boolean endNode;
+    private Boolean endNode;
     @Column(name="sort_num")
     @RedisMapper
     private Integer sortNum =1;
@@ -103,19 +103,19 @@ public class Node extends BaseEntity {
         this.flowId = flowId;
     }
 
-    public boolean isBeginNode() {
+    public Boolean getBeginNode() {
         return beginNode;
     }
 
-    public void setBeginNode(boolean beginNode) {
+    public void setBeginNode(Boolean beginNode) {
         this.beginNode = beginNode;
     }
 
-    public boolean isEndNode() {
+    public Boolean getEndNode() {
         return endNode;
     }
 
-    public void setEndNode(boolean endNode) {
+    public void setEndNode(Boolean endNode) {
         this.endNode = endNode;
     }
 
@@ -198,9 +198,9 @@ public class Node extends BaseEntity {
                     String node1DefId = (n1.getNodeDefId().split("-"))[1];
                     String node2DefId = (n2.getNodeDefId().split("-"))[1];
                     if(Integer.parseInt(node1DefId) > Integer.parseInt(node2DefId)){
-                        return 1;
-                    }else if(Integer.parseInt(node1DefId) < Integer.parseInt(node2DefId)){
                         return -1;
+                    }else if(Integer.parseInt(node1DefId) < Integer.parseInt(node2DefId)){
+                        return 1;
                     }else{
                         return 0;
                     }

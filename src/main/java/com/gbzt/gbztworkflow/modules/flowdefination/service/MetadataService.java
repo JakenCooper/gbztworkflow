@@ -239,6 +239,9 @@ public class MetadataService extends BaseService {
                 if(table.equals(metadata.getBussTableName())){
                     return buildResult(false,"表名儿重复，需要重新选择",null);
                 }
+                if(table.equals(metadata.getAttachBussTableName())){
+                    return buildResult(false,"附件表名儿重复，请重新填写",null);
+                }
             }
 
             //对于神通数据库必须将所有表名和列名转换成大写
@@ -260,6 +263,20 @@ public class MetadataService extends BaseService {
             }
             sqlBuffer = new StringBuffer(sqlBuffer.substring(0,sqlBuffer.length()-1));
             sqlBuffer.append(" );");
+            StringBuffer sqlAtttachBuffer=new StringBuffer();
+
+            if(StringUtils.isNotBlank(metadata.getAttachBussTableName())){
+                sqlAtttachBuffer.append("create table ").append(metadata.getAttachBussTableName()).append(" (");
+                for(int i=0;i<metadata.getAttachBussColumns().size();i++){
+                    String column=metadata.getAttachBussColumns().get(i);
+                    String columnType=metadata.getAttachBussColumnsType().get(i);
+                    sqlAtttachBuffer.append(column).append(" ").append(columnType).append(",");
+                }
+                sqlAtttachBuffer= new StringBuffer(sqlAtttachBuffer.substring(0,sqlAtttachBuffer.length()-1));
+                sqlAtttachBuffer.append(" );");
+                PreparedStatement attachPs=connection.prepareStatement(sqlAtttachBuffer.toString());
+                attachPs.executeUpdate();
+            }
 
             PreparedStatement ps = connection.prepareStatement(sqlBuffer.toString());
             ps.executeUpdate();

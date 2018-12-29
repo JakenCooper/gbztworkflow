@@ -47,7 +47,7 @@ public class Task extends BaseEntity {
     @Column(name="child_task_tag")
     @org.hibernate.annotations.Type(type="yes_no")
     @RedisMapper
-    private boolean childTaskTag;
+    private Boolean childTaskTag;
     @Transient
     private Task parentTask;
     @Transient
@@ -63,7 +63,7 @@ public class Task extends BaseEntity {
     @Column(name="claim_tag")
     @org.hibernate.annotations.Type(type="yes_no")
     @RedisMapper
-    private boolean claimTag; // nf(sub) and af due to claim
+    private Boolean claimTag; // nf(sub) and af due to claim
     @Column(name="claim_user")
     @RedisMapper
     private String claimUser; // nf(sub) and af due to claim
@@ -86,7 +86,7 @@ public class Task extends BaseEntity {
     @Column(name="finish_tag")
     @org.hibernate.annotations.Type(type="yes_no")
     @RedisMapper
-    private boolean finishTag;
+    private Boolean finishTag;
     @Column(name="finish_user")
     @RedisMapper
     private String finishUser;
@@ -102,11 +102,11 @@ public class Task extends BaseEntity {
     @Column(name="withdraw_tag")
     @org.hibernate.annotations.Type(type="yes_no")
     @RedisMapper
-    private boolean withdrawTag;
+    private Boolean withdrawTag;
     @Column(name="retreat_tag")
     @org.hibernate.annotations.Type(type="yes_no")
     @RedisMapper
-    private boolean retreatTag;
+    private Boolean retreatTag;
     @Column(name="withdraw_description")
     @RedisMapper
     private String withdrawDescription;
@@ -128,20 +128,20 @@ public class Task extends BaseEntity {
 
     @Transient
     @RedisMapper
-    private boolean qcTag;
+    private Boolean qcTag;
     @Transient
     @RedisMapper
     private String qcUser;
     @Transient
     @RedisMapper
-    private boolean qcRtnTag;
+    private Boolean qcRtnTag;
     @Transient
     @RedisMapper
     private String qcRtnDescription;
 
     @Transient
     @RedisMapper
-    private boolean transTag;
+    private Boolean transTag;
     @Transient
     @RedisMapper
     private String transUser;
@@ -153,20 +153,12 @@ public class Task extends BaseEntity {
     private Integer priority=1;
     @Column(name="emergency_tag")
     @org.hibernate.annotations.Type(type="yes_no")
-    private boolean emergencyTag;
+    private Boolean emergencyTag;
 
     @Column(name="lock_tag")
     @org.hibernate.annotations.Type(type="yes_no")
-    private boolean lock;
+    private Boolean lock;
 
-
-    public Long getCreateTimeMills() {
-        return createTimeMills;
-    }
-
-    public void setCreateTimeMills(Long createTimeMills) {
-        this.createTimeMills = createTimeMills;
-    }
 
     public String getId() {
         return id;
@@ -198,6 +190,22 @@ public class Task extends BaseEntity {
 
     public void setFlowId(String flowId) {
         this.flowId = flowId;
+    }
+
+    public String getBussId() {
+        return bussId;
+    }
+
+    public void setBussId(String bussId) {
+        this.bussId = bussId;
+    }
+
+    public String getBussTable() {
+        return bussTable;
+    }
+
+    public void setBussTable(String bussTable) {
+        this.bussTable = bussTable;
     }
 
     public String getNodeId() {
@@ -232,6 +240,30 @@ public class Task extends BaseEntity {
         this.parentTaskId = parentTaskId;
     }
 
+    public Boolean getChildTaskTag() {
+        return childTaskTag;
+    }
+
+    public void setChildTaskTag(Boolean childTaskTag) {
+        this.childTaskTag = childTaskTag;
+    }
+
+    public Task getParentTask() {
+        return parentTask;
+    }
+
+    public void setParentTask(Task parentTask) {
+        this.parentTask = parentTask;
+    }
+
+    public List<Task> getSubTasks() {
+        return subTasks;
+    }
+
+    public void setSubTasks(List<Task> subTasks) {
+        this.subTasks = subTasks;
+    }
+
     public String getFinishType() {
         return finishType;
     }
@@ -248,11 +280,11 @@ public class Task extends BaseEntity {
         this.assignUser = assignUser;
     }
 
-    public boolean isClaimTag() {
+    public Boolean getClaimTag() {
         return claimTag;
     }
 
-    public void setClaimTag(boolean claimTag) {
+    public void setClaimTag(Boolean claimTag) {
         this.claimTag = claimTag;
     }
 
@@ -304,11 +336,11 @@ public class Task extends BaseEntity {
         this.passStr = passStr;
     }
 
-    public boolean isFinishTag() {
+    public Boolean getFinishTag() {
         return finishTag;
     }
 
-    public void setFinishTag(boolean finishTag) {
+    public void setFinishTag(Boolean finishTag) {
         this.finishTag = finishTag;
     }
 
@@ -344,19 +376,19 @@ public class Task extends BaseEntity {
         this.description = description;
     }
 
-    public boolean isWithdrawTag() {
+    public Boolean getWithdrawTag() {
         return withdrawTag;
     }
 
-    public void setWithdrawTag(boolean withdrawTag) {
+    public void setWithdrawTag(Boolean withdrawTag) {
         this.withdrawTag = withdrawTag;
     }
 
-    public boolean isRetreatTag() {
+    public Boolean getRetreatTag() {
         return retreatTag;
     }
 
-    public void setRetreatTag(boolean retreatTag) {
+    public void setRetreatTag(Boolean retreatTag) {
         this.retreatTag = retreatTag;
     }
 
@@ -376,6 +408,14 @@ public class Task extends BaseEntity {
         this.retreatDescription = retreatDescription;
     }
 
+    public Long getCreateTimeMills() {
+        return createTimeMills;
+    }
+
+    public void setCreateTimeMills(Long createTimeMills) {
+        this.createTimeMills = createTimeMills;
+    }
+
     public String getExecutionType() {
         return executionType;
     }
@@ -392,11 +432,11 @@ public class Task extends BaseEntity {
         this.executionOrder = executionOrder;
     }
 
-    public boolean isQcTag() {
+    public Boolean getQcTag() {
         return qcTag;
     }
 
-    public void setQcTag(boolean qcTag) {
+    public void setQcTag(Boolean qcTag) {
         this.qcTag = qcTag;
     }
 
@@ -408,11 +448,11 @@ public class Task extends BaseEntity {
         this.qcUser = qcUser;
     }
 
-    public boolean isQcRtnTag() {
+    public Boolean getQcRtnTag() {
         return qcRtnTag;
     }
 
-    public void setQcRtnTag(boolean qcRtnTag) {
+    public void setQcRtnTag(Boolean qcRtnTag) {
         this.qcRtnTag = qcRtnTag;
     }
 
@@ -424,11 +464,11 @@ public class Task extends BaseEntity {
         this.qcRtnDescription = qcRtnDescription;
     }
 
-    public boolean isTransTag() {
+    public Boolean getTransTag() {
         return transTag;
     }
 
-    public void setTransTag(boolean transTag) {
+    public void setTransTag(Boolean transTag) {
         this.transTag = transTag;
     }
 
@@ -456,59 +496,19 @@ public class Task extends BaseEntity {
         this.priority = priority;
     }
 
-    public boolean isEmergencyTag() {
+    public Boolean getEmergencyTag() {
         return emergencyTag;
     }
 
-    public void setEmergencyTag(boolean emergencyTag) {
+    public void setEmergencyTag(Boolean emergencyTag) {
         this.emergencyTag = emergencyTag;
     }
 
-    public boolean isLock() {
+    public Boolean getLock() {
         return lock;
     }
 
-    public void setLock(boolean lock) {
+    public void setLock(Boolean lock) {
         this.lock = lock;
-    }
-
-    public Task getParentTask() {
-        return parentTask;
-    }
-
-    public void setParentTask(Task parentTask) {
-        this.parentTask = parentTask;
-    }
-
-    public List<Task> getSubTasks() {
-        return subTasks;
-    }
-
-    public void setSubTasks(List<Task> subTasks) {
-        this.subTasks = subTasks;
-    }
-
-    public boolean isChildTaskTag() {
-        return childTaskTag;
-    }
-
-    public void setChildTaskTag(boolean childTaskTag) {
-        this.childTaskTag = childTaskTag;
-    }
-
-    public String getBussId() {
-        return bussId;
-    }
-
-    public void setBussId(String bussId) {
-        this.bussId = bussId;
-    }
-
-    public String getBussTable() {
-        return bussTable;
-    }
-
-    public void setBussTable(String bussTable) {
-        this.bussTable = bussTable;
     }
 }

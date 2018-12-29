@@ -72,7 +72,7 @@ public class RetreatTask extends EngineBaseExecutor {
         TaskExecution execution = arg.execution;
 
         //detect oper or real submit.
-        if(!execution.isRetreatSubmitTag()){
+        if(!execution.getRetreatSubmitTag()){
             task.setExecutedResult(canWithdrawOrRetreat(arg));
             return "success";
         }else{
@@ -240,10 +240,10 @@ public class RetreatTask extends EngineBaseExecutor {
         if(OPER_TYPE_WITHDRAW.equals(execution.retreatOperType)){
             // [logic][多实例] 最新任务是多实例父任务，并且其中有任何一个子任务已经完成的情况下不允许收回
             boolean childTaskFinishedTag = false;
-            if(lastTaskObj.isChildTaskTag()){
+            if(lastTaskObj.getChildTaskTag()){
                 List<Task> subTasks = arg.taskDao.findTasksByParentTaskId(lastHistProc.getTaskId());
                 for(Task subTask : subTasks){
-                    if(subTask.isFinishTag()){
+                    if(subTask.getFinishTag()){
                         childTaskFinishedTag = true;
                         break;
                     }
@@ -254,7 +254,7 @@ public class RetreatTask extends EngineBaseExecutor {
                 }
             }
             //  [logic][多实例] 如果histproc的倒数第二步是多实例任务，并且已经完成，不允许收回
-            if(secondLastTaskObj.isChildTaskTag() && secondLastTaskObj.isFinishTag()){
+            if(secondLastTaskObj.getChildTaskTag() && secondLastTaskObj.getFinishTag()){
                 logger.debug(LogUtils.getMessage(loggerType,"Proc【"+execution.procInstId+",retreat: 】last step is multi thread task"));
                 return false;
             }
@@ -263,13 +263,13 @@ public class RetreatTask extends EngineBaseExecutor {
                 logger.warn(LogUtils.getMessage(loggerType,"Proc【"+execution.procInstId+",withdraw: 】already finished."));
                 return false;
             }*/
-            if(!line.isCanWithdraw()){
+            if(!line.getCanWithdraw()){
                 logger.warn(LogUtils.getMessage(loggerType,"Proc【"+execution.procInstId+",withdraw: 】sry,can not withdraw in line model"));
                 return false;
             }
 
             if(execution.taskId.equals(secondLastHistProc.getTaskId()) && execution.passUser.equals(secondLastHistProc.getUserId())){
-                if(lastTaskObj.isChildTaskTag()){
+                if(lastTaskObj.getChildTaskTag()){
                     // 的确是允许的多实例收回任务（多实例子任务没有任何一个已经完成），将arg对象中的标志位设置成true，在之后真正的收回操作时需要特殊处理
                     arg.multiInstanceTag = true;
                 }
@@ -283,11 +283,11 @@ public class RetreatTask extends EngineBaseExecutor {
                 return false;
             }
             //  [logic][多实例] 如果histproc的倒数第二步是多实例任务，并且已经完成，不允许退回
-            if(secondLastTaskObj.isChildTaskTag() && secondLastTaskObj.isFinishTag()){
+            if(secondLastTaskObj.getChildTaskTag() && secondLastTaskObj.getFinishTag()){
                 logger.debug(LogUtils.getMessage(loggerType,"Proc【"+execution.procInstId+",retreat: 】last step is multi thread task"));
                 return false;
             }
-            if(!line.isCanRetreat()){
+            if(!line.getCanRetreat()){
                 logger.warn(LogUtils.getMessage(loggerType,"Proc【"+execution.procInstId+",retreat: 】sry,can not retreat in line model"));
                 return false;
             }
@@ -302,7 +302,7 @@ public class RetreatTask extends EngineBaseExecutor {
     @Override
     public Object handleCallback(EngineTask task) throws EngineRuntimeException {
         RetreatTask.RetreatTaskArg arg = (RetreatTask.RetreatTaskArg)task.getArgs();
-        if(!arg.execution.isRetreatSubmitTag()){
+        if(!arg.execution.getRetreatSubmitTag()){
             return (boolean)task.getExecutedResult();
         }else{
             return (String)task.getExecutedResult();

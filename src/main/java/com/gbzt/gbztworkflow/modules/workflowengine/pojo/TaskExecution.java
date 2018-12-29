@@ -15,7 +15,7 @@ public class TaskExecution {
     public String formKey;
     public String passStr;
     public String passUser; // -- common
-    private boolean tempSaveTag = false;
+    private Boolean tempSaveTag = false;
 
     //[createtask]
     public String procInstId;
@@ -24,7 +24,7 @@ public class TaskExecution {
     public String assignUser;
     public List<String> assignUserList;
     public String taskType;
-    public boolean needHistProc = true;
+    public Boolean needHistProc = true;
 
 
     //[finishtask]
@@ -34,7 +34,7 @@ public class TaskExecution {
     // public String assignUser;
     // public String assignUserList;
     /**special argument*/
-    public boolean completeAtOnce;
+    public Boolean completeAtOnce;
 
     //[getundo]
     //public String passUser;
@@ -57,7 +57,7 @@ public class TaskExecution {
 
     //[getprochistoric]
     // childTaskTag : true value desperated !!!!
-    public boolean childTaskTag; //false:[default] search historic infos for proc,true: help searching GetHisTask for user done task (un-handled data for real runtime)
+    public Boolean childTaskTag; //false:[default] search historic infos for proc,true: help searching GetHisTask for user done task (un-handled data for real runtime)
 //    public List<String> procInstIds;  // 暂时不实现，同 childTaskTag = true的情况暂时弃用
     //public String procInstId;
    // public Integer pageNum;
@@ -69,11 +69,11 @@ public class TaskExecution {
     //public String procInstId;
     //public String passUser;
     public String retreatOperType;  // -- withdraw or  retreat
-    public boolean retreatSubmitTag = false; // -- is real submit or not
-    public boolean retreatOperPermission;
+    public Boolean retreatSubmitTag = false; // -- is real submit or not
+    public Boolean retreatOperPermission;
 
 
-    public boolean claimTag;
+    public Boolean claimTag;
 
     public String executionType;
     public String executionOrder;
@@ -89,44 +89,29 @@ public class TaskExecution {
 //        this.procInstIds = procInstIds;
 //    }
 
-    public String getRetreatOperType() {
-        return retreatOperType;
+
+    public String getId() {
+        return id;
     }
 
-    public void setRetreatOperType(String retreatOperType) {
-        this.retreatOperType = retreatOperType;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public boolean isRetreatSubmitTag() {
-        return retreatSubmitTag;
+    public String getFlowName() {
+        return flowName;
     }
 
-    public void setRetreatSubmitTag(boolean retreatSubmitTag) {
-        this.retreatSubmitTag = retreatSubmitTag;
+    public void setFlowName(String flowName) {
+        this.flowName = flowName;
     }
 
-    public boolean isRetreatOperPermission() {
-        return retreatOperPermission;
+    public String getFlowId() {
+        return flowId;
     }
 
-    public void setRetreatOperPermission(boolean retreatOperPermission) {
-        this.retreatOperPermission = retreatOperPermission;
-    }
-
-    public Map<String, String> getArgMap() {
-        return argMap;
-    }
-
-    public void setArgMap(Map<String, String> argMap) {
-        this.argMap = argMap;
-    }
-
-    public boolean isChildTaskTag() {
-        return childTaskTag;
-    }
-
-    public void setChildTaskTag(boolean childTaskTag) {
-        this.childTaskTag = childTaskTag;
+    public void setFlowId(String flowId) {
+        this.flowId = flowId;
     }
 
     public String getBussId() {
@@ -145,44 +130,12 @@ public class TaskExecution {
         this.formKey = formKey;
     }
 
-    public String getFlowId() {
-        return flowId;
+    public String getPassStr() {
+        return passStr;
     }
 
-    public void setFlowId(String flowId) {
-        this.flowId = flowId;
-    }
-
-    public String getFlowName() {
-        return flowName;
-    }
-
-    public void setFlowName(String flowName) {
-        this.flowName = flowName;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getProcInstId() {
-        return procInstId;
-    }
-
-    public void setProcInstId(String procInstId) {
-        this.procInstId = procInstId;
-    }
-
-    public String getTaskId() {
-        return taskId;
-    }
-
-    public void setTaskId(String taskId) {
-        this.taskId = taskId;
+    public void setPassStr(String passStr) {
+        this.passStr = passStr;
     }
 
     public String getPassUser() {
@@ -193,12 +146,36 @@ public class TaskExecution {
         this.passUser = passUser;
     }
 
-    public String getPassStr() {
-        return passStr;
+    public Boolean getTempSaveTag() {
+        return tempSaveTag;
     }
 
-    public void setPassStr(String passStr) {
-        this.passStr = passStr;
+    public void setTempSaveTag(Boolean tempSaveTag) {
+        this.tempSaveTag = tempSaveTag;
+    }
+
+    public String getProcInstId() {
+        return procInstId;
+    }
+
+    public void setProcInstId(String procInstId) {
+        this.procInstId = procInstId;
+    }
+
+    public String getNodeId() {
+        return nodeId;
+    }
+
+    public void setNodeId(String nodeId) {
+        this.nodeId = nodeId;
+    }
+
+    public String getNodeDefId() {
+        return nodeDefId;
+    }
+
+    public void setNodeDefId(String nodeDefId) {
+        this.nodeDefId = nodeDefId;
     }
 
     public String getAssignUser() {
@@ -217,11 +194,115 @@ public class TaskExecution {
         this.assignUserList = assignUserList;
     }
 
-    public boolean isClaimTag() {
+    public String getTaskType() {
+        return taskType;
+    }
+
+    public void setTaskType(String taskType) {
+        this.taskType = taskType;
+    }
+
+    public Boolean getNeedHistProc() {
+        return needHistProc;
+    }
+
+    public void setNeedHistProc(Boolean needHistProc) {
+        this.needHistProc = needHistProc;
+    }
+
+    public String getTaskId() {
+        return taskId;
+    }
+
+    public void setTaskId(String taskId) {
+        this.taskId = taskId;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Boolean getCompleteAtOnce() {
+        return completeAtOnce;
+    }
+
+    public void setCompleteAtOnce(Boolean completeAtOnce) {
+        this.completeAtOnce = completeAtOnce;
+    }
+
+    public Integer getPageNum() {
+        return pageNum;
+    }
+
+    public void setPageNum(Integer pageNum) {
+        this.pageNum = pageNum;
+    }
+
+    public Integer getPageSize() {
+        return pageSize;
+    }
+
+    public void setPageSize(Integer pageSize) {
+        this.pageSize = pageSize;
+    }
+
+    public Integer getTotalPage() {
+        return totalPage;
+    }
+
+    public void setTotalPage(Integer totalPage) {
+        this.totalPage = totalPage;
+    }
+
+    public Map<String, String> getArgMap() {
+        return argMap;
+    }
+
+    public void setArgMap(Map<String, String> argMap) {
+        this.argMap = argMap;
+    }
+
+    public Boolean getChildTaskTag() {
+        return childTaskTag;
+    }
+
+    public void setChildTaskTag(Boolean childTaskTag) {
+        this.childTaskTag = childTaskTag;
+    }
+
+    public String getRetreatOperType() {
+        return retreatOperType;
+    }
+
+    public void setRetreatOperType(String retreatOperType) {
+        this.retreatOperType = retreatOperType;
+    }
+
+    public Boolean getRetreatSubmitTag() {
+        return retreatSubmitTag;
+    }
+
+    public void setRetreatSubmitTag(Boolean retreatSubmitTag) {
+        this.retreatSubmitTag = retreatSubmitTag;
+    }
+
+    public Boolean getRetreatOperPermission() {
+        return retreatOperPermission;
+    }
+
+    public void setRetreatOperPermission(Boolean retreatOperPermission) {
+        this.retreatOperPermission = retreatOperPermission;
+    }
+
+    public Boolean getClaimTag() {
         return claimTag;
     }
 
-    public void setClaimTag(boolean claimTag) {
+    public void setClaimTag(Boolean claimTag) {
         this.claimTag = claimTag;
     }
 
@@ -255,77 +336,5 @@ public class TaskExecution {
 
     public void setRunableType(String runableType) {
         this.runableType = runableType;
-    }
-
-    public String getNodeId() {
-        return nodeId;
-    }
-
-    public void setNodeId(String nodeId) {
-        this.nodeId = nodeId;
-    }
-
-    public String getNodeDefId() {
-        return nodeDefId;
-    }
-
-    public void setNodeDefId(String nodeDefId) {
-        this.nodeDefId = nodeDefId;
-    }
-
-    public String getTaskType() {
-        return taskType;
-    }
-
-    public void setTaskType(String taskType) {
-        this.taskType = taskType;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public boolean isCompleteAtOnce() {
-        return completeAtOnce;
-    }
-
-    public void setCompleteAtOnce(boolean completeAtOnce) {
-        this.completeAtOnce = completeAtOnce;
-    }
-
-    public Integer getPageNum() {
-        return pageNum;
-    }
-
-    public void setPageNum(Integer pageNum) {
-        this.pageNum = pageNum;
-    }
-
-    public Integer getPageSize() {
-        return pageSize;
-    }
-
-    public void setPageSize(Integer pageSize) {
-        this.pageSize = pageSize;
-    }
-
-    public Integer getTotalPage() {
-        return totalPage;
-    }
-
-    public void setTotalPage(Integer totalPage) {
-        this.totalPage = totalPage;
-    }
-
-    public boolean isTempSaveTag() {
-        return tempSaveTag;
-    }
-
-    public void setTempSaveTag(boolean tempSaveTag) {
-        this.tempSaveTag = tempSaveTag;
     }
 }

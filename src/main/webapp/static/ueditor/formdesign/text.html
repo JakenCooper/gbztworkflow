@@ -336,7 +336,7 @@ dialog.onok = function (){
                 oNode.setAttribute('orgalign',gAlign );
             }
             if( gWidth != '' ) {
-                oNode.style.width = gWidth+ 'px';
+                oNode.style.width = gWidth+ '%';
                 //style += 'width:' + gWidth + 'px;';
                 oNode.setAttribute('orgwidth',gWidth );
             }
@@ -388,7 +388,7 @@ dialog.onok = function (){
             oNode.setAttribute('orgalign', '');
         }
         if( gWidth != '' ) {
-            oNode.style.width = gWidth+ 'px';
+            oNode.style.width = gWidth+ '%';
             oNode.setAttribute('orgwidth',gWidth );
         }else{
             oNode.style.width = '';

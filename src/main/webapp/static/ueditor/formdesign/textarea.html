@@ -45,7 +45,7 @@
     </tr>
     <tr >
         <td>
-            宽 <input id="orgwidth" type="text" value="300" class="input-small span1" placeholder="auto"/> px
+            宽 <input id="orgwidth" type="text" value="300" class="input-small span1" placeholder="auto"/> %
             &nbsp;&nbsp;
             高 <input id="orgheight" type="text" value="80" class="input-small span1" placeholder="auto"/> px
         </td>
@@ -204,7 +204,7 @@ dialog.onok = function (){
                 html += 'font-size:' + gFontSize + 'px;';
             }
             if( gWidth != '' ) {
-                html += 'width:' + gWidth + 'px;';
+                html += 'width:' + gWidth + '%;';
             }
             if( gHeight != '' ) {
                 html += 'height:' + gHeight + 'px;';
@@ -242,7 +242,7 @@ dialog.onok = function (){
             oNode.setAttribute('orgfontsize', '');
         }
         if( gWidth != '' ) {
-            oNode.style.width = gWidth+ 'px';
+            oNode.style.width = gWidth+ '%';
             oNode.setAttribute('orgwidth',gWidth );
         }else{
             oNode.setAttribute('orgwidth', '');

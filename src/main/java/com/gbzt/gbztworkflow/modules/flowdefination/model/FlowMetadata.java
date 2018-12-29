@@ -21,6 +21,43 @@ public class FlowMetadata {
 
     private List<String> dbTables;
     private List<String> dbTableColumns;
+    //附件表
+    private String  attachBussTableName;//附件表名
+    private List<String> attachBussColumns; //user selected columns.
+    private List<String> attachBussColumnsType; //user selected coumns type.
+    private String isAttach;
+
+    public String getAttachBussTableName() {
+        return attachBussTableName;
+    }
+
+    public void setAttachBussTableName(String attachBussTableName) {
+        this.attachBussTableName = attachBussTableName;
+    }
+
+    public List<String> getAttachBussColumns() {
+        return attachBussColumns;
+    }
+
+    public void setAttachBussColumns(List<String> attachBussColumns) {
+        this.attachBussColumns = attachBussColumns;
+    }
+
+    public List<String> getAttachBussColumnsType() {
+        return attachBussColumnsType;
+    }
+
+    public void setAttachBussColumnsType(List<String> attachBussColumnsType) {
+        this.attachBussColumnsType = attachBussColumnsType;
+    }
+
+    public String getIsAttach() {
+        return isAttach;
+    }
+
+    public void setIsAttach(String isAttach) {
+        this.isAttach = isAttach;
+    }
 
     @Override
     public String toString() {
