@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.gbzt.gbztworkflow.modules.workflowengine.mybatisdao.UndoDao" >
+    <sql id="common_run_task">
+        t.id AS id,
+        t.task_type AS taskType,
+        t.proc_inst_id AS procInstId,
+        t.flow_id AS flowId,
+        t.buss_id AS bussId,
+        t.buss_table AS bussTable,
+        t.node_id AS nodeId,
+        t.node_name AS nodeName,
+        t.node_def_id AS nodeDefId,
+        t.parent_task_id AS parentTaskId,
+        t.child_task_tag AS childTaskTag,
+        t.finish_type AS finish_type,
+        t.assign_user AS assignUser,
+        t.claim_tag AS claimTag,
+        t.claim_user AS claimUser,
+        t. OWNER AS OWNER,
+        t.assign_time AS assignTime,
+        t.claim_time AS claimTime,
+        t.pass_str AS passStr,
+        t.finish_tag AS finishTag,
+        t.finish_user AS finishUser,
+        t.finish_time AS finishTime,
+        t.duration AS duration,
+        t.description AS description,
+        t.withdraw_tag AS withdrawTag,
+        t.retreat_tag AS retreatTag,
+        t.withdraw_description AS withdrawDescription,
+        t.retreat_description AS retreatDescription,
+        t.create_time_mills AS createTimeMills,
+        t.execution_type AS executionType,
+        t.execution_order AS execution_order,
+        t.priority AS priority,
+        t.emergency_tag AS emergencyTag,
+        t.lock_tag AS lockTag,
+        t.`create_time` AS createTime
+    </sql>
+
+  <select id="getUndoLists"  parameterType="java.util.Map" resultType="com.gbzt.gbztworkflow.modules.workflowengine.pojo.Task">
+      SELECT
+        <include refid="common_run_task"/>
+      FROM gw_run_task t
+      WHERE
+      1=1
+        AND  t.assign_user = '${assignUser}'
+        AND  t.finish_tag = 'N'
+        AND  t.finish_type='single'
+
+      <if test="searchFlag=='proc'">
+          AND t.proc_inst_id IN (
+          SELECT
+            g.proc_inst_id
+          FROM
+          gw_run_variables g)
+      </if>
+      <if test="searchFlag=='task'">
+          AND t.id IN(
+          SELECT
+            g.task_id
+          FROM
+          gw_run_variables g)
+      </if>
+      ORDER BY  ${orderByType}
+      LIMIT ${pass_page},${limit}
+  </select>
+    <select id="getUndoListsCount" resultType="java.lang.Integer" parameterType="java.util.Map">
+        SELECT COUNT(id)
+        FROM gw_run_task t
+        WHERE 1=1
+        AND  t.assign_user = '${assignUser}'
+        AND  t.finish_tag = 'N'
+        AND  t.finish_type='single'
+        <if test="searchFlag=='proc'">
+            AND t.proc_inst_id IN (
+            SELECT
+            g.proc_inst_id
+            FROM
+            gw_run_variables g)
+        </if>
+        <if test="searchFlag=='task'">
+            AND t.id IN(
+            SELECT
+            g.task_id
+            FROM
+            gw_run_variables g)
+        </if>
+    </select>
+</mapper>

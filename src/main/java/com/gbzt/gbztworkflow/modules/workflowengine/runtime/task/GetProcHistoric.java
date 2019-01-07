@@ -48,7 +48,7 @@ public class GetProcHistoric extends EngineBaseExecutor {
         TaskExecution execution = arg.execution;
         List<Task> finalTasks = new ArrayList<>();
         // [logic] 默认情况走上面的if条件，也就是查询所有去除子任务对应父任务的任务
-        if(!execution.childTaskTag){
+        if(execution.childTaskTag == null || !execution.childTaskTag){
             // historic runtime infos for proc.
             if(!AppConst.REDIS_SWITCH) {
                 finalTasks = arg.taskDao.findTasksByProcInstIdAndChildTaskTagOrderByCreateTimeMillsDesc(execution.procInstId, false);
@@ -91,8 +91,8 @@ public class GetProcHistoric extends EngineBaseExecutor {
             resultMap.put("description",resultTask.getDescription());
             resultMap.put("startTime",resultTask.getCreateTime());
             resultMap.put("endTime",resultTask.getFinishTime());
-            resultMap.put("retreatTag",resultTask.getRetreatTag());
-            resultMap.put("withdrawTag",resultTask.getWithdrawTag());
+            resultMap.put("retreatTag",resultTask.getRetreatTag() == null?false:resultTask.getRetreatTag());
+            resultMap.put("withdrawTag",resultTask.getWithdrawTag() == null ? false:resultTask.getWithdrawTag());
             resultList.add(resultMap);
         }
         task.setExecutedResult(resultList);

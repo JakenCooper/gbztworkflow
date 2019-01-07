@@ -35,6 +35,8 @@ public class TaskExecution {
     // public String assignUserList;
     /**special argument*/
     public Boolean completeAtOnce;
+    public String ownerUser;
+
 
     //[getundo]
     //public String passUser;
@@ -336,5 +338,13 @@ public class TaskExecution {
 
     public void setRunableType(String runableType) {
         this.runableType = runableType;
+    }
+
+    public String getOwnerUser() {
+        return ownerUser;
+    }
+
+    public void setOwnerUser(String ownerUser) {
+        this.ownerUser = ownerUser;
     }
 }

@@ -28,6 +28,7 @@ import com.gbzt.gbztworkflow.modules.workflowengine.runtime.entity.EngineTask;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.EngineManager;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.EngineTaskTemplateFactory;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.task.*;
+import com.gbzt.gbztworkflow.modules.workflowengine.unDoService.service.UndoService;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.BeanUtils;
@@ -79,6 +80,8 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
     private JedisService jedisService;
     @Autowired
     private UserNodePrivCacheService nodeUserPrivCacheService;
+    @Autowired
+    private UndoService undoService;
 
 
     /**
@@ -110,6 +113,7 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
         targetBaseArg.histProcDao = this.histProcDao;
         targetBaseArg.ad = this.ad;
         targetBaseArg.jedisService = this.jedisService;
+        targetBaseArg.undoService=this.undoService;
     }
 
     /*
@@ -152,8 +156,9 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
 
         EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(StartProc.class,arg,null);
         try {
-            String result = EngineManager.execute(engineTask);
-            return (TaskModel) buildResult(model,true,"",result);
+//            String result = EngineManager.execute(engineTask);
+            List<String> resultList = EngineManager.execute(engineTask);
+            return (TaskModel) buildResult(model,true,"",resultList);
         } catch (Exception e) {
             return (TaskModel)buildResult(model,4,loggerType,null,e,
                     false,e.getMessage(),null);
@@ -176,8 +181,9 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
 
         EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(FinishTask.class,arg,model.getArgMap());
         try {
-            String result = EngineManager.execute(engineTask);
-            return (TaskModel) buildResult(model,true,"",result);
+//            String result = EngineManager.execute(engineTask);
+            List<String> resultList = EngineManager.execute(engineTask);
+            return (TaskModel) buildResult(model,true,"",resultList);
         } catch (Exception e) {
             return (TaskModel)buildResult(model,4,loggerType,null,e,
                     false,e.getMessage(),null);
@@ -434,9 +440,14 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
         if(commonFileList!=null){
             for(int i=0;i<commonFileList.size();i++){
                 TaskModel t=new TaskModel();
+                t.setProcInsId(commonFileList.get(i).getProcInsId());
                 t.setFileUrl(commonFileList.get(i).getFileUrl());
                 t.setFileName(commonFileList.get(i).getFileName());
                 t.setFileRealUrl(commonFileList.get(i).getFileRealUrl());
+                t.setFileId(commonFileList.get(i).getId());
+                t.setCreateDate(commonFileList.get(i).getCreateDate());
+                t.setUploadBy(commonFileList.get(i).getUploadBy());
+                t.setDelFlag(commonFileList.get(i).getDelFlag());
                 taskModelList.add(t);
             }
         }

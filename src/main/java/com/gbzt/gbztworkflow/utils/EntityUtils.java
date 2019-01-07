@@ -8,8 +8,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,6 +24,14 @@ public class EntityUtils {
 	private static final String PACKAGE_ENTITY;
 	private static final String PACKAGE_FORMATATTRIBUTE;
 	private static final String PACKAGE_REQUEST;
+
+	private static final String ANNOTATION_CHARGE_PREFIX_STR = "get";
+	private static final Pattern ANNOTATION_CHARGE_PATTERN;
+	private static final String ANNOTATION_PREFIX_STR = "@FormItemAtt(dispalyName = \"";
+	private static final String ANNOTATION_SUFFIX_STR = "\")";
+	private static final String COMMON_NEXT_LINE = "\n";
+	private static final String COMMON_TAB = "\t";
+
 
 	static{
 		EXTENDS_PATTERN = Pattern.compile("public class (\\w+)\\s{0,}\\{");
@@ -42,9 +49,13 @@ public class EntityUtils {
 		PACKAGE_ENTITY = "import com.thinkgem.jeesite.common.persistence.ActEntity;";
 		PACKAGE_FORMATATTRIBUTE = "import com.thinkgem.jeesite.modules.FormatAttribute;";
 		PACKAGE_REQUEST = "import javax.servlet.http.HttpServletRequest;"+"\n";
+
+		ANNOTATION_CHARGE_PATTERN = Pattern.compile("\\s{0,}public.+(get.+)\\(.{0,}\\)\\s{0,}\\{");
 	}
 
-	public static void addCommonMethods4Entity(String absFilePath){
+
+
+	public static void addCommonMethods4Entity(String absFilePath, Map<String,String> attrMap){
 		BufferedReader bufferedReader = null;
 		boolean brCloseTag = false;
 		PrintWriter pw = null;
@@ -59,6 +70,20 @@ public class EntityUtils {
 			while((content=bufferedReader.readLine()) != null){
 				if(!content.contains("public class")){
 					contentList.add(content);
+					Iterator<String> attrKeyIter = attrMap.keySet().iterator();
+					begining: while(attrKeyIter.hasNext()){
+						String attrKey = attrKeyIter.next();
+						Matcher attrMatcher = ANNOTATION_CHARGE_PATTERN.matcher(content);
+						while(attrMatcher.find()){
+							String mn = attrMatcher.group(1);
+							if(mn.toLowerCase().equals((ANNOTATION_CHARGE_PREFIX_STR + attrKey).toLowerCase())){
+								String annotationStr = COMMON_TAB + ANNOTATION_PREFIX_STR + attrMap.get(attrKey) +
+										ANNOTATION_SUFFIX_STR ;
+								contentList.add(contentList.size() -1, annotationStr);
+								break begining;
+							}
+						}
+					}
 					continue;
 				}
 				StringBuffer tempBuffer = new StringBuffer(content);
@@ -131,6 +156,13 @@ public class EntityUtils {
 	}
 
 	public static void main(String[] args){
-		EntityUtils.addCommonMethods4Entity("D:\\testfiles\\UnitSendFile.java");
+		//EntityUtils.addCommonMethods4Entity("D:\\testfiles\\UnitSendFile.java");
+
+		Map<String,String> controllerMap = new HashMap<String,String>();
+		controllerMap.put("sendOpinion","签发意见");
+		controllerMap.put("sendOpinionUser","签发人");
+		controllerMap.put("articleSize","文号");
+
+		EntityUtils.addCommonMethods4Entity("D:\\testfiles\\UnitSendFile.java",controllerMap);
 	}
 }

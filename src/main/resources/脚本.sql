@@ -192,6 +192,7 @@ create  table gw_run_histtask(
   task_id varchar(36),
   proc_inst_id varchar(36),
   user_id varchar(36),
+  owner_user varchar(36),
   create_user varchar(40),
 	create_time datetime,
 	update_user varchar(40),
@@ -217,6 +218,11 @@ create table gw_run_histproc(
 	del_reason varchar(500),
 	remark varchar(500)
 );
+
+/* ================================================================== */
+/**
+*  ---- 以下是增量sql修改，数据库初始化请无视以下sql脚本 ----
+**/
 
 /* 1018 增量修改*/
 alter table gw_def_flow add create_user varchar(40);
@@ -280,3 +286,7 @@ alter table gw_run_histproc add create_time_mills long;
 
 /**20181127*/
 alter table gw_def_user_node_priv change login_name login_name longtext;
+
+/**20190102*/
+alter table gw_run_histtask add owner_user varchar(36);
+

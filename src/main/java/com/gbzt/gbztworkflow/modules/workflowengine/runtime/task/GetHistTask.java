@@ -103,8 +103,11 @@ public class GetHistTask extends EngineBaseExecutor {
 
 
         if(!AppConst.REDIS_SWITCH) {
-            // TODO wrong usage... must use join search !
             List<HistTask> histTasks = arg.histTaskDao.findHistTasksByUserId(execution.passUser);
+            List<HistTask> ownerTasks = arg.histTaskDao.findHistTasksByUserIdAndOwnerUser("",execution.passUser);
+            if(isNotBlank(ownerTasks)) {
+                histTasks.addAll(ownerTasks);
+            }
             if (isBlank(histTasks)) {
                 arg.taskModel.setTotalPage(0);
                 arg.taskModel.setPageNum(pageNum + 1);
@@ -171,6 +174,12 @@ public class GetHistTask extends EngineBaseExecutor {
                 resultMap.put("flowId", resultTask.getFlowId());
                 resultMap.put("flowName", flowInst.getFlowName());
                 resultMap.put("assignUser", resultTask.getAssignUser());
+                // 针对于任务指派人的特殊标记
+                if(!resultTask.getAssignUser().equals(execution.passUser)){
+                    resultMap.put("ownerTag",true);
+                }else{
+                    resultMap.put("ownerTag",false);
+                }
                 resultMap.put("procInstId", resultTask.getProcInstId());
                 resultMap.put("nodeId", resultTask.getNodeId());
                 try {

@@ -127,8 +127,18 @@ public class FinishTask extends EngineBaseExecutor {
                 }
                 EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(CreateTask.class,nextArg,null);
                 try {
-                    String result = EngineManager.execute(engineTask);
-                    task.setExecutedResult(result);
+                    List<String> resultList = EngineManager.execute(engineTask);
+                    // 重要逻辑：替换送阅主任务的任务id，因为没有意义
+                    List<String> finalList = new ArrayList<String>();
+                    if(isNotBlank(resultList) && resultList.size() > 1){
+                        finalList.add(taskObj.getId());
+                        for(int i=1;i<resultList.size();i++){
+                            finalList.add(resultList.get(i));
+                        }
+                    }else{
+                        finalList.add(resultList.get(0));
+                    }
+                    task.setExecutedResult(finalList);
                 } catch (Exception e) {
                     throw e;
                 }
@@ -146,6 +156,7 @@ public class FinishTask extends EngineBaseExecutor {
                         throw new EngineRuntimeException("at least one sub task not finished..");
                     }
                 }
+                thisNode = flowInst.getNodeIdMap().get(thisNode.getId());
                 if(thisNode.getNextNodes() == null || thisNode.getNextNodes().size() == 0){
                     throw new EngineRuntimeException("solid step not found.");
                 }
@@ -168,8 +179,8 @@ public class FinishTask extends EngineBaseExecutor {
 
                 EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(CreateTask.class,nextArg,null);
                 try {
-                    String result = EngineManager.execute(engineTask);
-                    task.setExecutedResult(result);
+                    List<String> resultList = EngineManager.execute(engineTask);
+                    task.setExecutedResult(resultList);
                 } catch (Exception e) {
                     throw e;
                 }
@@ -183,20 +194,21 @@ public class FinishTask extends EngineBaseExecutor {
             //  顺便完成其他逻辑处理，例如创建histproc
             List<Task> finalSubTasks = null;
             if(!AppConst.REDIS_SWITCH){
-                finalSubTasks = arg.taskDao.findTasksByParentTaskId(taskId);
+                // finalSubTasks = arg.taskDao.findTasksByParentTaskId(taskId);
+                finalSubTasks = arg.taskDao.findTasksByParentTaskId(taskObj.getParentTaskId());
             }else{
                 finalSubTasks = arg.jedisService.findSubTaskByTaskId(taskObj.getProcInstId(),taskObj.getId());
             }
             boolean allFinished = true;
             for(Task finalTask : finalSubTasks){
-                if(!finalTask.getFinishTag()){
+                if(!finalTask.getFinishTag() || finalTask.getFinishTag() == null){
                     allFinished = false;
                     break;
                 }
             }
             if(allFinished){
                 Task parentTask = null;
-                if(AppConst.REDIS_SWITCH){
+                if(!AppConst.REDIS_SWITCH){
                     parentTask = arg.taskDao.findOne(taskObj.getParentTaskId());
                 }else{
                     parentTask = arg.jedisService.findTaskById(taskObj.getParentTaskId());
@@ -204,6 +216,8 @@ public class FinishTask extends EngineBaseExecutor {
                 execution.taskId = parentTask.getId();
                 // [logic] 对创建多实例下一步任务的必要属性进行设置 -- begin
                 execution.passUser = parentTask.getCreateUser();
+                thisNode = flowInst.getNodeIdMap().get(thisNode.getId());
+                execution.flowId = flowInst.getId();
                 Node parentNextNode = thisNode.getNextNodes().get(0);
                 String parentNextPassStr = (parentNextNode.getNodeDefId().split("-"))[1];
                 execution.passStr = parentNextPassStr;
@@ -214,8 +228,8 @@ public class FinishTask extends EngineBaseExecutor {
 
                 EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(FinishTask.class,parentArg,null);
                 try {
-                    String result = EngineManager.execute(engineTask);
-                    task.setExecutedResult(result);
+                    List<String> resultList = EngineManager.execute(engineTask);
+                    task.setExecutedResult(resultList);
                 } catch (Exception e) {
                     throw e;
                 }
@@ -238,6 +252,16 @@ public class FinishTask extends EngineBaseExecutor {
         }
     }
 
+    /**
+     * [logic]
+     *  PART1. 已办数据的清除方式
+     *      对于每个流程实例，只保存每个用户的最新一条已办数据，所以保存之前都要进行清除(这里的用户是userId,对应passUser,是任务的分配人)
+     *      对于每个流程实例，只保存所属岗位的最新一条已办数据，保存之前也要进行清除操作，所以可以动态改变岗位信息（这里的岗位是ownerUser，对应ownerUser,是指派人）
+     *  PART2. 已办数据的添加方式
+     *      如果指派人为空，则不添加任何指派人数据
+     *      如果指派人和分配人相同，则不添加任何指派人数据
+     *
+     * */
     private void addHistTask(Task taskObj,HistTaskDao histTaskDao,JedisService jedisService,TaskExecution execution){
         HistTask histTask = new HistTask();
         histTask.genBaseVariables();
@@ -248,11 +272,24 @@ public class FinishTask extends EngineBaseExecutor {
         if(!AppConst.REDIS_SWITCH) {
             histTaskDao.deleteHistTaskByProcInstIdAndUserId(taskObj.getProcInstId(), execution.passUser);
             histTaskDao.save(histTask);
+            if(isNotBlank(execution.ownerUser) && !execution.ownerUser.equals(execution.passUser)){
+                histTaskDao.delAllOwnerHistTaskInProc(taskObj.getProcInstId());
+                HistTask ownerHistTask = new HistTask();
+                ownerHistTask.genBaseVariables();
+                ownerHistTask.setId(CommonUtils.genUUid());
+                ownerHistTask.setTaskId(taskObj.getId());
+                ownerHistTask.setProcInstId(taskObj.getProcInstId());
+                // 特殊值
+                ownerHistTask.setUserId("");
+                ownerHistTask.setOwnerUser(execution.ownerUser);
+                histTaskDao.save(ownerHistTask);
+            }
         }else{
             jedisService.delHistTaskByUserIdAndProcInstId(histTask.getUserId(),histTask.getProcInstId());
             jedisService.saveHistTaskOrUndo(histTask,null);
         }
     }
+
 
     private void addVariables(FinishTask.FinishTaskArg arg){
         TaskExecution execution = arg.execution;
@@ -294,8 +331,8 @@ public class FinishTask extends EngineBaseExecutor {
     }
 
     @Override
-    public String handleCallback(EngineTask task) throws EngineRuntimeException {
-        return "success";
+    public List<String> handleCallback(EngineTask task) throws EngineRuntimeException {
+        return (List<String>)task.getExecutedResult();
     }
 
 

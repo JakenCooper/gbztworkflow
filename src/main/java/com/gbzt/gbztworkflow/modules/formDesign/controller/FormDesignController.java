@@ -67,9 +67,9 @@ public class FormDesignController {
         //为每一个input元素添加label
         Document doc=formDesignService.addLabel(parse_form);
         //添加c:if标签 生成jsp 文件
-        String jspCode=formDesignService.createJsp(parse_form,currentFlowId,request,response,session,false,mode);
+        String jspCode=formDesignService.createJsp(parse_form,currentFlowId,request,response,session,false,mode,true);
         //存放 view 页面代码
-        String jspCodeView=formDesignService.createJsp(parse_form,currentFlowId,request,response,session,true,mode);
+        String jspCodeView=formDesignService.createJsp(parse_form,currentFlowId,request,response,session,true,mode,false);
         if(StringUtils.isNotBlank(jspCode)){
             formDesign.setJspCode(jspCode);
         }

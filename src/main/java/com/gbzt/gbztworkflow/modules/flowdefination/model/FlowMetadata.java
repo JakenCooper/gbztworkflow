@@ -26,6 +26,15 @@ public class FlowMetadata {
     private List<String> attachBussColumns; //user selected columns.
     private List<String> attachBussColumnsType; //user selected coumns type.
     private String isAttach;
+    private Boolean refresh = false;
+
+    public Boolean getRefresh() {
+        return refresh;
+    }
+
+    public void setRefresh(Boolean refresh) {
+        this.refresh = refresh;
+    }
 
     public String getAttachBussTableName() {
         return attachBussTableName;

@@ -1,6 +1,8 @@
 package com.gbzt.gbztworkflow.modules.velocity.controller;
 
 import com.gbzt.gbztworkflow.modules.base.BaseController;
+import com.gbzt.gbztworkflow.modules.flowElement.entity.FlowElement;
+import com.gbzt.gbztworkflow.modules.flowElement.service.FlowElementService;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
 import com.gbzt.gbztworkflow.modules.formDesign.Util.HtmlConstant;
 import com.gbzt.gbztworkflow.modules.formDesign.entity.FormDesign;
@@ -18,6 +20,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URLEncoder;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -50,6 +53,8 @@ public class VelocityController extends BaseController {
     private VelocityService velocityService;
     @Autowired
     private FormDesignService formDesignService;
+    @Autowired
+    private FlowElementService flowElementService;
 
 
     @RequestMapping(value="velocity")
@@ -163,7 +168,13 @@ public class VelocityController extends BaseController {
 
             //改造自动生成的Pojo类,在原方法后追加通用方法.
             String pojoPath = javaFilePath+Package+"/entity/"+EntityName+".java";
-            EntityUtils.addCommonMethods4Entity(pojoPath);
+            //？？？
+            List<FlowElement> flowElementList = flowElementService.findFlowElementsByFlowId(flowId);
+            Map<String,String> feMap = new HashMap<String,String>();
+            for(FlowElement flowElement : flowElementList){
+                feMap.put(flowElement.getHumpName() , flowElement.getElementNameCn());
+            }
+            EntityUtils.addCommonMethods4Entity(pojoPath,feMap);
 
             // dao层 接口需要在Mybatis逆向生成之后,覆盖原来的(其自动生成的)dao接口
             datas.put("templatePath", daoTemplatePath);

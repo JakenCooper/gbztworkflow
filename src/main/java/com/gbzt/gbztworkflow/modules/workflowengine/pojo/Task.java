@@ -47,7 +47,7 @@ public class Task extends BaseEntity {
     @Column(name="child_task_tag")
     @org.hibernate.annotations.Type(type="yes_no")
     @RedisMapper
-    private Boolean childTaskTag;
+    private Boolean childTaskTag = false;
     @Transient
     private Task parentTask;
     @Transient
@@ -63,7 +63,7 @@ public class Task extends BaseEntity {
     @Column(name="claim_tag")
     @org.hibernate.annotations.Type(type="yes_no")
     @RedisMapper
-    private Boolean claimTag; // nf(sub) and af due to claim
+    private Boolean claimTag = false; // nf(sub) and af due to claim
     @Column(name="claim_user")
     @RedisMapper
     private String claimUser; // nf(sub) and af due to claim
@@ -86,7 +86,7 @@ public class Task extends BaseEntity {
     @Column(name="finish_tag")
     @org.hibernate.annotations.Type(type="yes_no")
     @RedisMapper
-    private Boolean finishTag;
+    private Boolean finishTag = false;
     @Column(name="finish_user")
     @RedisMapper
     private String finishUser;
@@ -102,11 +102,11 @@ public class Task extends BaseEntity {
     @Column(name="withdraw_tag")
     @org.hibernate.annotations.Type(type="yes_no")
     @RedisMapper
-    private Boolean withdrawTag;
+    private Boolean withdrawTag = false;
     @Column(name="retreat_tag")
     @org.hibernate.annotations.Type(type="yes_no")
     @RedisMapper
-    private Boolean retreatTag;
+    private Boolean retreatTag = false;
     @Column(name="withdraw_description")
     @RedisMapper
     private String withdrawDescription;
@@ -128,20 +128,20 @@ public class Task extends BaseEntity {
 
     @Transient
     @RedisMapper
-    private Boolean qcTag;
+    private Boolean qcTag = false;
     @Transient
     @RedisMapper
     private String qcUser;
     @Transient
     @RedisMapper
-    private Boolean qcRtnTag;
+    private Boolean qcRtnTag = false;
     @Transient
     @RedisMapper
     private String qcRtnDescription;
 
     @Transient
     @RedisMapper
-    private Boolean transTag;
+    private Boolean transTag = false;
     @Transient
     @RedisMapper
     private String transUser;
@@ -153,11 +153,11 @@ public class Task extends BaseEntity {
     private Integer priority=1;
     @Column(name="emergency_tag")
     @org.hibernate.annotations.Type(type="yes_no")
-    private Boolean emergencyTag;
+    private Boolean emergencyTag = false;
 
     @Column(name="lock_tag")
     @org.hibernate.annotations.Type(type="yes_no")
-    private Boolean lock;
+    private Boolean lockTag = false;
 
 
     public String getId() {
@@ -504,11 +504,11 @@ public class Task extends BaseEntity {
         this.emergencyTag = emergencyTag;
     }
 
-    public Boolean getLock() {
-        return lock;
+    public Boolean getLockTag() {
+        return lockTag;
     }
 
-    public void setLock(Boolean lock) {
-        this.lock = lock;
+    public void setLockTag(Boolean lockTag) {
+        this.lockTag = lockTag;
     }
 }

@@ -13,6 +13,7 @@ import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.EngineBaseExecu
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.IEngineArg;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.entity.EngineTask;
 import com.gbzt.gbztworkflow.utils.CommonUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -55,7 +56,7 @@ public class GetUndo extends EngineBaseExecutor {
         GetUndo.GetUndoArg arg =(GetUndo.GetUndoArg)task.getArgs();
         final TaskExecution execution = arg.execution;
 
-        final List<TaskVariables> oriTaskVariables = new ArrayList<TaskVariables>();
+            final List<TaskVariables> oriTaskVariables = new ArrayList<TaskVariables>();
         // !!!! 现在只支持查询单个类型的变量对象（流程类型或者任务类型），否则直接抛出异常
         final String[] typeArr = new String[1];
         if(execution.argMap != null && execution.argMap.keySet().size() !=0 ){
@@ -83,9 +84,7 @@ public class GetUndo extends EngineBaseExecutor {
                     continue;
                 }
                 List<TaskVariables> taskVariablesList = null;
-                if(!AppConst.REDIS_SWITCH) {
-                    taskVariablesList = arg.taskVariableDao.findTaskVariablesByTypeAndKeyAndValue(varType, realKey, argValue);
-                }else{
+                if(AppConst.REDIS_SWITCH) {
                     taskVariablesList = arg.jedisService.findTaskVariablesByTypeAndKeyAndValue(varType,realKey,argValue);
                 }
                 oriTaskVariables.addAll(taskVariablesList);
@@ -94,55 +93,47 @@ public class GetUndo extends EngineBaseExecutor {
         Integer pageNum = execution.pageNum == null || execution.pageNum <= 0 ? 0 : execution.pageNum - 1;
         Integer pageSize = execution.pageSize == null || execution.pageSize <= 0 ? 10 : execution.pageSize;
         if(!AppConst.REDIS_SWITCH) {
-            Sort sort = new Sort(Sort.Direction.DESC, "createTime");
-            Specification<Task> specification = new Specification<Task>() {
-                @Override
-                public Predicate toPredicate(Root<Task> root, CriteriaQuery<?> criteriaQuery, CriteriaBuilder criteriaBuilder) {
-                    List<Predicate> predicates = new ArrayList<Predicate>();
-                    Predicate notFinished = criteriaBuilder.notEqual(root.get("finishTag").as(String.class), "Y");
-                    // TODO zhangys [!important] 测试是否会将送阅父任务查询出来！！！！
-                    predicates.add(notFinished);
-                    if (isNotBlank(execution.passUser)) {
-                        Predicate belongtoPassUser = criteriaBuilder.equal(root.get("assignUser").as(String.class), execution.passUser);
-                        predicates.add(belongtoPassUser);
-                    }
-                    if (isNotBlank(execution.procInstId)) {
-                        Predicate belongtoprocinst = criteriaBuilder.equal(root.get("procInstId").as(String.class), execution.procInstId);
-                        predicates.add(belongtoprocinst);
-                    }
-                    if (oriTaskVariables.size() > 0) {
-                        // 按照变量类型过滤相关属性(流程类型必须按照流程实例id进行过滤——【【【【【因为不可能每一个task都提交任务变量！！！！！】】】】)
-                        // 任务类型就按照任务id进行过滤，其含义是精确过滤某些任务
-                        if (typeArr[0].equals(TaskVariables.VARS_TYPE_PROC)) {
-                            Set<String> procInstIds = new HashSet<String>();
-                            for (TaskVariables tmpTaskVariable : oriTaskVariables) {
-                                procInstIds.add(tmpTaskVariable.getProcInstId());
-                            }
-                            Expression<String> inexpression = root.<String>get("procInstId");
-                            predicates.add(inexpression.in(procInstIds));
-                        } else if (typeArr[0].equals(TaskVariables.VARS_TYPE_TASK)) {
-                            Set<String> taskIds = new HashSet<String>();
-                            for (TaskVariables tmpTaskVariable : oriTaskVariables) {
-                                taskIds.add(tmpTaskVariable.getTaskId());
-                            }
-                            Expression<String> inexpression = root.<String>get("id");
-                            predicates.add(inexpression.in(taskIds));
-                        }
-                    }
-                    Predicate[] predicateArray = new Predicate[predicates.size()];
-                    return criteriaBuilder.and(predicates.toArray(predicateArray));
+
+            List<Task> taskList=new ArrayList<>();
+
+            try {
+                Map<String,Object> map=new HashMap<>();
+                map.put("assignUser",arg.execution.passUser);
+                map.put("typeArr",typeArr);
+                map.put("limits",pageSize);
+                map.put("searchFlag", typeArr[0]);
+                com.gbzt.gbztworkflow.modules.workFlowPage.entity.Page page=new com.gbzt.gbztworkflow.modules.workFlowPage.entity.Page();
+                Integer page_size=arg.taskModel.getPageSize();
+                page.setMaxPageSize(page_size);//每页数据大小
+                Integer cuurentPage=arg.taskModel.getPageNum();//当前页
+                Integer pass_page=(cuurentPage-1)*page_size;
+                Integer limit=page_size;
+                map.put("pass_page",pass_page);
+                map.put("limit",page_size);
+                if(StringUtils.isBlank(arg.taskModel.getOrderBy())){
+                    arg.taskModel.setOrderBy("t.`create_time` desc");
                 }
-            };
-            Pageable pageable = new PageRequest(pageNum, pageSize, sort);
-            Page<Task> pageResult = arg.taskDao.findAll(specification, pageable);
+                map.put("orderByType",arg.taskModel.getOrderBy());
+                Integer count=arg.undoService.getUndoListsCount(map);
+                taskList=arg.undoService.getUndoList(map);
+                if(count%page_size==0){
+                    arg.taskModel.setTotalPage(count/page_size);
+                }else{
+                    arg.taskModel.setTotalPage(count/page_size+1);
+                }
+                arg.taskModel.setPageNum(pageNum + 1);
+                arg.taskModel.setPageSize(pageSize);
+                Long ct=new Long(count);
+                arg.taskModel.setTotalCount(ct);
+                Long zjlCout=new Long(count);
+                arg.taskModel.setCount(zjlCout);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             List<Map<String, Object>> resultList = new ArrayList<Map<String, Object>>();
 
-            arg.taskModel.setTotalPage(pageResult.getTotalPages());
-            ;
-            arg.taskModel.setPageNum(pageNum + 1);
-            arg.taskModel.setPageSize(pageSize);
-            arg.taskModel.setTotalCount(pageResult.getTotalElements());
-            for (Task resultTask : pageResult.getContent()) {
+
+            for (Task resultTask : taskList) {
                 // TODO fetch variables for proc and task (cache)
                 Map<String, Object> resultMap = new HashMap<String, Object>();
                 Flow flowInst = super.getFlowComplete(arg.definationService, arg.definationCacheService, resultTask.getFlowId());
@@ -152,7 +143,9 @@ public class GetUndo extends EngineBaseExecutor {
                 resultMap.put("assignUser", resultTask.getAssignUser());
                 resultMap.put("procInstId", resultTask.getProcInstId());
                 resultMap.put("nodeId", resultTask.getNodeId());
-                resultMap.put("nodeName", flowInst.getNodeIdMap().get(resultTask.getNodeId()).getName());
+                if(flowInst.getNodeIdMap().get(resultTask.getNodeId())!=null){
+                    resultMap.put("nodeName", flowInst.getNodeIdMap().get(resultTask.getNodeId()).getName());
+                }
                 resultMap.put("nodeDefId", resultTask.getNodeDefId());
                 resultMap.put("bussId", resultTask.getBussId());
                 resultMap.put("bussTable", resultTask.getBussTable());

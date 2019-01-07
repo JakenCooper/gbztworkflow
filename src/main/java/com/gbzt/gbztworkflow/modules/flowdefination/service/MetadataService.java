@@ -69,7 +69,7 @@ public class MetadataService extends BaseService {
                 .append(metadata.getBussDbName());
         String url = prefix+metadata.getBussDbHost()+":"+metadata.getBussDbPort()+"/"+metadata.getBussDbName()
                 +suffix;
-        if(SimpleCache.inCache(speBuffer.toString())){
+        if(SimpleCache.inCache(speBuffer.toString()) && !metadata.getRefresh()){
             metadata.setDbTables((List<String>)SimpleCache.getFromCache(speBuffer.toString()));
             return buildResult(true,"",metadata);
         }

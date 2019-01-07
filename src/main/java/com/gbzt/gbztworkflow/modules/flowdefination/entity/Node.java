@@ -35,11 +35,11 @@ public class Node extends BaseEntity {
     @Column(name="is_begin_node")
     @org.hibernate.annotations.Type(type="yes_no")
     @RedisMapper
-    private Boolean beginNode;
+    private Boolean beginNode = false;
     @Column(name="is_end_node")
     @org.hibernate.annotations.Type(type="yes_no")
     @RedisMapper
-    private Boolean endNode;
+    private Boolean endNode = false;
     @Column(name="sort_num")
     @RedisMapper
     private Integer sortNum =1;

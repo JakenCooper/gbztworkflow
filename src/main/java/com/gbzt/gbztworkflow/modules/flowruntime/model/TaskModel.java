@@ -46,6 +46,7 @@ public class TaskModel extends BaseModel implements Serializable {
     private String searchType;//查询类型
     /*end*/
     /*文件上传属性:*/
+    private String fileId;
     private String fileName;
     private String fileRealUrl;
     private String fileUrl;
@@ -59,6 +60,27 @@ public class TaskModel extends BaseModel implements Serializable {
     /* 是否为暂存 start*/
     private boolean tempSaveTag = false;
     /* 是否为暂存 end*/
+    private long count;// 总记录数，设置为“-1”表示不查询总数
+
+    private String orderBy;//排序字段
+
+    public String getOrderBy() {
+        return orderBy;
+    }
+
+    public void setOrderBy(String orderBy) {
+        this.orderBy = orderBy;
+    }
+
+    public long getCount() {
+        return count;
+    }
+
+    public void setCount(long count) {
+        this.count = count;
+    }
+
+    private String ownerUser;
 	
     public boolean isTempSaveTag() {
         return tempSaveTag;
@@ -300,5 +322,22 @@ public class TaskModel extends BaseModel implements Serializable {
 
     public void setExecutionOrder(String executionOrder) {
         this.executionOrder = executionOrder;
+    }
+
+    public String getOwnerUser() {
+        return ownerUser;
+    }
+
+    public void setOwnerUser(String ownerUser) {
+        this.ownerUser = ownerUser;
+    }
+
+
+    public String getFileId() {
+        return fileId;
+    }
+
+    public void setFileId(String fileId) {
+        this.fileId = fileId;
     }
 }

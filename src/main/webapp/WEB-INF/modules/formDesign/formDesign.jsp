@@ -58,7 +58,7 @@
         <label><input type="radio" name="mode" value="0"/>紧凑模式</label>
         <label><input type="radio" name="mode" value="1" checked="checked"/>非紧凑模式</label>
         <input style="width: 55px;margin-left: 5px;" type="number" id="containerWidth"/> px
-        <button type="button" onclick="containerWidthChange();" class="btn btn-info btn-small">修改富文本宽度</button>
+        <button type="button" onclick="containerWidthChange();" class="btn btn-info btn-small">修改表单宽度</button>
        <%-- <button type="button" onclick="leipiFormDesign.exec('progressbar');" class="btn btn-info btn-small">进度条</button>--%>
        <%-- <button type="button" onclick="leipiFormDesign.exec('qrcode');" class="btn btn-info btn-small">二维码</button>--%>
         <div class="alert alert-warning">
@@ -479,7 +479,6 @@
     function setTableWidth(width) {
         var content=UE.getEditor('container').getContent();
         // var tableWidth=$("#tableWidth").val();
-        console.log(typeof width);
         var tableWidth=width;
         if(tableWidth==""){
             $.message('请填写宽度');

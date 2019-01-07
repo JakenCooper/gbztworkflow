@@ -378,6 +378,7 @@
         <form:hidden id="textRealurl" path="textRealurl" htmlEscape="false"/>
         <form:hidden id="wordsCount" path="wordsCount" htmlEscape="false"/>
 
+        <input type="hidden" id="fileJsonInfo" name="fileJsonInfo"/><!-- 上传返回结果 -->
         <input type="hidden" id="isTemporarySave" value="false" name="isTemporarySave"/><!-- 是否暂存 -->
         <input type="hidden" id="flowDefId" value="${flowDefId}" name="flowDefId"/><!-- 流程id -->
 

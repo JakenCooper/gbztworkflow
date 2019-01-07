@@ -7,6 +7,8 @@ import com.gbzt.gbztworkflow.modules.flowruntime.model.TaskData;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.TaskModel;
 import com.thinkgem.jeesite.common.config.Global;
 import com.thinkgem.jeesite.common.utils.IdGen;
+import com.thinkgem.jeesite.modules.commonFileAttach.entity.CommonFileAttach;
+import com.thinkgem.jeesite.modules.commonFileAttach.service.CommonFileAttachService;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.thinkgem.jeesite.modules.unitofficework.ofsService.UploadToStoreService;
 import org.springframework.stereotype.Controller;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.thinkgem.jeesite.common.web.BaseController;
@@ -46,6 +49,8 @@ public class ${EntityName}Controller extends BaseController {
     private ActTaskService actTaskService;
     @Autowired
     private UploadToStoreService uploadToStoreService;
+    @Autowired
+    private CommonFileAttachService commonFileAttachService;
     
     @ModelAttribute
     public ${EntityName} get(@RequestParam(required=false) String id) {
@@ -98,12 +103,14 @@ public class ${EntityName}Controller extends BaseController {
                     e.printStackTrace();
                 }
             }
+            ${entityName}.getAct().setProcDefKey("${map.flowName}");
             List<Act> list = actTaskService.nextTaskDefinition(${entityName}.getAct());
             model.addAttribute("stepList", list);
             if(StringUtils.isBlank(${entityName}.getAct().getProcDefId()) && list.size()>0){
                 ${entityName}.getAct().setProcDefId(list.get(0).getProcDefId());
             }
-            List<TaskModel>fileList= actTaskService.findCommonFileByProcInsId(${entityName}.getProcInsId());
+           // List<TaskModel> fileList = actTaskService.findCommonFileByProcInsId(${entityName}.getProcInsId());
+            List<CommonFileAttach> fileList = commonFileAttachService.findCommonFileAttachByProcInsId(${entityName}.getProcInsId());
             model.addAttribute("fileList",fileList);
             model.addAttribute("filepathlist", "nofile");
             model.addAttribute("filenamelist", "nofile");
@@ -143,7 +150,8 @@ public class ${EntityName}Controller extends BaseController {
     @RequestMapping("save")
     public String save(@RequestParam("file") MultipartFile[] files,${EntityName} ${entityName}, Model model, HttpServletRequest request, HttpServletResponse response,RedirectAttributes redirectAttributes){
 		${entityName}.getAct().setTempSaveTag(Boolean.parseBoolean(request.getParameter("isTemporarySave")));
-        String fileJsonInfo=request.getParameter("fileJsonInfo");
+        String fileInfor = request.getParameter("fileJsonInfo");
+        String fileJsonInfo[] = null != fileInfor && "" != fileInfor ? fileInfor.split("SmallComma") : null;
         ${EntityName} ${entityName}Clone = null;
         try {
             ${entityName}Clone = (${EntityName}) ${entityName}.clone();
@@ -183,18 +191,22 @@ public class ${EntityName}Controller extends BaseController {
             switch (${entityName}Clone.getAct().getFlagTrans()) {
                 case "yes":
                     ${EntityName} ${entityName}1 = ${entityName}Service.saveNew(${entityName}Clone,"yes");
-	                uploadToStoreService.uploadFileToOfficeStore(files,${entityName}Clone.getProcInsId(),"${entityName_CN}");
-	                if(StringUtils.isNotBlank(fileJsonInfo)){
-                        uploadFile(fileJsonInfo,${entityName}1);
+	               	// uploadToStoreService.uploadFileToOfficeStore(files,${entityName}Clone.getProcInsId(),"${entityName_CN}");
+                    if(null != fileJsonInfo){
+                        for(int i = 0; i < fileJsonInfo.length; i++) {
+                            if(StringUtils.isNotBlank(fileJsonInfo[i])){
+                                ${entityName}Service.uploadFile("["+fileJsonInfo[i]+"]",${entityName});
+                            }
+                        }
                     }
                     model.addAttribute("message", "流程处理成功！");
                     if(isNewRecord){
-                        return "redirect:"+Global.getAdminPath()+"/act/task/todo?messagetag=1";
-                        // return "redirect:"+Global.getAdminPath()+"/${package}/${entityName}/form?messagetag=1";
+                        // return "redirect:"+Global.getAdminPath()+"/act/task/todo?messagetag=1";
+                        return "redirect:"+Global.getAdminPath()+"/${package}/${entityName}/form?messagetag=1";
                     }
                         return "redirect:"+Global.getAdminPath()+"/act/task/todo?messagetag=1";
                         // return form(${entityName}Clone, model,request,response);
-	            default:
+	           default:
 	                ${entityName}Service.saveNew(${entityName}Clone,"no");
 	                model.addAttribute("message", "流程处理成功");
 	                return "success";
@@ -234,21 +246,5 @@ public class ${EntityName}Controller extends BaseController {
         ${entityName}Service.delete(${entityName});
         addMessage(redirectAttributes, "删除单表成功");
         return "redirect:"+Global.getAdminPath()+"/${package}/${entityName}/?repage";
-    }
-    
-    public void uploadFile(String fileJsonInfo,${EntityName} ${entityName}){
-        JSONArray json = JSONArray.fromObject(fileJsonInfo);
-        int size = json.size();
-        for (int i = 0; i < size; i++) {
-            TaskModel taskModel=new TaskModel();
-            taskModel.setFlowName("专项纪要");
-            taskModel.setUploadBy(UserUtils.getUser().getLoginName());
-            taskModel.setProcInstId(${entityName}.getProcInsId());
-            JSONObject o = (JSONObject) json.get(i);
-            taskModel.setFileName(o.get("fileName").toString());
-            taskModel.setFileRealUrl(o.get("fileRealUrl").toString());
-            taskModel.setFileUrl(o.get("fileUrl").toString());
-            actTaskService.uploadFileInfo(taskModel);
-        }
     }
 }

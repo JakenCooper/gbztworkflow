@@ -240,7 +240,8 @@ public class RetreatTask extends EngineBaseExecutor {
         if(OPER_TYPE_WITHDRAW.equals(execution.retreatOperType)){
             // [logic][多实例] 最新任务是多实例父任务，并且其中有任何一个子任务已经完成的情况下不允许收回
             boolean childTaskFinishedTag = false;
-            if(lastTaskObj.getChildTaskTag()){
+            if(lastTaskObj!=null && lastTaskObj.getChildTaskTag()!=null
+                    && lastTaskObj.getChildTaskTag() == true){
                 List<Task> subTasks = arg.taskDao.findTasksByParentTaskId(lastHistProc.getTaskId());
                 for(Task subTask : subTasks){
                     if(subTask.getFinishTag()){
@@ -254,7 +255,9 @@ public class RetreatTask extends EngineBaseExecutor {
                 }
             }
             //  [logic][多实例] 如果histproc的倒数第二步是多实例任务，并且已经完成，不允许收回
-            if(secondLastTaskObj.getChildTaskTag() && secondLastTaskObj.getFinishTag()){
+            if(secondLastTaskObj.getChildTaskTag()!=null &&
+                    secondLastTaskObj.getFinishTag() !=null &&
+                    secondLastTaskObj.getChildTaskTag() == true && secondLastTaskObj.getFinishTag() == true){
                 logger.debug(LogUtils.getMessage(loggerType,"Proc【"+execution.procInstId+",retreat: 】last step is multi thread task"));
                 return false;
             }

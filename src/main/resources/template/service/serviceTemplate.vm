@@ -1,10 +1,7 @@
 package com.thinkgem.jeesite.modules.${package}.service;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Date;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 import com.gbzt.gbztworkflow.modules.flowruntime.model.TaskData;
 import com.google.common.collect.Maps;
@@ -13,8 +10,12 @@ import com.thinkgem.jeesite.common.service.CrudService;
 import com.thinkgem.jeesite.common.utils.MessageUtils;
 import com.thinkgem.jeesite.common.utils.StringUtils;
 import com.thinkgem.jeesite.modules.act.service.ActTaskService;
+import com.thinkgem.jeesite.modules.commonFileAttach.entity.CommonFileAttach;
+import com.thinkgem.jeesite.modules.commonFileAttach.service.CommonFileAttachService;
 import com.thinkgem.jeesite.modules.sys.entity.User;
 import com.thinkgem.jeesite.modules.sys.utils.UserUtils;
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +35,8 @@ public class ${EntityName}Service  extends CrudService<${EntityName}Dao, ${Entit
     private ${EntityName}Dao dao;
     @Autowired
     private ActTaskService actTaskService;
+    @Autowired
+    private CommonFileAttachService commonFileAttachService;
     
     //@Transactional(readOnly = false)
     //public ${EntityName} get${EntityName}ByProcInsId(String procInsId) {
@@ -111,7 +114,7 @@ public class ${EntityName}Service  extends CrudService<${EntityName}Dao, ${Entit
                 String procInsId = null;
 				// 起草暂存在后台接口处进行特殊处理; 其余暂存直接存入业务表,不进行处理
                 try {
-                    procInsId = actTaskService.startProcess(${entityName}.getAct());
+                    procInsId = (actTaskService.startProcess(${entityName}.getAct())).get(0);
                 } catch (Exception e1) {
                     e1.printStackTrace();
                     delete(${entityName});
@@ -150,6 +153,34 @@ public class ${EntityName}Service  extends CrudService<${EntityName}Dao, ${Entit
             e.printStackTrace();
         }
                 return ${entityName};
+    }
+public void uploadFile(String fileJsonInfo, ${EntityName} ${entityName}){
+        JSONArray json = null;
+        try {
+            json = JSONArray.fromObject(fileJsonInfo);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        int size = json.size();
+        if(StringUtils.isBlank(fileJsonInfo)||StringUtils.isBlank(${entityName}.getProcInsId())){
+            return;
+        }
+        for (int i = 0; i < size; i++) {
+            CommonFileAttach commonFileAttach=new CommonFileAttach();
+            commonFileAttach.setId(UUID.randomUUID().toString());
+            commonFileAttach.setFlowName("${map.flowName}");
+            commonFileAttach.setUploadBy(UserUtils.getUser().getLoginName());
+            commonFileAttach.setProcInsId(${entityName}.getProcInsId());
+            JSONObject o = (JSONObject) json.get(i);
+            commonFileAttach.setFileName(o.get("fileName").toString());
+            commonFileAttach.setFileRealUrl(o.get("fileRealUrl").toString());
+            commonFileAttach.setFileUrl(o.get("fileUrl").toString());
+            SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String date=sdf.format(new Date());
+            commonFileAttach.setCreateDate(date);
+            commonFileAttach.setDelFlag("1");
+            commonFileAttachService.save(commonFileAttach);
+        }
     }
     
 }

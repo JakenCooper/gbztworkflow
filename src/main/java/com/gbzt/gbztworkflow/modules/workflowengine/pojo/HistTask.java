@@ -23,6 +23,10 @@ public class HistTask extends BaseEntity {
     @RedisMapper
     private String userId;
 
+    @Column(name ="owner_user")
+    @RedisMapper
+    private String ownerUser;
+
     public String getId() {
         return id;
     }
@@ -53,5 +57,13 @@ public class HistTask extends BaseEntity {
 
     public void setUserId(String userId) {
         this.userId = userId;
+    }
+
+    public String getOwnerUser() {
+        return ownerUser;
+    }
+
+    public void setOwnerUser(String ownerUser) {
+        this.ownerUser = ownerUser;
     }
 }

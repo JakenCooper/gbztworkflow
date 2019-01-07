@@ -35,11 +35,11 @@ public class Line extends BaseEntity {
     @Column(name="can_withdraw")
     @org.hibernate.annotations.Type(type="yes_no")
     @RedisMapper
-    private Boolean canWithdraw;
+    private Boolean canWithdraw = false;
     @Column(name="can_retreat")
     @org.hibernate.annotations.Type(type="yes_no")
     @RedisMapper
-    private Boolean canRetreat;
+    private Boolean canRetreat = false;
     @Column(name="task_type")
     @RedisMapper
     private String taskType;

@@ -1,12 +1,18 @@
 package com.gbzt.gbztworkflow.config;
 
 import com.alibaba.druid.pool.DruidDataSource;
+import org.apache.ibatis.session.SqlSessionFactory;
 import org.hibernate.Hibernate;
+import org.mybatis.spring.SqlSessionFactoryBean;
+import org.mybatis.spring.mapper.ClassPathMapperScanner;
+import org.mybatis.spring.mapper.MapperScannerConfigurer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.JpaVendorAdapter;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
@@ -14,6 +20,7 @@ import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 
 import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
+import java.io.IOException;
 
 @Configuration
 @EnableJpaRepositories(basePackages = "com.gbzt.gbztworkflow.modules")
@@ -80,5 +87,38 @@ public class RepoConfig {
             emf.setPackagesToScan("com.gbzt.gbztworkflow.modules");
             return emf;
         }
+
+
+        @Bean(name="sqlSessionFactory")
+        @Autowired
+        public SqlSessionFactoryBean getSqlSessionFactory(DataSource dataSource){
+            SqlSessionFactoryBean sfb = new SqlSessionFactoryBean();
+            sfb.setDataSource(dataSource);
+
+            PathMatchingResourcePatternResolver resourceLoader = new PathMatchingResourcePatternResolver();
+            Resource[] mapperResources = null;
+            try {
+                mapperResources = resourceLoader.getResources("classpath:/mybatis/*.xml");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            Resource configResource= null;
+            try {
+                configResource = resourceLoader.getResource("mybatis-config.xml");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            sfb.setTypeAliasesPackage("com.gbzt.gbztworkflow.modules.workflowengine.pojo");
+            sfb.setConfigLocation(configResource);
+            sfb.setMapperLocations(mapperResources);
+            return sfb;
+        }
+    }
+
+    @Bean
+    public MapperScannerConfigurer getMapperScannerConfigurer(){
+        MapperScannerConfigurer msc = new MapperScannerConfigurer();
+        msc.setBasePackage("com.gbzt.gbztworkflow.modules.workflowengine.mybatisdao");
+        return msc;
     }
 }

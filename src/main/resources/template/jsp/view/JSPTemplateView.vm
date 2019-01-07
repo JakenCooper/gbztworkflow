@@ -372,7 +372,7 @@
 <div id="newButtonDiv" style="width:543px;margin:0 auto;height:30px;">
     <%--暂存 编辑正文 返回 流转历史--%>
     <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="返  回" onclick="refreshList()"/>&nbsp;
-    <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="暂  存" onclick="temporarySave('yes')"/>&nbsp;
+##    <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="暂  存" onclick="temporarySave('yes')"/>&nbsp;
     <c:if test="${notEmpty} ${entityName}.textType }">
         <input id="assignButton" class="btn" type="button" value="查看正文" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;"
                onclick="seeDoc($('#textType').val(),3,'textAddr','','textContent','${ctx}','${pageContext.request.contextPath}',DocStorePath)"/>&nbsp;
@@ -380,7 +380,10 @@
     <c:if test="${empty} ${entityName}.textType }">
         <input id="assignButton" class="btn" type="button" style="background: #F3F3F3; color: black;" value="无正文" disabled="disabled"/>&nbsp;
     </c:if>
-    <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" id="btn-withdraw" class="btn" type="button" value="收  回" onclick="withdrawOrRetreatOper('withdraw')"/>&nbsp;
+    <!-- 判断岗位权限 -->
+    <c:if test="${${entityName}.act.ownerTag == false}">
+    	<input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" id="btn-withdraw" class="btn" type="button" value="收  回" onclick="withdrawOrRetreatOper('withdraw')"/>&nbsp;
+    </c:if>
     <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="监  控" onclick="history('${${entityName}.act.procInsId}');"/>&nbsp;
 </div>
 <div id="containerDIV" style="margin: 0 auto;width: 575px">

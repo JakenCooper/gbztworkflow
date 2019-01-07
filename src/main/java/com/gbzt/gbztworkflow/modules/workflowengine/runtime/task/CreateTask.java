@@ -77,6 +77,9 @@ public class CreateTask extends EngineBaseExecutor {
         TaskExecution execution = arg.execution;
         Task taskObj = new Task();
         List<Task> subTasks = new ArrayList<Task>();
+        // add by zhangys 20190103 返回所有的taskid列表，为了兼容工作平台对接的待浏览请求回执
+        // 但其实这里返回的taskid列表是不能直接使用的，因为多实例主任务的taskid是没有意义的
+        List<String> allTaskIds = new ArrayList<String>();
         taskObj.setId(CommonUtils.genUUid());
         taskObj.genBaseVariables();
         taskObj.setCreateUser(execution.passUser);
@@ -119,6 +122,7 @@ public class CreateTask extends EngineBaseExecutor {
 
         taskObj.setExecutionType(execution.executionType);
         taskObj.setExecutionOrder(execution.executionOrder);
+        taskObj.setFinishTag(new Boolean(false));
 
         if(execution.assignUser != null){
             taskObj.setAssignUser(execution.assignUser);
@@ -158,6 +162,7 @@ public class CreateTask extends EngineBaseExecutor {
                 subTask.setTaskType(AppConst.FLOWRUNTIME_TASKTYPE_USER);
                 subTask.setExecutionType(null);
                 subTask.setExecutionOrder(null);
+                subTask.setFinishTag(new Boolean(false));
                 subTasks.add(subTask);
             }
         }
@@ -175,6 +180,12 @@ public class CreateTask extends EngineBaseExecutor {
                 arg.jedisService.saveTask(subTasks);
             }else{
                 arg.jedisService.saveTask(taskObj);
+            }
+        }
+        allTaskIds.add(taskObj.getId());
+        if(subTasks.size() > 0){
+            for(Task subTask : subTasks){
+                allTaskIds.add(subTask.getId());
             }
         }
         // [logic] 只有标记字段为true时才需要创建histtask（目前只有收回退回时无需创建）
@@ -201,13 +212,14 @@ public class CreateTask extends EngineBaseExecutor {
             }
         }
 
-        task.setExecutedResult(taskObj.getId());
+//        task.setExecutedResult(taskObj.getId());
+        task.setExecutedResult(allTaskIds);
         return null;
     }
 
     @Override
-    public String handleCallback(EngineTask task) throws EngineRuntimeException {
-        return (String)task.getExecutedResult();
+    public List<String> handleCallback(EngineTask task) throws EngineRuntimeException {
+        return (List<String>)task.getExecutedResult();
     }
 
 

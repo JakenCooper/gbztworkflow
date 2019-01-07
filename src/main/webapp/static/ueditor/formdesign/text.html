@@ -300,7 +300,7 @@ dialog.onok = function (){
             }
         });
     }
-    var gValue=$G('orgvalue').value.replace(/\"/g,"&quot;"),gTitle=$G('orgname').value.replace(/\"/g,"&quot;"),gName=$G('fieldname').value,gFontSize=$G('orgfontsize').value,gAlign=$G('orgalign').value,gWidth=$G('orgwidth').value,gHeight=$G('orgheight').value,gType=$G('orgtype').value,id=$G('id').value, name=$("#name").val();
+    var gValue=$G('orgvalue').value.replace(/\"/g,"&quot;"),gTitle=$G('orgname').value.replace(/\"/g,"&quot;"),gName=$G('fieldname').value,gFontSize=$G('orgfontsize').value,gAlign=$G('orgalign').value,gWidth=$G('orgwidth').value,gHeight=$G('orgheight').value,gType=$G('orgtype').value,id=$G('id').value, name=$("#name").val(),inputType=$G('input ');
 
     if( !oNode ) {
 
@@ -435,11 +435,14 @@ dialog.onok = function (){
     </tr>
      <tr>
         <th><span>默认值</span> </th>
-        <th><span style="display: none">流程变量</span> </th>
+        <th><span style="display: none">流程变量</span>
+
+        </th>
     </tr>
     <tr>
         <td><input type="text" id="orgvalue" placeholder="无则不填"></td>
-        <td ><label class="checkbox inline" style="display: none"><input id="fieldflow" type="checkbox"/> 流程变量</label></td>
+        <td ><label class="checkbox inline" style="display: none"><input id="fieldflow" type="checkbox"/> 流程变量</label>
+        </td>
     </tr>
     <tr>
         <th><span>数据类型</span> </th>
@@ -449,10 +452,8 @@ dialog.onok = function (){
         <td>
              <select id="orgtype">
                 <option value="text">普通文本</option>
-                <option value="email">邮箱地址</option>
-                <option value="int">整数</option>
-                <option value="float">小数</option>
-                <option value="idcard">身份证号码</option>
+                <option value="date">时间选择框</option>
+                 <option value="userTree">人员树</option>
             </select>   
         </td>
         <td>
@@ -470,7 +471,7 @@ dialog.onok = function (){
     </tr>
     <tr >
         <td>
-            <input id="orgwidth" type="text" value="150" class="input-small span1" placeholder="auto"/>
+            <input id="orgwidth" type="text" value="85" class="input-small span1" placeholder="auto"/>
             X
             <input id="orgheight" type="text" value="" class="input-small span1" placeholder="auto"/>
             &

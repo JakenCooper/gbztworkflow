@@ -1,6 +1,8 @@
 package com.gbzt.gbztworkflow.modules.formDesign.service;
 
 
+import com.gbzt.gbztworkflow.modules.flowElement.dao.FlowElementDao;
+import com.gbzt.gbztworkflow.modules.flowElement.entity.FlowElement;
 import com.gbzt.gbztworkflow.modules.flowdefination.dao.FlowDao;
 import com.gbzt.gbztworkflow.modules.flowdefination.dao.NodeDao;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
@@ -14,6 +16,7 @@ import com.gbzt.gbztworkflow.modules.taskNodePermissions.entity.TaskNodePermissi
 import com.gbzt.gbztworkflow.modules.velocity.service.VelocityService;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
+import org.jsoup.helper.DataUtil;
 import org.jsoup.helper.StringUtil;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -40,7 +43,8 @@ public class FormDesignService {
     private FlowDao flowDao;
     @Autowired
     private NodeDao nodeDao;
-
+    @Autowired
+    private FlowElementDao flowElementDao;
     public void save(FormDesign formDesign) throws ParseException {
      /*   if(formDesign.getCreateDate()!=null){
             formDesignDao.saveAndFlush(formDesign);
@@ -141,7 +145,7 @@ public class FormDesignService {
         return doc;
     }
 
-    public String createJsp(String parseForm, String currentFlowId, HttpServletRequest request, HttpServletResponse response, HttpSession session,boolean isView,String mode) {
+    public String createJsp(String parseForm, String currentFlowId, HttpServletRequest request, HttpServletResponse response, HttpSession session,boolean isView,String mode,boolean isElement) {
         //用来操作form 代码
         long startTime = System.currentTimeMillis();
         Document doc= Jsoup.parseBodyFragment(parseForm);
@@ -151,7 +155,9 @@ public class FormDesignService {
         Elements checkBoxElements=doc.getElementsByAttributeValue("leipiplugins","checkboxs");
         Elements radioElements=doc.getElementsByAttributeValue("leipiplugins","radios");
         Elements tbElements=doc.getElementsByTag(HtmlConstant.TABLE_AREA_TAG);
+        boolean deleteFlag=false;
         Map<String,String> nodesMap=new HashMap<>();
+        FormDesign flowName=formDesignDao.findFormDesignByCurrentFlowId(currentFlowId);
         try {
             /*radio -------------------------------------------------------------start*/
             out:
@@ -160,12 +166,25 @@ public class FormDesignService {
                 String name=element.child(i).attr("name");
                 //控件拼接id接不到 暂时使用控件自身字段接收
                 String id=element.attr("fieldname");
+                String orgtype=element.attr("orgtype");
+                String orgName=element.attr("name");
+                String fieldname= element.attr("title");
+
                 if(name.contains("_")){
                     name= UeditorTools.humpNomenclature(name);
                     int childSize=element.children().size();
                     for(int m=0;m<childSize;m++){
                         element.child(m).attr("name",name).removeAttr("type");
                     }
+                }
+                if(isElement){
+                    List<FlowElement> flowElementList=flowElementDao.findFlowElementsByFlowId(currentFlowId);
+                    if(flowElementList.size()>0&&!deleteFlag){
+                        flowElementDao.deleteFlowElementByFlowId(currentFlowId);
+                        deleteFlag=true;
+                    }
+                    FlowElement flowElement=new FlowElement(UUID.randomUUID().toString(),currentFlowId,flowName.getFormName(),id,fieldname,orgName,name, new Date());
+                    flowElementDao.save(flowElement);
                 }
                 String style=element.child(i).attr("style");
                 //字段名称
@@ -258,7 +277,19 @@ public class FormDesignService {
                 Element element=checkBoxElements.get(i);
                 String name=element.child(i).attr("name");
                 //控件拼接id接不到 暂时使用控件自身字段接收
-                String id=element.attr("title");
+                String ids[]=element.attr("title").split(",");
+                String id="";
+                String orgName="";
+                String fieldname="";
+                if(ids.length>=2){
+                     id=ids[0];
+                     orgName=element.child(i).attr("name");
+                    fieldname=ids[1];
+                }else{
+                     id=element.attr("title");
+                     orgName=name;
+                }
+
                 if(name.contains("_")){
                     name= UeditorTools.humpNomenclature(name);
                     Elements elements=element.children();
@@ -266,6 +297,16 @@ public class FormDesignService {
                     for(int m=0;m<childSize;m++){
                         element.child(m).attr("name",name).removeAttr("type");
                     }
+                }
+
+                if(isElement){
+                    List<FlowElement> flowElementList=flowElementDao.findFlowElementsByFlowId(currentFlowId);
+                    if(flowElementList.size()>0&&!deleteFlag){
+                        flowElementDao.deleteFlowElementByFlowId(currentFlowId);
+                        deleteFlag=true;
+                    }
+                    FlowElement flowElement=new FlowElement(UUID.randomUUID().toString(),currentFlowId,flowName.getFormName(),id,fieldname,orgName,name, new Date());
+                    flowElementDao.save(flowElement);
                 }
                 String style=element.child(i).attr("style");
                 //字段名称
@@ -357,9 +398,27 @@ public class FormDesignService {
                 String id=element.attr("id");
                 String name=element.attr("name");
                 String type=element.attr("type");
+                String orgtype=element.attr("orgtype");
+                String orgName=element.attr("name");
+                String fieldname=null;
+                if(StringUtils.isBlank(element.attr("fieldname"))){
+                    fieldname=element.attr("title");
+                }else{
+                    fieldname=element.attr("fieldname");
+                }
+
                 if(name.contains("_")){
                     name= UeditorTools.humpNomenclature(name);
                     element.attr("name",name);
+                }
+                if(isElement&& HtmlConstant.INPUT_TYPE_TEXT.equals(type)){
+                    List<FlowElement> flowElementList=flowElementDao.findFlowElementsByFlowId(currentFlowId);
+                    if(flowElementList.size()>0&&!deleteFlag){
+                        flowElementDao.deleteFlowElementByFlowId(currentFlowId);
+                        deleteFlag=true;
+                    }
+                    FlowElement flowElement=new FlowElement(UUID.randomUUID().toString(),currentFlowId,flowName.getFormName(),id,fieldname,orgName,name, new Date());
+                    flowElementDao.save(flowElement);
                 }
                 String style=element.attr("style");
                 //字段名称
@@ -382,10 +441,22 @@ public class FormDesignService {
                         endWhen="\n\r\t\t##end_c:when_###end\n\r";
                     }
                     /*String lable="\n\r\t\t\t<lable for=\""+id+"\">"+fieldName+"</lable>:\n\r";*/
+
+
+                    String outerHtml=element.outerHtml();
+
+                    if(HtmlConstant.INPUT_TYPE_TEXT.equals(type)){
+                        outerHtml=outerHtml.replace("<input","<form:input").replace("name=","path=").replace(">","/>");
+                    }else {
+                        continue;
+                    }
+                    if(HtmlConstant.DATE_INPUT_TYPE_TAG.equals(orgtype)){
+                        outerHtml=HtmlConstant.getDateInput(name,permission,"");
+                    }
                     //重置前一个input样式
                     element.attr("style",style);
                     element.removeAttr("readonly");
-                    if(HtmlConstant.INPUT_TYPE_TEXT.equals(type)){
+                    if(HtmlConstant.INPUT_TYPE_TEXT.equals(type)&&!HtmlConstant.INPUT_TYPE_TEXT.equals(type)){
                         if("不可见".equals(permission)){
                             //设置新的权限
                             element.attr("style",style+"display:none");
@@ -394,12 +465,13 @@ public class FormDesignService {
                             element.attr("readonly","${readonly}");
                         }
                     }
-                    String outerHtml=element.outerHtml();
-
-                    if(HtmlConstant.INPUT_TYPE_TEXT.equals(type)){
-                        outerHtml=outerHtml.replace("<input","<form:input").replace("name=","path=").replace(">","/>");
-                    }else {
-                        continue;
+                    //时间控件设置权限
+                    if(HtmlConstant.DATE_INPUT_TYPE_TAG.equals(orgtype)){
+                        outerHtml=HtmlConstant.getDateInput(name,permission,"");
+                    }
+                    //人员树
+                    if(HtmlConstant.USER_TREE_TYPE_TAG.equals(type)){
+                        outerHtml=HtmlConstant.getUserTreeTag(name,permission,"");
                     }
                    String code="";
                     String uuid=UUID.randomUUID().toString();
@@ -418,20 +490,28 @@ public class FormDesignService {
 
                 }
                 if(taskNodePermissionsList.size()==0){
+                    Node node= nodeDao.findNodeByFlowIdAndBeginNode(currentFlowId,true);
                     String uuid=UUID.randomUUID().toString();
-
-
                     String key="##tranJsp"+uuid+"##tranJsp_";
-
+                    String outerHtml=element.removeAttr("type").outerHtml();
                     if(HtmlConstant.INPUT_TYPE_TEXT.equals(type)){
-                        String outerHtml=element.removeAttr("type").outerHtml();
                         // = 号为避免实体类属性中也存在name字符串
                         outerHtml=outerHtml.replace("input","form:input").replace("name=","path=").replace(">","/>");
                         nodesMap.put(key,"\t\t\t"+outerHtml);
                     }
+                    //时间控件设置权限
+                    if(HtmlConstant.DATE_INPUT_TYPE_TAG.equals(orgtype)){
+                        outerHtml=HtmlConstant.getDateInput(name,"",node.getName());
+                        nodesMap.put(key,"\t\t\t"+outerHtml);
+                    }
+                    //人员树
+                    if(HtmlConstant.USER_TREE_TYPE_TAG.equals(orgtype)){
+                        outerHtml=HtmlConstant.getUserTreeTag(name,"",node.getName());
+                        nodesMap.put(key,"\t\t\t"+outerHtml);
+                    }
 
                     if(HtmlConstant.FILE_TAG.equals(type)){
-                        Node node= nodeDao.findNodeByFlowIdAndBeginNode(currentFlowId,true);
+
                         String startWhen="\n\r\t\t##start_:when test=\"${'"+node.getName()+"'==taskName"+"}\"_###end\n\r";
                         String endWhen="\n\r\t\t##end_c:when_###end\n\r";
                         String otherwiseStart="\n\r\t\t##start_:otherwise _###end\n\r";
@@ -440,6 +520,8 @@ public class FormDesignService {
                                 otherwiseStart+"\n\r"+HtmlConstant.FILE_LIST_TAG+"\n\r"+otherwiseEnd+"##chooseEnd";
                         nodesMap.put(key, "\t\t\t" + fileCode);
                     }
+
+
 
                     element.after(key);
                 }
@@ -475,9 +557,27 @@ public class FormDesignService {
                 String fieldName=element.attr("fieldname");
                 String type=element.attr("type");
                 String name=element.attr("name");
+                String orgtype=element.attr("orgtype");
+                String orgName=element.attr("name");
+                String fieldname=null;
+                if(StringUtils.isBlank(element.attr("fieldname"))){
+                    fieldname=element.attr("title");
+                }else{
+                    fieldname=element.attr("fieldname");
+                }
                 if(name.contains("_")){
                     name= UeditorTools.humpNomenclature(name);
                     element.attr("name",name);
+                }
+
+                if(isElement){
+                    List<FlowElement> flowElementList=flowElementDao.findFlowElementsByFlowId(currentFlowId);
+                    if(flowElementList.size()>0&&!deleteFlag){
+                        flowElementDao.deleteFlowElementByFlowId(currentFlowId);
+                        deleteFlag=true;
+                    }
+                    FlowElement flowElement=new FlowElement(UUID.randomUUID().toString(),currentFlowId,flowName.getFormName(),id,fieldname,orgName,name, new Date());
+                    flowElementDao.save(flowElement);
                 }
                 //拼接c:if
                 List<TaskNodePermissions> taskNodePermissionsList=taskPermissionsDao.findByTaskNodeIdAndAndCurrentFlowId(id,currentFlowId);
@@ -567,9 +667,27 @@ public class FormDesignService {
                 String id=selectElement.attr("id");
                 String type=selectElement.attr("type");
                 String style=selectElement.attr("style");
+                String orgtype=selectElement.attr("orgtype");
+                String orgName=selectElement.attr("name");
+                String fieldname=null;
+                if(StringUtils.isBlank(selectElement.attr("fieldname"))){
+                    fieldname=selectElement.attr("title");
+                }else{
+                    fieldname=selectElement.attr("fieldname");
+                }
                 if(name.contains("_")){
                     name= UeditorTools.humpNomenclature(name);
                     selectElement.attr("name",name);
+                }
+
+                if(isElement){
+                    List<FlowElement> flowElementList=flowElementDao.findFlowElementsByFlowId(currentFlowId);
+                    if(flowElementList.size()>0&&!deleteFlag){
+                        flowElementDao.deleteFlowElementByFlowId(currentFlowId);
+                        deleteFlag=true;
+                    }
+                    FlowElement flowElement=new FlowElement(UUID.randomUUID().toString(),currentFlowId,flowName.getFormName(),id,fieldname,orgName,name, new Date());
+                    flowElementDao.save(flowElement);
                 }
                 List<TaskNodePermissions> taskNodePermissionsList=taskPermissionsDao.findByTaskNodeIdAndAndCurrentFlowId(id,currentFlowId);
                 for(int j=0;j<taskNodePermissionsList.size();j++){

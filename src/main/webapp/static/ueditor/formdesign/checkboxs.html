@@ -233,7 +233,7 @@
        
         window.onload = function() {
             if( UE.plugins[thePlugins].editdom ){
-
+                debugger
                 oNode = UE.plugins[thePlugins].editdom;
                 var gTitle=oNode.getAttribute('title').replace(/&quot;/g,"\"");
                 var gFlow=oNode.getAttribute('fieldflow');
@@ -277,6 +277,7 @@
                 alert('请输入字段名称');
                 return false;
             }
+
             var formidnamearray =new Array();
             var formid = $G('id').value;
             var formname = $G('name').value;
@@ -355,7 +356,7 @@
                     }
                     //{|- 使用边界，防止用户删除了span标签，程序处理要把边界替换为空
 
-                    var html = '{|-<span leipiplugins="checkboxs"  title="'+id+'" fieldname="' + id + '" fieldflow="' + gFlow + '">';
+                    var html = '{|-<span leipiplugins="checkboxs"  title="'+id+","+$G('fieldname').value+'" fieldname="' + $G('fieldname').value + '" fieldflow="' + gFlow + '">';
                     html +=options;
                     html +='</span>-|}';
                  
@@ -370,12 +371,12 @@
                     return false;
                 }
             } else {
+                debugger
                 var id=$G('id').value;
-                oNode.setAttribute('title',id);
+                oNode.setAttribute('title',id );
                 oNode.setAttribute('orgchecked',gChecked);
                 oNode.setAttribute('fieldname',gName);
                 oNode.setAttribute('fieldflow',gFlow);
-                $("#fieldname").val(id);
                 if(id!=''){
                     oNode.setAttribute('id',id);
                 }else{

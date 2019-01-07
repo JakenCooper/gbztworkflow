@@ -17,6 +17,7 @@ import com.gbzt.gbztworkflow.modules.workflowengine.runtime.entity.EngineTask;
 import com.gbzt.gbztworkflow.utils.CommonUtils;
 import org.apache.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class StartProc extends EngineBaseExecutor {
@@ -90,6 +91,7 @@ public class StartProc extends EngineBaseExecutor {
             arg.jedisService.saveProcInst(procInst);
         }
 
+        List<String> finalIds = new ArrayList<String>();
         Flow flowInst = arg.flowInst;
 
         if(isNotBlank(execution.passStr)){
@@ -110,13 +112,15 @@ public class StartProc extends EngineBaseExecutor {
             String taskId = null;
             EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(CreateTask.class,nextArg,null);
             try {
-                taskId = EngineManager.execute(engineTask);
+                List<String> taskIds = EngineManager.execute(engineTask);
+                taskId = taskIds.get(0);
             } catch (Exception e) {
                 throw e;
             }
 
             if(execution.getTempSaveTag()){ // 暂存
-                task.setExecutedResult(procInst.getId());
+                finalIds.add(procInst.getId());
+                task.setExecutedResult(finalIds);
                 return "success";
             }
 
@@ -128,6 +132,7 @@ public class StartProc extends EngineBaseExecutor {
             nextExcution.passStr = execution.passStr;
             nextExcution.taskId = taskId;
             nextExcution.assignUser = execution.assignUser;
+            nextExcution.ownerUser = execution.ownerUser;
             nextExcution.assignUserList = execution.assignUserList;
             nextExcution.argMap = execution.argMap;
 
@@ -135,21 +140,27 @@ public class StartProc extends EngineBaseExecutor {
             finishTaskArg.execution = nextExcution;
             finishTaskArg.copyFrom(arg);
 
+
             EngineTask  finishTask = EngineTaskTemplateFactory.buildEngineTask(FinishTask.class,finishTaskArg,null);
             try {
-                taskId = EngineManager.execute(finishTask);
+                List<String> taskIds = EngineManager.execute(finishTask);
+                finalIds.add(procInst.getId());
+                for(String finishTaskId : taskIds){
+                    finalIds.add(finishTaskId);
+                }
             } catch (Exception e) {
                 throw e;
             }
 
         }
-        task.setExecutedResult(procInst.getId());
+//        task.setExecutedResult(procInst.getId());
+        task.setExecutedResult(finalIds);
         return null;
     }
 
     @Override
-    public String handleCallback(EngineTask task) throws EngineRuntimeException {
-        return (String)task.getExecutedResult();
+    public List<String> handleCallback(EngineTask task) throws EngineRuntimeException {
+        return (List<String>)task.getExecutedResult();
     }
 
 

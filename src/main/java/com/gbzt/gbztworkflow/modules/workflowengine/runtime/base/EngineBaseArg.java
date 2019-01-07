@@ -10,6 +10,7 @@ import com.gbzt.gbztworkflow.modules.flowdefination.service.UserNodePrivCacheSer
 import com.gbzt.gbztworkflow.modules.flowdefination.service.UserNodePrivService;
 import com.gbzt.gbztworkflow.modules.redis.service.JedisService;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.*;
+import com.gbzt.gbztworkflow.modules.workflowengine.unDoService.service.UndoService;
 
 /**
  *  所有所需任务参数
@@ -35,7 +36,9 @@ public class EngineBaseArg  implements IEngineArg{
     public AffairConfiguerDao ad;
     public JedisService jedisService;
     /**流程流转相关-- end */
-
+    /*mybatis 查询待办service
+    * */
+    public UndoService undoService;
     /*
     * 提供两个重要方法：copy以及从其他arg对象拷贝基础属性的构造方法
     * */
@@ -54,6 +57,7 @@ public class EngineBaseArg  implements IEngineArg{
         this.histTaskDao = targetArg.histTaskDao;
         this.histProcDao = targetArg.histProcDao;
         this.jedisService = targetArg.jedisService;
+        this.undoService=targetArg.undoService;
 
 
         this.ad = targetArg.ad;
