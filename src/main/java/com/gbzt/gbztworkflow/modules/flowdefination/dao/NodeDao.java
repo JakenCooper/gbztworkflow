@@ -13,10 +13,20 @@ public interface NodeDao extends JpaRepository<Node,String>,JpaSpecificationExec
 
     public List<Node> findNodeByFlowIdOrderByNodeDefIdDesc(String flowId);
 
+    public List<Node> findNodeByFlowIdOrderBySortNumDesc(String flowId);
+
+    public Integer countNodeByFlowId(String flowId);
+
     public Integer countNodeByNameAndFlowId(String name,String flowId);
 
     public List<Node> findNodesByIdIn(List<String> ids);
 
     public Node findNodeByFlowIdAndBeginNode(String flowId,boolean flag);
+
+    public Node findNodeByFlowIdAndEndNode(String flowId,boolean flag);
+
+    public Node findNodeByNodeDefIdAndFlowId(String node,String flowId);
+
+    public List<Node> findNodeByFlowIdAndDelTagAndTransferOut(String flowId,boolean delTag,boolean transferOut);
 
 }

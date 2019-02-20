@@ -1,6 +1,7 @@
 package com.gbzt.gbztworkflow.modules.flowdefination.entity;
 
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.gbzt.gbztworkflow.modules.base.BaseEntity;
 import com.gbzt.gbztworkflow.modules.redis.entity.RedisMapper;
 import org.apache.commons.lang3.StringUtils;
@@ -50,7 +51,17 @@ public class Node extends BaseEntity {
     private String beginNodeStr;
     @Transient
     private String endNodeStr;
+    @Column(name = "transferOut")
+    @org.hibernate.annotations.Type(type="yes_no")
+    private Boolean transferOut=false;//是否可转出
 
+    public Boolean getTransferOut() {
+        return transferOut;
+    }
+
+    public void setTransferOut(Boolean transferOut) {
+        this.transferOut = transferOut;
+    }
 
     public String getBeginNodeStr() {
         return beginNodeStr;

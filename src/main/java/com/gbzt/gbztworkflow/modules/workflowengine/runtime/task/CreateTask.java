@@ -40,7 +40,7 @@ public class CreateTask extends EngineBaseExecutor {
         private String flowId;
         private String nodeDefId;
         private ProcInst procInst;
-        private boolean updateToFinishTaskTag = false;
+        public boolean updateToFinishTaskTag = false;
     }
 
     @Override

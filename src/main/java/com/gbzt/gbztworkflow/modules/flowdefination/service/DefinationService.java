@@ -11,6 +11,7 @@ import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.FlowBuss;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Line;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
+import com.gbzt.gbztworkflow.modules.formDesign.Util.UeditorTools;
 import com.gbzt.gbztworkflow.modules.redis.service.JedisService;
 import com.gbzt.gbztworkflow.modules.test.TestController;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.ProcInstDao;
@@ -46,7 +47,8 @@ public class DefinationService extends BaseService {
 
     @Autowired
     private JedisService jedisService;
-
+    @Autowired
+    private MetadataService metadataService;
 
 
     /**
@@ -63,6 +65,14 @@ public class DefinationService extends BaseService {
         if(flow.getBussColumns() == null || flow.getBussColumns().size() == 0){
             return buildResult(false,"没有选择业务字段",null);
         }
+        /*
+        * 添加时模块英文名和附件表信息自动添加
+        * */
+        String attachfileTableName=flow.getBussTableName()+"_attach";
+        flow.setAttachfileTableName(attachfileTableName);
+        String tableName=flow.getBussTableName();
+        flow.setModuleName(UeditorTools.humpNomenclature(tableName));
+        flow.setModuleNameCn(flow.getFlowName());
         boolean isnew = false;
         if(StringUtils.isBlank(flow.getId())){
             flow.setId(CommonUtils.genUUid());
@@ -183,7 +193,7 @@ public class DefinationService extends BaseService {
         if(StringUtils.isBlank(flowId)){
             return buildResult(false,"流程id为空",null);
         }
-        return buildResult(true,"",nodeDao.findNodeByFlowIdOrderByNodeDefIdDesc(flowId));
+        return buildResult(true,"",nodeDao.findNodeByFlowIdOrderBySortNumDesc(flowId));
     }
 
     public Node getNodeByIdSimple(String nodeId){
@@ -230,9 +240,15 @@ public class DefinationService extends BaseService {
         if(StringUtils.isBlank(node.getId())){
             node.setId(CommonUtils.genUUid());
         }
-        if(node.getSortNum() == null){
-            node.setSortNum(1);
+        Integer currentNodeSize = nodeDao.countNodeByFlowId(node.getFlowId());
+        if(currentNodeSize == null) {
+            currentNodeSize = 0;
         }
+        node.setSortNum(currentNodeSize+1);
+        node.setNodeDefId("audit-"+String.valueOf(node.getSortNum()));
+//        if(node.getSortNum() == null){
+//            node.setSortNum(1);
+//        }
         node.genBaseVariables();
         nodeDao.save(node);
         refreshDetailDefination(node.getFlowId());

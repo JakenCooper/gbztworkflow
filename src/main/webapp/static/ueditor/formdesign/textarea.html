@@ -33,23 +33,29 @@
     </tr>
      <tr >
         <th><span>字体大小</span> </th>
-        <th><span>流程变量</span> </th>
+        <!--<th><span>流程变量</span> </th>-->
+         <th><span>意见字段</span> </th>
     </tr>
     <tr>
         <td><input id="orgfontsize" type="text"  value="" class="input-small span1" placeholder="auto"/> px</td>
-        <td><label class="checkbox inline"><input id="fieldflow" type="hidden"/> 待用</label></td>
+        <!--<td><label class="checkbox inline"><input id="fieldflow" type="hidden"/> 待用</label></td>-->
+        <td>
+            <input id="fieldflow" type="hidden"/>
+            <label class="checkbox inline"><input id="adviseTag" name="adviseTag" type="checkbox"/> 意见字段</label>
+        </td>
     </tr>
     <tr >
         <th><span>输入框样式</span> </th>
-        <th><span>待用</span> </th>
+        <!--<th><span>待用</span> </th>-->
+        <th>&nbsp;</th>
     </tr>
     <tr >
         <td>
-            宽 <input id="orgwidth" type="text" value="300" class="input-small span1" placeholder="auto"/> %
+            宽 <input id="orgwidth" type="text" value="99.6" class="input-small span1" placeholder="auto"/> %
             &nbsp;&nbsp;
             高 <input id="orgheight" type="text" value="80" class="input-small span1" placeholder="auto"/> px
         </td>
-        <td> <label class="checkbox"><input id="orgrich" type="hidden"  /> 待用 </label> </td>
+        <td> <input id="orgrich" type="hidden"  /> </td>
     </tr>
     <tr>
         <td colspan="2">
@@ -85,7 +91,8 @@ window.onload = function() {
     if( UE.plugins[thePlugins].editdom ){
         oNode = UE.plugins[thePlugins].editdom;
         var gValue = oNode.getAttribute('value').replace(/&quot;/g,"\""),gName=oNode.getAttribute('fieldname'),gFlow=oNode.getAttribute('fieldflow'),gTitle=oNode.getAttribute('title').replace(/&quot;/g,"\""),gFontSize=oNode.getAttribute('orgfontsize'),gWidth=oNode.getAttribute('orgwidth'),gHeight=oNode.getAttribute('orgheight'),gRich=oNode.getAttribute('orgrich'),id=oNode.getAttribute('id'),name=oNode.getAttribute('name');
-        
+
+
         gValue = gValue==null ? '' : gValue;
         gTitle = gTitle==null ? '' : gTitle;
         gName = gName==null ? '' : gName;
@@ -106,6 +113,15 @@ window.onload = function() {
         $G('orgfontsize').value = gFontSize;
         $G('orgwidth').value = gWidth;
         $G('orgheight').value = gHeight;
+
+        var adviseTagValue = oNode.getAttribute('adviseTagValue');
+        alert(adviseTagValue);
+        if(adviseTagValue == 'true'){
+            $('#adviseTag').attr('checked','checked');
+        }else{
+            $('#adviseTag').removeAttr('checked');
+        }
+
     }
     var idValue=$("#id").val();
     if(idValue ==''){
@@ -163,9 +179,38 @@ dialog.onok = function (){
         });
     }
     var gValue=$G('orgvalue').value.replace(/\"/g,"&quot;"),gTitle=$G('orgname').value.replace(/\"/g,"&quot;"),gName=$G('fieldname').value,gFontSize=$G('orgfontsize').value,gWidth=$G('orgwidth').value,gHeight=$G('orgheight').value,id=$G('id').value,name=$G('name').value;
+    var adviseTagValue = $('#adviseTag').is(':checked')?"true":"false";
 
     if( !oNode ) {
         try {
+            var column_name = $("#name").val();
+            var adviseType = -99;
+            if("true" == adviseTagValue){
+                var adviseSummaryData = {
+                    flowId : $("#currentflowid").val(),
+                    columnName : $("#name").val(),
+                    adviseTag : adviseTagValue
+                };
+                $.ajax({
+                    url : adminPath+'/taskNodePermissions/saveAdviseType',
+                    type : 'post',
+                    async : false,
+                    contentType : 'application/json;charset=UTF-8',
+                    data : JSON.stringify(adviseSummaryData),
+                    dataType : 'json',
+                    success : function (data) {
+                        if(data.charge){
+                            adviseType = data.result;
+                        }else{
+                            alert(data.message);
+                        }
+                    },
+                    error : function () {
+                        alert('添加意见数据错误，请联系(@!*#^$#@!*')
+                    }
+                });
+            }
+
             var html = '<textarea ';
             html += ' title = "' + gTitle + '"';
             html += ' name = "' + name + '"';
@@ -173,6 +218,9 @@ dialog.onok = function (){
             html += ' value = "' + gValue + '"';
             html += ' fieldname = "' + gName + '"';
             html += ' id = "' + id + '"';
+            if(adviseType != -99){
+                html += ' adviseType = "' + adviseType + '"';
+            }
             if ( $G('fieldflow').checked ) {
                 html += ' fieldflow = "1"';
             } else {
@@ -264,6 +312,7 @@ dialog.onok = function (){
         }else{
             oNode.setAttribute('name','');
         }
+        oNode.setAttribute('adviseTagValue',adviseTagValue);
         delete UE.plugins[thePlugins].editdom;
     }
 };

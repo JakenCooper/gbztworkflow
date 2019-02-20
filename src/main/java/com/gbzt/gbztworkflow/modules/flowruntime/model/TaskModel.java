@@ -57,12 +57,81 @@ public class TaskModel extends BaseModel implements Serializable {
     /*end*/
     //查询开始节点名称
     private String startNodesName;
-    /* 是否为暂存 start*/
-    private boolean tempSaveTag = false;
-    /* 是否为暂存 end*/
+    private boolean tempSaveTag = false;//是否为暂存
+    private Boolean transferOut; //判断当前节点是否可转出
     private long count;// 总记录数，设置为“-1”表示不查询总数
 
     private String orderBy;//排序字段
+    private String searchAll="no";
+
+    private String endPassNum;//结束节点序号
+
+    private boolean canEnd;//判断当前节点是否有结束连线
+
+    private String begainLineId;//连线开始id
+
+    private String endLineId;//连线终止id
+
+
+    private String adviseBussTableName; //意见业务表名称
+
+    private String secondLastTaskId; //倒数第二步任务id
+
+    public String getSecondLastTaskId() {
+        return secondLastTaskId;
+    }
+
+    public void setSecondLastTaskId(String secondLastTaskId) {
+        this.secondLastTaskId = secondLastTaskId;
+    }
+
+    public String getAdviseBussTableName() {
+        return adviseBussTableName;
+    }
+
+    public void setAdviseBussTableName(String adviseBussTableName) {
+        this.adviseBussTableName = adviseBussTableName;
+    }
+
+    public String getBegainLineId() {
+        return begainLineId;
+    }
+
+    public void setBegainLineId(String begainLineId) {
+        this.begainLineId = begainLineId;
+    }
+
+    public String getEndLineId() {
+        return endLineId;
+    }
+
+    public void setEndLineId(String endLineId) {
+        this.endLineId = endLineId;
+    }
+
+    public boolean isCanEnd() {
+        return canEnd;
+    }
+
+    public void setCanEnd(boolean canEnd) {
+        this.canEnd = canEnd;
+    }
+
+    public String getEndPassNum() {
+        return endPassNum;
+    }
+
+    public void setEndPassNum(String endPassNum) {
+        this.endPassNum = endPassNum;
+    }
+
+    public String getSearchAll() {
+        return searchAll;
+    }
+
+    public void setSearchAll(String searchAll) {
+        this.searchAll = searchAll;
+    }
 
     public String getOrderBy() {
         return orderBy;
@@ -339,5 +408,13 @@ public class TaskModel extends BaseModel implements Serializable {
 
     public void setFileId(String fileId) {
         this.fileId = fileId;
+    }
+
+    public Boolean getTransferOut() {
+        return transferOut;
+    }
+
+    public void setTransferOut(Boolean transferOut) {
+        this.transferOut = transferOut;
     }
 }

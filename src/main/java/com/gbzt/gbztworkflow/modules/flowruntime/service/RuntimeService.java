@@ -1,9 +1,7 @@
 package com.gbzt.gbztworkflow.modules.flowruntime.service;
 
-import com.gbzt.gbztworkflow.consts.ExecResult;
 import com.gbzt.gbztworkflow.modules.affairConfiguer.dao.AffairConfiguerDao;
 import com.gbzt.gbztworkflow.modules.affairConfiguer.entity.AffairConfiguer;
-import com.gbzt.gbztworkflow.modules.affairConfiguer.service.AffairConfiguerService;
 import com.gbzt.gbztworkflow.modules.base.BaseService;
 import com.gbzt.gbztworkflow.modules.commonFile.dao.CommonFileDao;
 import com.gbzt.gbztworkflow.modules.commonFile.entity.CommonFile;
@@ -11,15 +9,14 @@ import com.gbzt.gbztworkflow.modules.flowdefination.dao.FlowDao;
 import com.gbzt.gbztworkflow.modules.flowdefination.dao.LineDao;
 import com.gbzt.gbztworkflow.modules.flowdefination.dao.NodeDao;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
+import com.gbzt.gbztworkflow.modules.flowdefination.entity.Line;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Node;
-import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationCacheService;
-import com.gbzt.gbztworkflow.modules.flowdefination.service.DefinationService;
-import com.gbzt.gbztworkflow.modules.flowdefination.service.UserNodePrivCacheService;
-import com.gbzt.gbztworkflow.modules.flowdefination.service.UserNodePrivService;
+import com.gbzt.gbztworkflow.modules.flowdefination.service.*;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.UserTreeInfo;
 import com.gbzt.gbztworkflow.modules.redis.service.JedisService;
+import com.gbzt.gbztworkflow.modules.todo.service.ToDoService;
 import com.gbzt.gbztworkflow.modules.workflowengine.dao.*;
-import com.gbzt.gbztworkflow.modules.workflowengine.pojo.Task;
+import com.gbzt.gbztworkflow.modules.workflowengine.pojo.ProcInst;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.TaskExecution;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.TaskModel;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.EngineBaseArg;
@@ -33,7 +30,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -82,7 +78,8 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
     private UserNodePrivCacheService nodeUserPrivCacheService;
     @Autowired
     private UndoService undoService;
-
+    @Autowired
+    private ToDoService toDoService;
 
     /**
      *  @author 小白白
@@ -114,6 +111,7 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
         targetBaseArg.ad = this.ad;
         targetBaseArg.jedisService = this.jedisService;
         targetBaseArg.undoService=this.undoService;
+        targetBaseArg.toDoService=this.toDoService;
     }
 
     /*
@@ -346,7 +344,9 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
         try {
             String result = EngineManager.execute(engineTask);
             System.out.println("result of retreat tag === "+result);
-            return (TaskModel)buildResult(model,true,"",result);
+            TaskModel rtnModel = (TaskModel)buildResult(model,true,"",result);
+            rtnModel.setSecondLastTaskId(execution.secondLastTaskId);
+            return rtnModel;
         } catch (Exception e) {
             return (TaskModel)buildResult(model,4,loggerType,null,e,
                     false,e.getMessage(),null);
@@ -354,6 +354,7 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
     }
 
 
+    @Override
     public TaskModel getBussTable(TaskModel model) {
         String loggerType = LOGGER_TYPE_PREFIX+"getBussTable";
         TaskExecution execution = new TaskExecution();
@@ -372,6 +373,7 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
         }
     }
 
+    @Override
     public List<TaskModel> getAffairConfiguerList(TaskModel taskModel) {
         System.out.println("进入getAffairConfiguerList");
         List<AffairConfiguer> affairConfiguers=new ArrayList<>();
@@ -397,6 +399,7 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
 
 
 
+    @Override
     public TaskModel findFlowByFlowName(TaskModel taskModel){
         System.out.println("进入findFlowByFlowName");
         Flow flow=flowDao.findFlowByFlowName(taskModel.getFlowName());
@@ -465,4 +468,73 @@ public class RuntimeService extends BaseService implements  IRuntimeService  {
         return taskModel;
     }
 
+    @Override
+    public TaskModel findNodeByFlowIdAndEndNode(TaskModel taskModel) {
+        Node node=nodeDao.findNodeByFlowIdAndEndNode(taskModel.getFlowId(),true);
+        String pass=node.getNodeDefId();
+        if(StringUtils.isNotBlank(pass)){
+            pass=pass.split("-")[1];
+        }
+        taskModel.setEndPassNum(pass);
+        taskModel.setNodeId(node.getId());
+        return taskModel;
+    }
+
+    @Override
+    public TaskModel findNodeByFlowIdAndBeginNode(TaskModel taskModel) {
+        Node node=nodeDao.findNodeByFlowIdAndBeginNode(taskModel.getFlowId(),true);
+        String pass=node.getNodeDefId();
+        if(StringUtils.isNotBlank(pass)){
+            pass=pass.split("-")[1];
+        }
+        taskModel.setEndPassNum(pass);
+
+        return taskModel;
+    }
+
+    @Override
+    public TaskModel findLineByEndNodeIdAndBeginNodeId(TaskModel taskModel) {
+        Line line=lineDao.findLineByEndNodeIdAndBeginNodeId(taskModel.getEndLineId(),taskModel.getBegainLineId());
+        if(line!=null){
+            taskModel.setCanEnd(true);
+        }else {
+            taskModel.setCanEnd(false);
+        }
+        return taskModel;
+
+    }
+
+
+    @Override
+    public TaskModel findNodeByNodeDefIdAndFlowId(TaskModel taskModel) {
+        Node node=nodeDao.findNodeByNodeDefIdAndFlowId(taskModel.getNodeDefId(),taskModel.getFlowId());
+        if(node!=null){
+            taskModel.setNodeId(node.getId());
+            taskModel.setTransferOut(node.getTransferOut());
+        }
+        return taskModel;
+    }
+
+    @Override
+    public List<TaskModel> findNodeByFlowIdAndDelTagAndTransferOut(TaskModel taskModel) {
+        List<Node> nodeList=nodeDao.findNodeByFlowIdAndDelTagAndTransferOut(taskModel.getFlowId(),false,true);
+        List<TaskModel> list=new ArrayList<>();
+        for(int i=0;i<nodeList.size();i++){
+            TaskModel t=new TaskModel();
+            String name=nodeList.get(i).getName();
+            t.setNodeName(name);
+            list.add(t);
+        }
+        return list;
+    }
+
+    @Override
+    public TaskModel findAdviseBussTblNameByProcInstId(TaskModel taskModel){
+        String procInstId = taskModel.getProcInstId();
+        ProcInst procInst = procInstDao.findOne(procInstId);
+        Flow flowInst = flowDao.findOne(procInst.getFlowId());
+        String adviseBussTblName = flowInst.getBussTableName()+MetadataService.ADVISE_BUSS_TBL_SUFFIX;
+        taskModel.setAdviseBussTableName(adviseBussTblName);
+        return (TaskModel)buildResult(taskModel,true,"success","success");
+    }
 }

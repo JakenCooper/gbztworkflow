@@ -6,11 +6,24 @@ import javax.servlet.http.HttpServletResponse;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.TaskData;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.TaskModel;
 import com.thinkgem.jeesite.common.config.Global;
-import com.thinkgem.jeesite.common.utils.IdGen;
+import com.thinkgem.jeesite.common.utils.*;
+import com.thinkgem.jeesite.modules.commonFileAttach.entity.CommonFileAttach;
+import com.thinkgem.jeesite.modules.commonFileAttach.service.CommonFileAttachService;
+import org.springframework.web.bind.annotation.ResponseBody;
+import com.thinkgem.jeesite.modules.doc.entity.DocReceive;
+import com.thinkgem.jeesite.modules.doc.entity.DocBase;
+import com.thinkgem.jeesite.modules.doc.entity.DocAttachment;
+import com.thinkgem.jeesite.modules.doc.utils.MsgConstant;
+import com.thinkgem.jeesite.modules.sys.entity.User;
+import com.thinkgem.jeesite.modules.doc.utils.JsonManager;
+import com.thinkgem.jeesite.modules.workbench.entity.DocOperEventArg;
+import com.thinkgem.jeesite.modules.workbench.xml.entity.Attach;
+import com.thinkgem.jeesite.modules.workbench.xml.entity.Receive;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import com.thinkgem.jeesite.modules.commonFileAttach.entity.CommonFileAttach;
 import com.thinkgem.jeesite.modules.commonFileAttach.service.CommonFileAttachService;
 import org.springframework.beans.factory.annotation.Autowired;
-import com.thinkgem.jeesite.modules.unitofficework.ofsService.UploadToStoreService;
+import com.thinkgem.jeesite.common.upload.UploadToStoreService;
 import org.springframework.stereotype.Controller;
 import com.thinkgem.jeesite.modules.act.entity.TaskSearchArg;
 import net.sf.json.JSONObject;
@@ -22,18 +35,22 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
+import com.thinkgem.jeesite.common.mapper.JsonMapper;
 import com.thinkgem.jeesite.common.web.BaseController;
-import com.thinkgem.jeesite.common.utils.StringUtils;
 import com.thinkgem.jeesite.modules.sys.utils.UserUtils;
 import com.thinkgem.jeesite.modules.act.entity.Act;
 import com.thinkgem.jeesite.modules.act.service.ActTaskService;
 
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URLDecoder;
 import java.util.*;
 import com.thinkgem.jeesite.modules.${package}.entity.${EntityName};
 import com.thinkgem.jeesite.modules.${package}.service.${EntityName}Service;
+
+import com.thinkgem.jeesite.modules.advisesummary.entity.AdviseEntity;
+import com.thinkgem.jeesite.modules.advisesummary.entity.AdviseSummary;
+import com.thinkgem.jeesite.modules.advisesummary.service.AdviseSummaryService;
+import com.thinkgem.jeesite.modules.advisesummary.service.AdviseBussService;
 
 /**
 * 单表生成${EntityName}Controller
@@ -42,7 +59,9 @@ import com.thinkgem.jeesite.modules.${package}.service.${EntityName}Service;
 @Controller
 @RequestMapping(value = "${adminPath}/${package}/${entityName}")
 public class ${EntityName}Controller extends BaseController {
-    
+
+    private static final String MODULE_NAME = "${entityName}";
+
     @Autowired
     private ${EntityName}Service ${entityName}Service;
     @Autowired
@@ -51,15 +70,38 @@ public class ${EntityName}Controller extends BaseController {
     private UploadToStoreService uploadToStoreService;
     @Autowired
     private CommonFileAttachService commonFileAttachService;
-    
+    private JsonManager jm = JsonManager.getInstance();
+
+    @Autowired
+    private AdviseBussService advisebussService;
+    @Autowired
+    private AdviseSummaryService adviseSummaryService;
+
+    public void set${EntityName}Service(${EntityName}Service ${entityName}Service){
+        this.${entityName}Service = ${entityName}Service;
+    }
+    public void setActTaskService(ActTaskService actTaskService){
+        this.actTaskService = actTaskService;
+    }
+    public void setUploadToStoreService(UploadToStoreService uploadToStoreService){
+        this.uploadToStoreService = uploadToStoreService;
+    }
+    public void setCommonFileAttachService(CommonFileAttachService commonFileAttachService){
+        this.commonFileAttachService = commonFileAttachService;
+    }
+
     @ModelAttribute
     public ${EntityName} get(@RequestParam(required=false) String id) {
         ${EntityName} entity = null;
-        if (StringUtils.isNotBlank(id)){
-            entity = ${entityName}Service.get(id);
-        }
-        if (entity == null){
-            entity = new ${EntityName}();
+        try{
+            if (StringUtils.isNotBlank(id)){
+                entity = ${entityName}Service.get(id);
+            }
+            if (entity == null){
+                entity = new ${EntityName}();
+            }
+        }catch (Exception e){
+        e.printStackTrace();
         }
         return entity;
     }
@@ -74,74 +116,159 @@ public class ${EntityName}Controller extends BaseController {
 
     @RequestMapping("form")
     public String form(${EntityName} ${entityName},Model model,HttpServletRequest request, HttpServletResponse response){
-        String office_id=UserUtils.getUser().getOffice().getId();
-        if(StringUtils.isBlank(${entityName}.getAct().getProcDefKey())||StringUtils.isBlank(${entityName}.getAct().getTaskDefKey())){
-            ${entityName}.getAct().setProcDefKey("${map.flowName}");// 流程名,从数据库查
-            ${entityName}.getAct().setTaskDefKey("audit-1");
-        }
-        String isView = request.getParameter("isView");
-        model.addAttribute("uuid", IdGen.uuid());
         String view = null;
-        if(StringUtils.isBlank(${entityName}.getId())){
-            List<Act> list = actTaskService.nextTaskDefinition(${entityName}.getAct());
-            model.addAttribute("officeId",office_id);
-            model.addAttribute("stepList", list);
-            if(StringUtils.isBlank(${entityName}.getAct().getProcDefId()) && list.size()>0){
-                ${entityName}.getAct().setProcDefId(list.get(0).getProcDefId());
-                model.addAttribute("taskName",list.get(0).getStartNodeName());
+        try {
+            String office_id=UserUtils.getUser().getOffice().getId();
+            if(StringUtils.isBlank(${entityName}.getAct().getProcDefKey())||StringUtils.isBlank(${entityName}.getAct().getTaskDefKey())){
+                ${entityName}.getAct().setProcDefKey("${map.flowName}");// 流程名,从数据库查
+                ${entityName}.getAct().setTaskDefKey("audit-1");
             }
-            if("1".equals(request.getParameter("messagetag"))){
-                model.addAttribute("message", "流程处理成功！");
+            String isView = request.getParameter("isView");
+
+            String proinstid = request.getParameter("procInsId");
+            String iscollect = request.getParameter("iscollect");
+            if(StringUtils.isNotBlank(iscollect)){
+                model.addAttribute("iscollect","yes");
+                ${entityName}.getAct().setProcInsId(proinstid);
+            }else{
+                model.addAttribute("iscollect","no");
             }
-            view = "modules/${package}/${entityName}Form";
-        }else{
-            String procDefKey = ${entityName}.getAct().getProcDefKey();
-            if(StringUtils.isNotBlank(procDefKey)){
-                try {
-                    ${entityName}.getAct().setProcDefKey(URLDecoder.decode(procDefKey, "UTF-8"));
-                } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
+
+            if(StringUtils.isNotBlank(isView)){
+                //事务查询使用  返回时 
+                String curPage=request.getParameter("curPage");
+                String pageTotal=request.getParameter("pageTotal");
+                String dataTotal=request.getParameter("dataTotal");
+                String page_size=request.getParameter("page_size");
+                String remarks=request.getParameter("remarks");
+                String year=request.getParameter("year");
+                String affairType=request.getParameter("affairType");
+                String title=request.getParameter("title");
+                String articleSize=request.getParameter("articleSize");
+                String search_createDate=request.getParameter("search_createDate");
+                String search_endDate=request.getParameter("search_endDate");
+                StringBuilder  searchsql = new StringBuilder();
+                searchsql.append("?curPage=").append(curPage).append("&pageTotal=").append(pageTotal).append("&dataTotal=").append(dataTotal).append
+                        ("&page_size=").append(page_size)
+                        .append("&remarks=").append(remarks).append("&year=").append(year).append("&affairType=").append(affairType).append("&title=").append
+                        (title).append("&articleSize=").append(articleSize)
+                        .append("&search_createDate=").append(search_createDate).append("&search_endDate=").append(search_endDate);
+                model.addAttribute("sqlsearch",searchsql);
+
+                ${entityName}.getAct().setProcInsId(proinstid);
+
+                model.addAttribute("affair","yes");
+            }else{
+                model.addAttribute("sqlsearch","no");
+                model.addAttribute("affair","no");
+            }
+            model.addAttribute("uuid", IdGen.uuid());
+            if(StringUtils.isBlank(${entityName}.getId())){
+                //起草
+                //起草页面来文号设置默认值
+                if(StringUtils.isBlank(${entityName}.getArticleSize())){
+                String code = actTaskService.getArticleCode("${table_name}", "article_size");
+                ${entityName}.setArticleSize(code);
                 }
-            }
-            ${entityName}.getAct().setProcDefKey("${map.flowName}");
-            List<Act> list = actTaskService.nextTaskDefinition(${entityName}.getAct());
-            model.addAttribute("stepList", list);
-            if(StringUtils.isBlank(${entityName}.getAct().getProcDefId()) && list.size()>0){
-                ${entityName}.getAct().setProcDefId(list.get(0).getProcDefId());
-            }
-           // List<TaskModel> fileList = actTaskService.findCommonFileByProcInsId(${entityName}.getProcInsId());
-            List<CommonFileAttach> fileList = commonFileAttachService.findCommonFileAttachByProcInsId(${entityName}.getProcInsId());
-            model.addAttribute("fileList",fileList);
-            model.addAttribute("filepathlist", "nofile");
-            model.addAttribute("filenamelist", "nofile");
-            model.addAttribute("dowmloadfile", "nofile");
-            if ("yes".equals(isView)) {
-                return "modules/${package}/${entityName}View";
-            }
-            if(StringUtils.isBlank(${entityName}.getAct().getTaskId())){
-                return "modules/${package}/${entityName}Form";
-            }
-            if("done".equals(${entityName}.getAct().getStatus())){
-                return "modules/${package}/${entityName}View";
-            }
-            List<TaskData> datas = actTaskService.getAllCurrentTask(${entityName}.getProcInsId(),UserUtils.getUser().getLoginName(),null, null,new TaskSearchArg());
-            TaskData targetData = null;
-            for(TaskData tmpTaskData : datas){
-                if(tmpTaskData.getTaskId().equals(${entityName}.getAct().getTaskId())){
-                    targetData = tmpTaskData;
-                    break;
+                // 生成最新的总序号
+                Integer totalSeq = actTaskService.getTotalSeqForGR("${table_name}", null) + 1;
+                ${entityName}.setTotalSeq(Integer.toString(totalSeq));
+                List<Act> list = actTaskService.nextTaskDefinition(${entityName}.getAct());
+                model.addAttribute("officeId",office_id);
+                model.addAttribute("stepList", list);
+                if(StringUtils.isBlank(${entityName}.getAct().getProcDefId()) && list.size()>0){
+                    ${entityName}.getAct().setProcDefId(list.get(0).getProcDefId());
+                    model.addAttribute("taskName",list.get(0).getStartNodeName());
                 }
-            }
-            if(targetData != null){
-                request.setAttribute("taskName", targetData.getNodeName());
-                if(targetData.getEndTime() == null){
-                    return "modules/${package}/${entityName}Audit";
+                if("1".equals(request.getParameter("messagetag"))){
+                    model.addAttribute("message", "流程处理成功！");
+                }
+                view = "modules/${package}/${entityName}Form";
+            }else{
+
+                List<AdviseSummary> adviseSummarys = adviseSummaryService.getAdviseSummaryByModuleName(MODULE_NAME);
+                if(adviseSummarys != null && adviseSummarys.size() > 0){
+                    String tableName = adviseSummarys.get(0).getTableName();
+                    Map<String,List<AdviseEntity>> adviseEntityMap = advisebussService.searchAdviseBuss(tableName,${entityName}.getProcInsId());
+                    model.addAttribute("adviseEntityMap", adviseEntityMap);
+                }
+
+                String procDefKey = ${entityName}.getAct().getProcDefKey();
+                if(StringUtils.isNotBlank(procDefKey)){
+                    try {
+                        ${entityName}.getAct().setProcDefKey(URLDecoder.decode(procDefKey, "UTF-8"));
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
+                }
+                ${entityName}.getAct().setProcDefKey("${map.flowName}");
+                List<Act> list = actTaskService.nextTaskDefinition(${entityName}.getAct());
+                model.addAttribute("stepList", list);
+                if(StringUtils.isBlank(${entityName}.getAct().getProcDefId()) && list.size()>0){
+                    ${entityName}.getAct().setProcDefId(list.get(0).getProcDefId());
+                }
+                List<CommonFileAttach> fileList = commonFileAttachService.findCommonFileAttachByProcInsId(${entityName}.getProcInsId());
+                model.addAttribute("fileList",fileList);
+                model.addAttribute("filepathlist", "nofile");
+                model.addAttribute("filenamelist", "nofile");
+                model.addAttribute("dowmloadfile", "nofile");
+                model.addAttribute("procInsId",${entityName}.getProcInsId());
+                //判断是否可退回：start  事务收藏隐藏此功能
+                if( StringUtils.isNotBlank(isView) || StringUtils.isNotBlank(iscollect)) {
                 }else{
+                    TaskModel taskModel=new TaskModel();
+                    taskModel.setProcInsId(${entityName}.getProcInsId());
+                    taskModel.setProcInstId(${entityName}.getProcInsId());
+                    taskModel.setTaskId(${entityName}.getAct().getTaskId());
+                    taskModel.setRetreatOperType("retreat");
+                    taskModel.setPassUser(UserUtils.getUser().getLoginName());
+                    boolean tasks = actTaskService.canWithdrawOrRetreat(taskModel);
+                    boolean transferOut=actTaskService.findCurrentId(${entityName}.getAct().getTaskDefKey(),actTaskService.findFlowByFlowName("${map.flowName}").getFlowId()).getTransferOut();
+                    if(tasks){
+                         model.addAttribute("retreatFlag","yes");
+                    }else {
+                         model.addAttribute("retreatFlag","no");
+                    }
+                    if(transferOut){
+                        model.addAttribute("transferOutFlag","yes");
+                    }else{
+                        model.addAttribute("transferOutFlag","no");
+                    }
+                }
+                //判断是否可退回：end
+                if ("yes".equals(isView)) {
                     return "modules/${package}/${entityName}View";
                 }
+                if("yes".equals(iscollect)){
+                    return "modules/${package}/${entityName}View";
+                }
+                if(StringUtils.isBlank(${entityName}.getAct().getTaskId())){
+                    return "modules/${package}/${entityName}Form";
+                }
+                if("done".equals(${entityName}.getAct().getStatus())){
+                    return "modules/${package}/${entityName}View";
+                }
+                List<TaskData> datas = actTaskService.getAllCurrentTask(${entityName}.getProcInsId(),UserUtils.getUser().getLoginName(),null, null,new TaskSearchArg());
+                TaskData targetData = null;
+                for(TaskData tmpTaskData : datas){
+                    if(tmpTaskData.getTaskId().equals(${entityName}.getAct().getTaskId())){
+                        targetData = tmpTaskData;
+                        break;
+                    }
+                }
+                if(targetData != null){
+                    request.setAttribute("taskName", targetData.getNodeName());
+                    if(targetData.getEndTime() == null){
+                        return "modules/${package}/${entityName}Audit";
+                    }else{
+                        return "modules/${package}/${entityName}View";
+                    }
+                }
+                // 预想中的不可能，所以直接跳转到一个明显的错误页面
+                return "modules/${package}/${entityName}Form";
             }
-            // 预想中的不可能，所以直接跳转到一个明显的错误页面
-            return "modules/${package}/${entityName}Form";
+        }catch (Exception e){
+            e.printStackTrace();
         }
         return view;
     }
@@ -158,35 +285,45 @@ public class ${EntityName}Controller extends BaseController {
         } catch (CloneNotSupportedException e1) {
             e1.printStackTrace();
         }
-        String defultUser=request.getParameter("defultUser");
-        String dafultTime=request.getParameter("dafultTime");
-        String timeSelect=request.getParameter("timeSelect");
-        if(StringUtils.isNotBlank(defultUser)){
-            ${entityName}.setDefultUser(defultUser);
+        String defultTime = ${entityName}.getDefultCreateTime();
+        if(StringUtils.isNotBlank(defultTime)){
+            defultTime = DateUtils.getDefultTime(defultTime);
+            ${entityName}.setDefultCreateTime(defultTime);
         }
-        if(StringUtils.isNotBlank(dafultTime)){
-            ${entityName}.setDefultCreateTime(dafultTime);
-        }
-        if(StringUtils.isNotBlank(timeSelect)){
-            ${entityName}.setDraftSelectTime(timeSelect);
-        }
-
+                
         if (!beanValidator(model, ${entityName}Clone)){
             return form(${entityName}Clone, model,request,response);
         }
-        String resultDate=null;
+        String articlesize = ${entityName}.getArticleSize();
+        //判断articSize是否重复
+        int  articleList  = actTaskService.getArticleSize("${table_name}",articlesize);
+        String id = ${entityName}.getId();
+        if(articleList != 0 && StringUtils.isBlank(id)){
+            model.addAttribute("message","来文号已经存在，请重新输入...");
+            return form(${entityName}Clone, model,request,response);
+        }
+        String resultDate = null;
         resultDate="?procDefKey="+request.getParameter("procDefKey_s")
-        +"&serects="+request.getParameter("secretType_s")
-        +"&beginDate="+request.getParameter("beginDate_s")
-        +"&endDate="+request.getParameter("endDate_s")
-        +"&pageNo="+request.getParameter("pageNo_s")
-        +"&pageSize="+request.getParameter("pageSize_s");
+		        +"&serects="+request.getParameter("secretType_s")
+		        +"&beginDate="+request.getParameter("beginDate_s")
+		        +"&endDate="+request.getParameter("endDate_s")
+		        +"&pageNo="+request.getParameter("pageNo_s")
+		        +"&pageSize="+request.getParameter("pageSize_s");
         redirectAttributes.addFlashAttribute("resultDate",resultDate);
+        List<String> assigneeList = new ArrayList<String>();
+        String assignee ="";
         try{
             //如果是起草流程，则跳转之后不带任何表单数据
             boolean isNewRecord = false;
             if(StringUtils.isBlank(${entityName}.getId())){
                 isNewRecord = true;
+            }
+            if(${entityName}Clone.getAct().getAssignee().indexOf(",") != -1){
+                String[] assignees = ${entityName}Clone.getAct().getAssignee().split(",");
+                assigneeList = Arrays.asList(assignees);
+
+            }else{
+                assignee = ${entityName}Clone.getAct().getAssignee();
             }
             switch (${entityName}Clone.getAct().getFlagTrans()) {
                 case "yes":
@@ -195,22 +332,100 @@ public class ${EntityName}Controller extends BaseController {
                     if(null != fileJsonInfo){
                         for(int i = 0; i < fileJsonInfo.length; i++) {
                             if(StringUtils.isNotBlank(fileJsonInfo[i])){
-                                ${entityName}Service.uploadFile("["+fileJsonInfo[i]+"]",${entityName});
+                                ${entityName}Service.uploadFile("["+fileJsonInfo[i]+"]",${entityName}1);
                             }
                         }
                     }
                     model.addAttribute("message", "流程处理成功！");
+                    if (${entityName}1.getAct().getTempSaveTag()){ // 如果是暂存则直接return
+                        model.addAttribute("message", "流程处理成功！");
+                        return "redirect:"+Global.getAdminPath()+"/act/task/todo?messagetag=1";
+                    }
+					//exchange to xml 处理添加发文的xml转换
+                    //先添加一个自己的已办， 在添加一个assign的待办
+                    String affairOperType = null;
+                    List<Receive> relist = new ArrayList<Receive>();
+                    affairOperType = NoneSpringConstHolder.DOC_MESSAGE_OPER_TYPE_INSERT;
+                    String skipUrl = Global.getConfig("ServerUrl");
+                    String receiveId = ${entityName}1.getId();
+                    //////处理自己的已办  
+                    String pasStr=  ${entityName}1.getAct().getFlag();
+					String firstaddornot= ${entityName}1.getAct().getVarsMap().get("起草").toString() ;
+                    if("yes".equals( firstaddornot)){
+                        //起草
+                        Receive re = Receive.genBasicReceive(receiveId,${entityName}1.getId(),UserUtils.getUser().getLoginName(), UserUtils.getUser().getName(),
+                                new Date()).setOperColumns(MsgConstant.DOCSTATUS_YIFASONG,
+                                NoneSpringConstHolder.DOC_MESSAGE_TYPE_DONE, NoneSpringConstHolder.DOC_MESSAGE_OPER_TYPE_INSERT, skipUrl);
+                        relist.add(re);
+                    }else{
+                        affairOperType = NoneSpringConstHolder.DOC_MESSAGE_OPER_TYPE_UPDATE;
+                        //非起草
+                        if(assigneeList.size()>0){
+                       /* if("4".equals(pasStr)){*/
+                            //送阅
+                            Map map = new HashMap<String,String>();
+                            receiveId = ${entityName}1.getAct().getVarsMap().get(UserUtils.getUser().getLoginName()).toString();
+                        }
+                        Receive re = Receive.genBasicReceive(receiveId,${entityName}1.getId(),UserUtils.getUser().getLoginName(), UserUtils.getUser().getName(),
+                                new Date()).setOperColumns(MsgConstant.DOCSTATUS_YIFASONG,
+                                NoneSpringConstHolder.DOC_MESSAGE_TYPE_DONE, NoneSpringConstHolder.DOC_MESSAGE_OPER_TYPE_UPDATE, skipUrl);
+                        relist.add(re);
+                            
+                    }
+                    //处理接收人的待办  assignList 为loginname
+                    List<User> users  = new ArrayList<>();
+                    if(assigneeList.size()>0){
+                        //Receive 为多人
+                        for(int i=0;i<assigneeList.size();i++){
+                            User useri = UserUtils.getUserByLoginName(assigneeList.get(i));
+                            users.add(useri);
+                        }
+                    }else{
+                        User tempAssignUser = UserUtils.getUserByLoginName(assignee);
+                        if(tempAssignUser != null){
+                            users.add(tempAssignUser);
+                        }
+                    }
+                    if(users != null){
+                        for (User useuse: users) {
+                            if(assigneeList.size()>0){
+                                /* if("4".equals(pasStr)){*/
+                                receiveId = ${entityName}1.getAct().getVarsMap().get(useuse.getLoginName()).toString();
+                                //送阅
+                                Receive receive = Receive.genBasicReceive(receiveId, ${entityName}1.getId(), useuse.getLoginName(), useuse.getName(), new Date()).setOperColumns("待浏览", NoneSpringConstHolder.DOC_MESSAGE_TYPE_TOBROWSE, NoneSpringConstHolder.DOC_MESSAGE_OPER_TYPE_INSERT, skipUrl);
+                                relist.add(receive);
+                            }else{
+                                Receive receive = Receive.genBasicReceive(${entityName}1.getId(), ${entityName}1.getId(), useuse.getLoginName(), useuse.getName(), new Date()).setOperColumns("待签收", NoneSpringConstHolder.DOC_MESSAGE_TYPE_TODO, NoneSpringConstHolder.DOC_MESSAGE_OPER_TYPE_INSERT, skipUrl);
+                                relist.add(receive);
+                            }
+                                  
+                        }
+                    }
+                    DocOperEventArg eventArg = new DocOperEventArg( UserUtils.getUser().getLoginName(),
+                            UserUtils.getUser().getName(),affairOperType,relist);
+                    List<Attach> attchlist = new ArrayList<>();
+                    List<CommonFileAttach> fileList = commonFileAttachService.findCommonFileAttachByProcInsId(${entityName}1.getProcInsId());
+                    Map maps = new HashMap();
+                    //给maps put  正文名称  正文地址  备注
+                    maps.put("getDocBody",${entityName}1.getTextAddr());
+                    maps.put("getFileName",${entityName}1.getProcInsId());
+                    maps.put("getRemarks",${entityName}1.getRemarks());
+                    //map 需要的数据  
+                    ${entityName}1.getAct().setTitle(${entityName}1.getTitle());
+                    ${entityName}1.getAct().setReferenceNum(${entityName}1.getArticleSize());
+                    // super.fireDocOperAttachEvent(${entityName}1.getAct(), eventArg,maps,fileList,${entityName}1);
                     if(isNewRecord){
                         // return "redirect:"+Global.getAdminPath()+"/act/task/todo?messagetag=1";
                         return "redirect:"+Global.getAdminPath()+"/${package}/${entityName}/form?messagetag=1";
                     }
-                        return "redirect:"+Global.getAdminPath()+"/act/task/todo?messagetag=1";
-                        // return form(${entityName}Clone, model,request,response);
-	           default:
-	                ${entityName}Service.saveNew(${entityName}Clone,"no");
+                    return "redirect:"+Global.getAdminPath()+"/act/task/todo?messagetag=1";
+                    // return form(${entityName}Clone, model,request,response);
+	           	default:
+	                ${EntityName} ${entityName}2 = ${entityName}Service.saveNew(${entityName}Clone,"no");
+					pasStr=  ${entityName}2.getAct().getFlag();
 	                model.addAttribute("message", "流程处理成功");
 	                return "success";
-	            }
+			}
         }catch(Exception e){
             model.addAttribute("workFlowObject", ${entityName}Clone);
             model.addAttribute("message", "流程处理失败");
@@ -246,5 +461,279 @@ public class ${EntityName}Controller extends BaseController {
         ${entityName}Service.delete(${entityName});
         addMessage(redirectAttributes, "删除单表成功");
         return "redirect:"+Global.getAdminPath()+"/${package}/${entityName}/?repage";
+    }
+
+    @RequestMapping(value = "sendToDocSys")
+    public String sendToDocSys(${EntityName} ${entityName},RedirectAttributes redirectAttributes,Model model){
+        boolean flag=${entityName}Service.isHaveEndLine("${map.flowName}",${entityName});
+        if(flag){
+            //有正文时转出
+            if(StringUtils.isNotBlank(${entityName}.getTextAddr())){
+                try {
+                    ${entityName}Service.sendToDocSys(${entityName});
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    addMessage(redirectAttributes, "转出流程失败");
+                    return "redirect:"+Global.getAdminPath()+"/act/task/todo";
+                }
+            }
+        }else {
+             addMessage(redirectAttributes, "流程处理失败,缺少当前节点与结束节点连线");
+             return "redirect:"+Global.getAdminPath()+"/act/task/todo";
+        }
+        User user =new User();
+        user.setLoginName(Global.getConfig("endMen"));
+        TaskModel taskModel=actTaskService.findFlowByFlowName("${map.flowName}");
+        String flowId=taskModel.getFlowId();
+        Map<String,Object> map=actTaskService.getEndPassNum(flowId);
+        if(StringUtils.isNotBlank(flowId)){
+            ${entityName}.getAct().setVarsMap(map);
+        }
+        if(flag){
+            try {
+                 actTaskService.finishTask(${entityName}.getAct(),user);
+                addMessage(redirectAttributes, "转出成功");
+            } catch (IllegalAccessException e) {
+                 e.printStackTrace();
+                 addMessage(redirectAttributes, "转出失败");
+            }
+            return "redirect:"+Global.getAdminPath()+"/act/task/todo";
+        }else{
+            addMessage(redirectAttributes, "流程处理失败");
+            return "redirect:"+Global.getAdminPath()+"/act/task/todo";
+        }
+    }
+
+    private String convertValue4Export(Object obj){
+        if(obj instanceof java.util.Date){
+            return DateUtils.formatDate((java.util.Date)obj,null);
+        }else{
+            return obj.toString();
+        }
+    }
+                                    
+    //文件导出打印单
+    @RequestMapping(value = "export")
+    // @ResponseBody
+    //Map<String,String>
+    public String export(HttpServletResponse response,${EntityName} ${entityName},Model model, HttpServletRequest request) {
+        Map<String, Object> params = new HashMap<String, Object>();
+        Map<String,String> resultMap = new HashMap<String,String>();
+        //补充参数
+        #foreach($item in $flowBussMap.entrySet())
+##            $item.key     传进来map的key
+##            $item.value   传进来map的values
+            params.put("$item.key", ${entityName}.$item.value != null ? convertValue4Export(${entityName}.$item.value) : "" );
+        #end
+##        params.put("${fromUnit}", ${entityName}.getFromUnit()!=null?${entityName}.getFromUnit():"");
+        //获取模板路径
+        String templatepath =  Global.getConfig("docexportPath");
+        XwpfTUtil xwpfTUtil = new XwpfTUtil();
+        XWPFDocument doc = null;
+        InputStream is = null;
+        OutputStream os = null;
+        //path = 模板路径+模板文件名
+        String fileNameInResource = templatepath+"/${wordTemplatName}";
+        //创建文件流，读取文件内容
+            try{
+                is = new FileInputStream(fileNameInResource);
+            }catch (FileNotFoundException e){
+                model.addAttribute("message", "未上传模板文件或模板文件内容为空，请联系管理员...");
+                return form(${entityName},model,request,response);
+            }
+            try{
+                doc = new XWPFDocument(is);
+            }catch (IOException e){
+                model.addAttribute("message", "模板文件内容为空，请联系管理员...");
+                return form(${entityName},model,request,response);
+            }
+            //调用util类 利用正则替换${} 数据
+            xwpfTUtil.replaceInPara(doc, params);
+            xwpfTUtil.replaceInTable(doc, params);
+            try{
+                os = response.getOutputStream();
+            }catch (IOException e){
+                model.addAttribute("message", "文件流异常处理，请检查模板文件是否正确");
+                return form(${entityName},model,request,response);
+            }
+            //处理浏览器显示下载名
+            //设置文件名为标题
+            String fileName = ${entityName}.getTitle();
+
+            if(StringUtils.isNotBlank(fileName)){
+                fileName=fileName+".doc";
+            }else{
+                fileName="${wordTemplatName}";
+            }
+            response.setContentType("application/vnd.ms-excel");
+            try {
+                if (request.getHeader("User-Agent").toLowerCase().indexOf("firefox") > 0) {
+                    fileName = new String(fileName.getBytes("UTF-8"), "ISO8859-1");//firefox浏览器
+                }else{
+                    fileName = new String(fileName.getBytes("GBK"), "ISO8859-1");
+                }
+                response.addHeader("Content-Disposition",
+                "attachment;fileName="+fileName);
+            } catch (UnsupportedEncodingException e1) {
+                e1.printStackTrace();
+            }
+            //写入
+        try {
+            doc.write(os);
+            //关闭文件流
+            xwpfTUtil.close(os);
+            xwpfTUtil.close(is);
+            os.flush();
+            os.close();
+        }catch (Exception e){
+            model.addAttribute("message", "文件流写入异常，请检查模板文件是否正确..");
+            return form(${entityName},model,request,response);
+        }
+        return null;
+    }
+
+    @RequestMapping(value = "saveToToDoTask")
+    @ResponseBody
+    public String saveToToDoTask(
+    @RequestParam(value = "id", defaultValue="", required = true) String id,
+    @RequestParam(value = "buttonType", defaultValue="", required = true) String buttonType) {
+        logger.info("请求接口doc/docReceive/saveToToDoTask开始");
+        // 创建响应返回的JSON字符串对象
+        String resultStr = "";
+        try {
+            // service接口调用
+            DocReceive docReceive = ${entityName}Service.getDocReceive(id);
+        
+            //本服务文件存储服务器 与 市政府文件存储服务器不同时，下载文件
+            if(!Global.getConfig("govOfficalStoreSysPath").trim().equals(Global.getConfig("sendMsgPath").trim())){
+                //下载文件
+                if(docReceive.getDocBase() != null){
+                    //下载正文
+                    DocBase docBase = docReceive.getDocBase();
+                    String fileurl  = docBase.getDocBody();
+                    String filePath = "";
+                    if(StringUtils.isNotEmpty(fileurl)){
+                        ${entityName}Service.downloadFile(fileurl);
+                        filePath = ${entityName}Service.getLocalFileUrl(fileurl);
+                        docBase.setDocBody(filePath);
+                    }
+                    //下载附件
+                    List<DocAttachment> docAttachments = docBase.getDocAttachmentList();
+                    if(docAttachments != null && docAttachments.size()>0){
+                        for (int i = 0; i < docAttachments.size(); i++) {
+                            if(StringUtils.isNotEmpty(docAttachments.get(i).getDocAttachment())){
+                                ${entityName}Service.downloadFile(docAttachments.get(i).getDocAttachment());
+                                filePath = ${entityName}Service.getLocalFileUrl(fileurl);
+                                docAttachments.get(i).setDocAttachment(filePath);
+                            }
+                        }
+                        docBase.setDocAttachmentList(docAttachments);
+                    }
+                    docReceive.setDocBase(docBase);
+                }
+            }
+    
+            // 保存到待办
+            String businessId = "";
+            switch (buttonType) {
+                // ${map.flowName}
+                case "1":
+                    ${EntityName} ${entityName} = ${entityName}Service.get${EntityName}(docReceive);
+                    ${entityName}.getAct().setAssignee(UserUtils.getUser().getLoginName());
+                    String flowId=actTaskService.findFlowByFlowName("${map.flowName}").getFlowId();
+                    ${entityName}.getAct().setProcDefId(flowId);
+                    ${entityName}.getAct().setProcDefKey("${map.flowName}");
+                    Map<String,Object> map=actTaskService.getStartPassNum(flowId);
+                    String pass="";
+                    if(map!=null){
+                        pass= (String) map.get("pass");
+                        try {
+                            Integer add=Integer.parseInt(pass)+1;
+                            ${entityName}.getAct().setFlag(add.toString());
+                        } catch (NumberFormatException e) {
+                            logger.info("pass 转换失败");
+                        }
+                    }else{
+                        logger.info("流程开始节点pass未找到,请配置开始节点");
+                    }
+                    businessId = ${entityName}Service.saveNew(${entityName},"").getAct().getProcInsId();
+                    List<CommonFileAttach> commonFileAttachList=new ArrayList<CommonFileAttach>();
+                        commonFileAttachList=${entityName}.getFileList();
+                        for(int i=0;i<commonFileAttachList.size();i++){
+                        CommonFileAttach commonFileAttach=commonFileAttachList.get(i);
+                        commonFileAttach.setId(UUID.randomUUID().toString());
+                        commonFileAttach.setFlowName("一般收文");
+                        commonFileAttach.setDelFlag("0");
+                        commonFileAttach.setProcInsId(businessId);
+                        commonFileAttach.setCreateDate(DateUtils.getDefultTime(new Date().toString()));
+                        commonFileAttachService.save(commonFileAttach);
+                    }
+                    break;
+            }
+            // 返回
+            resultStr = jm.getJsonString(MsgConstant.OK, MsgConstant.NULL, businessId);
+        }catch (ErrorException e) {
+            logger.error("请求接口doc/docReceive/saveToToDoTask失败", e);
+            // 捕获异常，并将异常信息拼接为Json格式的字符串返回
+            resultStr = JsonManager.getInstance().getJsonString(MsgConstant.ERR,
+            e.getErrorMsg(), null);
+        } catch (Exception e) {
+            logger.error("请求接口doc/docReceive/saveToToDoTask失败", e);
+            // 捕获异常，并将异常信息拼接为Json格式的字符串返回
+            resultStr = JsonManager.getInstance().getJsonString(MsgConstant.ERR,
+            MsgConstant.UNKNOWN_ERR + ":" + e.getMessage(), null);
+        }
+        return resultStr;
+    }
+
+
+        @RequestMapping(value = "handleDoc")
+        @ResponseBody
+        public String handleDoc(
+        @RequestParam(value = "id", defaultValue="", required = true) String id,
+        @RequestParam(value = "handleType", defaultValue="", required = true) String handleType,
+        @RequestParam(value = "srcHandleType", defaultValue="", required = true) String srcHandleType,
+        @RequestParam(value = "handleAdvice", defaultValue="", required = false) String handleAdvice) {
+            logger.info("请求接口doc/docReceive/handleDoc开始");
+            // 创建响应返回的JSON字符串对象
+            String resultStr = "";
+    
+            // 参数封装
+            DocReceive docReceive = new DocReceive();
+            docReceive.setId(id);
+            docReceive.setHandleType(handleType);
+            docReceive.setSrcHandleType(srcHandleType);
+            docReceive.setHandleAdvice(handleAdvice);
+            try {
+                // check参数
+                docReceive.checkEntity();
+        
+                // service调用
+                ${entityName}Service.handleDoc(docReceive);
+        
+                // 返回
+                resultStr = jm.getJsonString(MsgConstant.OK, MsgConstant.NULL, null);
+            }catch (ErrorException e) {
+                logger.error("请求接口doc/docReceive/handleDoc失败", e);
+                // 捕获异常，并将异常信息拼接为Json格式的字符串返回
+                resultStr = JsonManager.getInstance().getJsonString(MsgConstant.ERR,
+                e.getErrorMsg(), null);
+            } catch (Exception e) {
+                logger.error("请求接口doc/docReceive/handleDoc失败", e);
+                // 捕获异常，并将异常信息拼接为Json格式的字符串返回
+                resultStr = JsonManager.getInstance().getJsonString(MsgConstant.ERR,
+                MsgConstant.UNKNOWN_ERR + ":" + e.getMessage(), null);
+            }
+            return resultStr;
+        }
+
+    @RequestMapping("turnOutPermission")
+    @ResponseBody
+    public String turnOutPermission(){
+        String flowId=actTaskService.findFlowByFlowName("${map.flowName}").getFlowId();
+        String turnOutInfo=actTaskService.findNodeByFlowIdAndDelTagAndTransferOut(flowId);
+        Map<String,Object> map=new HashMap<>();
+        map.put("turnOutInfo",turnOutInfo);
+        return JsonMapper.toJsonString(map);
     }
 }

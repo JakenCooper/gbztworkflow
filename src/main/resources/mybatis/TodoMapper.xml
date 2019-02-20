@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.gbzt.gbztworkflow.modules.workflowengine.mybatisdao.ToDoDao" >
+  <sql id="todo_run_task">
+	grt.id AS id,
+	grt.proc_inst_id AS procInstId,
+	grt.flow_id AS flowId,
+	grt.assign_user AS assignUser,
+	grt.OWNER AS OWNER,
+	grt.buss_table AS bussTable,
+	grt.node_id AS nodeId,
+	grt.node_name AS nodeName,
+	grt.node_def_id AS nodeDefId,
+	grt.buss_id AS bussId,
+	grt.description AS description,
+	grt.create_time_mills AS createTimeMills,
+	grt.finish_time AS finishTime
+  </sql>
+ <select id="getToDoLists" parameterType="java.util.Map" resultType="com.gbzt.gbztworkflow.modules.workflowengine.pojo.Task">
+	SELECT
+		<include refid="todo_run_task"/>
+	FROM
+		(
+			gw_run_task grt
+			INNER JOIN gw_run_histtask grh ON grt.id = grh.task_id
+		)
+	<!-- 执行搜索时此行代码生效 -->
+	 <if test="title!='' and title!=null ">
+		INNER JOIN gw_run_variables grv ON grv.task_id = grt.id
+	 </if>
+	WHERE
+    finish_tag = 'Y' AND  assign_user = '${assignUser}'  AND  finish_type='single'
+     <if test="searchFlag=='proc'">
+          AND grt.proc_inst_id IN (
+          SELECT
+            g.proc_inst_id
+          FROM
+          gw_run_variables g)
+      </if>
+      <if test="searchFlag=='task'">
+          AND grt.id IN(
+          SELECT
+            g.task_id
+          FROM
+          gw_run_variables g)
+      </if>
+     ORDER BY  ${orderByType}
+     LIMIT ${pass_page},${limit}
+ </select>
+ <select id="findFirstInProcInstIdOrderByCreateTimeDesc" resultType="com.gbzt.gbztworkflow.modules.workflowengine.pojo.Task" parameterType="java.util.ArrayList" >
+	SELECT * 
+	FROM gw_run_procinst grp
+	WHERE grp.id in
+	<foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+               #{item}       
+    </foreach> 
+    ORDER BY grp.create_time
+    DESC
+  </select>
+  <select id="getTodoListsCount" resultType="java.lang.Integer" parameterType="java.util.Map">
+        SELECT
+			COUNT(grt.id)
+		FROM
+			(
+				gw_run_task grt
+				INNER JOIN gw_run_histtask grh ON grt.id = grh.task_id
+			)
+		<!-- 执行搜索时此行代码生效 -->
+		<if test="title!='' and title!=null ">	
+			INNER JOIN gw_run_variables grv ON grv.task_id = grt.id
+		</if>		
+		WHERE
+	      assign_user = '${assignUser}' AND  finish_tag = 'Y' AND  finish_type='single'
+	     <if test="searchFlag=='proc'">
+	          AND grt.proc_inst_id IN (
+	          SELECT
+	            g.proc_inst_id
+	          FROM
+	          gw_run_variables g)
+	      </if>
+	      <if test="searchFlag=='task'">
+	          AND grt.id IN(
+	          SELECT
+	            g.task_id
+	          FROM
+	          gw_run_variables g)
+	      </if>
+    </select>
+</mapper>

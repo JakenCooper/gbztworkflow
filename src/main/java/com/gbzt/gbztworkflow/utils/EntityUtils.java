@@ -24,6 +24,9 @@ public class EntityUtils {
 	private static final String PACKAGE_ENTITY;
 	private static final String PACKAGE_FORMATATTRIBUTE;
 	private static final String PACKAGE_REQUEST;
+	private static final String PACKAGE_COMMONFILE_ATTACH;
+	private static final String PACKAGE_LIST;
+	private static final String COMMON_FILE_ATTACH_SECTION;
 
 	private static final String ANNOTATION_CHARGE_PREFIX_STR = "get";
 	private static final Pattern ANNOTATION_CHARGE_PATTERN;
@@ -47,8 +50,22 @@ public class EntityUtils {
 		formatSectionBuffer.append("\t").append("}").append("\n").append("\n");
 		FORMAT_SECTION = formatSectionBuffer.toString();
 		PACKAGE_ENTITY = "import com.thinkgem.jeesite.common.persistence.ActEntity;";
-		PACKAGE_FORMATATTRIBUTE = "import com.thinkgem.jeesite.modules.FormatAttribute;";
-		PACKAGE_REQUEST = "import javax.servlet.http.HttpServletRequest;"+"\n";
+		// PACKAGE_FORMATATTRIBUTE = "import com.thinkgem.jeesite.modules.FormatAttribute;";
+		PACKAGE_FORMATATTRIBUTE = "import com.thinkgem.jeesite.common.formatattribute.FormatAttribute;";
+		PACKAGE_REQUEST = "import javax.servlet.http.HttpServletRequest;"+"\nimport com.thinkgem.jeesite.modules.workbench.annotation.FormAnnotation.FormItemAtt;\n";
+		PACKAGE_COMMONFILE_ATTACH = "import com.thinkgem.jeesite.modules.commonFileAttach.entity.CommonFileAttach;\n";
+		PACKAGE_LIST = "import java.util.ArrayList;"+"\nimport java.util.List;\n";
+
+		StringBuffer commonFileAttachSectionBuffer = new StringBuffer();
+		commonFileAttachSectionBuffer.append("\t").append("private List<CommonFileAttach> fileList = new ArrayList<>();").append("\n");
+		commonFileAttachSectionBuffer.append("\t").append("public List<CommonFileAttach> getFileList() {").append("\n");
+		commonFileAttachSectionBuffer.append("\t").append("\t").append("return fileList;").append("\n");
+		commonFileAttachSectionBuffer.append("\t").append("}").append("\n").append("\n");
+
+		commonFileAttachSectionBuffer.append("\t").append("public void setFileList(List<CommonFileAttach> fileList) {").append("\n");
+		commonFileAttachSectionBuffer.append("\t").append("\t").append("this.fileList = fileList;").append("\n");
+		commonFileAttachSectionBuffer.append("\t").append("}").append("\n").append("\n");
+		COMMON_FILE_ATTACH_SECTION = commonFileAttachSectionBuffer.toString();
 
 		ANNOTATION_CHARGE_PATTERN = Pattern.compile("\\s{0,}public.+(get.+)\\(.{0,}\\)\\s{0,}\\{");
 	}
@@ -113,6 +130,9 @@ public class EntityUtils {
 				contentList.add(classIndex,PACKAGE_REQUEST);
 				contentList.add(classIndex,PACKAGE_FORMATATTRIBUTE);
 				contentList.add(classIndex,PACKAGE_ENTITY);
+				contentList.add(classIndex,PACKAGE_COMMONFILE_ATTACH);
+				contentList.add(classIndex,PACKAGE_LIST);
+
 				int lastIndex = -1;
 				for(int index=contentList.size()-1;index>=0;index--){
 					if(contentList.get(index).contains("}")){
@@ -122,13 +142,14 @@ public class EntityUtils {
 				}
 				contentList.add(lastIndex, FORMAT_SECTION);
 				contentList.add(lastIndex, CLONE_SECTION);
+				contentList.add(lastIndex, COMMON_FILE_ATTACH_SECTION);
 				try {
 					// terminate reader buffer.
 					bufferedReader.close();
 					brCloseTag = true;
 				} catch (Exception e) {
 				}
-				pw = new PrintWriter(new OutputStreamWriter(new FileOutputStream(targetFile)));
+				pw = new PrintWriter(new OutputStreamWriter(new FileOutputStream(targetFile),"UTF-8"));
 				for(String writeContent : contentList){
 					pw.println(writeContent);
 				}

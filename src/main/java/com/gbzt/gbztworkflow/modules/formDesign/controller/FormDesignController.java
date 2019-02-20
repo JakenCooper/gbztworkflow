@@ -43,7 +43,8 @@ public class FormDesignController {
     public String editTableWidth(HttpServletRequest request){
         String tableContent=request.getParameter("tableContent");
         String tableWidth=request.getParameter("tableWidth");
-        tableContent=formDesignService.editTableWidth(tableContent,tableWidth);
+        String color=request.getParameter("color");
+        tableContent=formDesignService.editTableWidth(tableContent,tableWidth,color);
         return new Gson().toJson(tableContent);
     }
     @RequestMapping(value = "save")
@@ -55,6 +56,10 @@ public class FormDesignController {
         String parse_form=request.getParameter("parse_form");
         String currentFlowId=request.getParameter("currentFlowId");
         String mode=request.getParameter("mode");
+        String containerWidth=request.getParameter("containerWidth");
+        String color=request.getParameter("color");
+        formDesign.setColor(color);
+        formDesign.setContainerWidth(containerWidth);
         formDesign.setId(uuid);
         formDesign.setFormHtml(parse_form);
         formDesign.setCurrentFlowId(currentFlowId);
@@ -67,9 +72,9 @@ public class FormDesignController {
         //为每一个input元素添加label
         Document doc=formDesignService.addLabel(parse_form);
         //添加c:if标签 生成jsp 文件
-        String jspCode=formDesignService.createJsp(parse_form,currentFlowId,request,response,session,false,mode,true);
+        String jspCode=formDesignService.createJsp(parse_form,currentFlowId,false,true,color);
         //存放 view 页面代码
-        String jspCodeView=formDesignService.createJsp(parse_form,currentFlowId,request,response,session,true,mode,false);
+        String jspCodeView=formDesignService.createJsp(parse_form,currentFlowId,true,false,color);
         if(StringUtils.isNotBlank(jspCode)){
             formDesign.setJspCode(jspCode);
         }
@@ -113,6 +118,9 @@ public class FormDesignController {
         if(formDesign!=null){
             model.addAttribute("html",formDesign.getFormHtml());
             model.addAttribute("view","edit");
+            model.addAttribute("formName",formDesign.getFormName());
+            model.addAttribute("containerWidth",formDesign.getContainerWidth());
+            model.addAttribute("color",formDesign.getColor());
         }
         return "formDesign/formDesign.jsp";
     }

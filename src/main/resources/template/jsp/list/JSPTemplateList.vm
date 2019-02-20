@@ -11,6 +11,10 @@
     <script src="${ctxStatic}/My97DatePicker/WdatePicker.js" type="text/javascript"></script>
 	<script type="text/javascript">
         $(function () {
+            // 为每一个textarea绑定事件使其高度自适应
+            $.each($("textarea"), function(i, n){
+                autoTextarea($(n)[0]);
+            });
             // 根据流程加载tree数据
             selectNextPersonAudit();
 

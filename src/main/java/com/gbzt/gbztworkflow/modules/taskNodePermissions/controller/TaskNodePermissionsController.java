@@ -1,14 +1,22 @@
 package com.gbzt.gbztworkflow.modules.taskNodePermissions.controller;
 
+import com.gbzt.gbztworkflow.consts.ExecResult;
+import com.gbzt.gbztworkflow.modules.base.BaseController;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.FlowBuss;
 //import com.gbzt.gbztworkflow.modules.flowdefination.service.FlowBussService;
+import com.gbzt.gbztworkflow.modules.flowdefination.service.MetadataService;
+import com.gbzt.gbztworkflow.modules.taskNodePermissions.entity.AdviseTypeModel;
 import com.gbzt.gbztworkflow.modules.taskNodePermissions.entity.TaskFormIdName;
 import com.gbzt.gbztworkflow.modules.taskNodePermissions.entity.TaskNodePermissions;
 import com.gbzt.gbztworkflow.modules.taskNodePermissions.service.TaskPermissionsService;
+import com.gbzt.gbztworkflow.modules.velocity.service.VelocityService;
 import com.google.gson.Gson;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.servlet.http.HttpServletRequest;
@@ -22,9 +30,14 @@ import java.util.Map;
 
 @Controller
 @RequestMapping("/taskNodePermissions/")
-public class TaskNodePermissionsController {
+public class TaskNodePermissionsController extends BaseController {
     @Autowired
     private TaskPermissionsService taskPermissionsService;
+    @Autowired
+    private MetadataService metadataService;
+    @Autowired
+    private VelocityService velocityService;
+
    /* @Autowired
     private FlowBussService flowBussService;*/
 
@@ -115,6 +128,17 @@ public class TaskNodePermissionsController {
             map.put("msg","0");
         }
         return new Gson().toJson(map);
+    }
+
+
+    @RequestMapping(value = "saveAdviseType",method = RequestMethod.POST,produces = "application/json;charset=utf-8")
+    public ResponseEntity saveAdviseType(@RequestBody AdviseTypeModel adviseTypeModel){
+        String attrName = velocityService.humpNomenclature(adviseTypeModel.getColumnName());
+        String adviseInsertResult = metadataService.addAdviseSummary(adviseTypeModel.getFlowId(),attrName);
+        if("-2".equals(adviseInsertResult)){
+            return buildResp(200,new ExecResult(false,"服务器内部异常，请检查日志",""));
+        }
+        return buildResp(200,new ExecResult(true,"success",adviseInsertResult));
     }
 }
 

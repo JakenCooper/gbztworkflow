@@ -36,7 +36,7 @@
         t.priority AS priority,
         t.emergency_tag AS emergencyTag,
         t.lock_tag AS lockTag,
-        t.`create_time` AS createTime
+        t.create_time AS createTime
     </sql>
 
   <select id="getUndoLists"  parameterType="java.util.Map" resultType="com.gbzt.gbztworkflow.modules.workflowengine.pojo.Task">
@@ -49,14 +49,14 @@
         AND  t.finish_tag = 'N'
         AND  t.finish_type='single'
 
-      <if test="searchFlag=='proc'">
+      <if test="searchFlag == 'proc'">
           AND t.proc_inst_id IN (
           SELECT
             g.proc_inst_id
           FROM
           gw_run_variables g)
       </if>
-      <if test="searchFlag=='task'">
+      <if test="searchFlag == 'task'">
           AND t.id IN(
           SELECT
             g.task_id
@@ -64,7 +64,17 @@
           gw_run_variables g)
       </if>
       ORDER BY  ${orderByType}
-      LIMIT ${pass_page},${limit}
+      <choose>
+          <when test="isAll == 'yes'">
+
+          </when>
+          <when test="isAll == 'no'">
+              <if test="pass_page != null and limit != null">
+                  LIMIT ${pass_page},${limit}
+              </if>
+          </when>
+      </choose>
+
   </select>
     <select id="getUndoListsCount" resultType="java.lang.Integer" parameterType="java.util.Map">
         SELECT COUNT(id)
@@ -73,7 +83,7 @@
         AND  t.assign_user = '${assignUser}'
         AND  t.finish_tag = 'N'
         AND  t.finish_type='single'
-        <if test="searchFlag=='proc'">
+        <if test="searchFlag == 'proc'">
             AND t.proc_inst_id IN (
             SELECT
             g.proc_inst_id

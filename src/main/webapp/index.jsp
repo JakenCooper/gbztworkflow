@@ -20,49 +20,31 @@
     <script type="text/javascript">
         var alert_tag = true;
         // var adminPath = 'http://localhost:8080/gbztworkflow';
-        var adminPath = 'http://10.18.198.183:8080/gbztworkflow';
+        var adminPath = 'http://localhost:8666/gw';
     </script>
 </head>
 <body>
 
-    <nav class="navbar navbar-inverse">
-        <section class="container-fluid">
-            <div class="navbar-header">
-                <h2 class="navbar-text">国博政通工作流引擎 </h2>
-            </div>
-            <div class="pull-right navbar-text">
-                &nbsp;&nbsp;<strong> [ 囍 ]  ╮(￣▽￣| ")╭  [ 囍 ]</strong>
-            </div>
-        </section>
-    </nav>
-    <section class="container-fluid" id="main">
+<nav class="navbar navbar-inverse" >
+    <section class="container-fluid">
+        <div class="navbar-header">
+            <h2 class="navbar-text" id="logoTitle">工作流引擎 </h2>
+        </div>
+        <div class="pull-right navbar-text navTitleText">
+            <a href="#"> <span class="glyphicon glyphicon-user"></span>&nbsp;admin</a>
+            <a href="#">  <span class="glyphicon glyphicon-off"></span>&nbsp;退出</a>
+            &nbsp;&nbsp;&nbsp;
+            <!--<span class="glyphicon glyphicon-off">&nbsp;退出</span>-->
+        </div>
     </section>
+</nav>
+<section class="container-fluid" id="main">
+</section>
 
 
-    <div id="section_flowadd"></div>
+<div id="section_flowadd"></div>
+<div id="section_bussadd"></div>
 
-    <script type="text/javascript" src="${ctxStatic}/bundle.js"></script>
-
-    <script type="text/javascript">
-
-        $(function(){
-            $('#index_menugroup .panel-title').click(function(event){
-                $(event.target).find('a').click();
-            });
-            $('#linecanvas').hide();
-           /* $('body').mLoading({
-                mask:false,
-                text:' ☎ 提交ing... ☏'
-            });
-            $('body').mLoading('hide');*/
-
-
-            //buss method ...
-           /* $('button:contains("页面编辑器")').click(function(e){
-                alert(window.currentflowid);
-                window.open("{ctx}/formDesign/get?id="+window.currentflowid);
-            });*/
-        });
-    </script>
+<script type="text/javascript" src="${ctxStatic}/bundle.js"></script>
 </body>
 </html>

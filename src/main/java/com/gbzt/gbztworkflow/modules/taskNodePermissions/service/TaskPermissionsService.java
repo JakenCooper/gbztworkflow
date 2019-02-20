@@ -1,9 +1,12 @@
 package com.gbzt.gbztworkflow.modules.taskNodePermissions.service;
 
+import com.gbzt.gbztworkflow.modules.flowdefination.service.MetadataService;
 import com.gbzt.gbztworkflow.modules.taskNodePermissions.dao.TaskFormIdNameDao;
 import com.gbzt.gbztworkflow.modules.taskNodePermissions.dao.TaskPermissionsDao;
 import com.gbzt.gbztworkflow.modules.taskNodePermissions.entity.TaskFormIdName;
 import com.gbzt.gbztworkflow.modules.taskNodePermissions.entity.TaskNodePermissions;
+import com.gbzt.gbztworkflow.modules.velocity.service.VelocityService;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,9 +24,18 @@ public class TaskPermissionsService {
     private TaskPermissionsDao taskPermissionsDao;
     @Autowired
     private TaskFormIdNameDao taskFormIdNameDao;
+    @Autowired
+    private VelocityService velocityService;
+    @Autowired
+    private MetadataService metadataService;
 
+    private Logger logger =Logger.getLogger(TaskPermissionsService.class);
+
+    @Transactional(readOnly = false)
     public Integer savePermissions(String[] array){
         int flag=0;
+//        boolean firstTimeSaved = false;
+//        String nodeAdviseType = "-1";
         try {
             List<TaskNodePermissions> permissionList=new ArrayList<>();
             for(int i=0;i<array.length;i++){
@@ -32,6 +44,15 @@ public class TaskPermissionsService {
                 String taskNodeId=array[i].split(":")[2];
                 String currentFlowId=array[i].split(":")[3];
                 String columnName=array[i].split(":")[4];
+                /*if(!firstTimeSaved && "true".equals(adviseTag)){
+                    String attrName = velocityService.humpNomenclature(columnName);
+                    String adviseInsertResult = metadataService.addAdviseSummary(currentFlowId,attrName);
+                    if("-2".equals(adviseInsertResult)){
+                        throw new IllegalArgumentException("无法正确添加意见信息，请检查日志！");
+                    }
+                    nodeAdviseType = adviseInsertResult;
+                    firstTimeSaved = true;
+                }*/
                 TaskNodePermissions taskNodePermissions=new TaskNodePermissions();
                 taskNodePermissions.setTaskName(taskName);
                 taskNodePermissions.setPermission(permission);
@@ -40,6 +61,8 @@ public class TaskPermissionsService {
                 taskNodePermissions.setColumnName(columnName);
                 taskNodePermissions.setDelFlag("0");
                 taskNodePermissions.setId(UUID.randomUUID().toString());
+//                taskNodePermissions.setAdviseType(nodeAdviseType);
+
                 SimpleDateFormat sdf=new SimpleDateFormat("yyyy-mm-dd  HH:mm:ss");
                 String date=sdf.format(new Date());
                 Date createDate= sdf.parse(date);
@@ -50,6 +73,7 @@ public class TaskPermissionsService {
             flag=1;
         } catch (Exception e) {
             e.printStackTrace();
+            return 0;
         }
         return flag;
     }

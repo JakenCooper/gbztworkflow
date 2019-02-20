@@ -44,23 +44,18 @@
     input[type=radio], input[type=radio]:checked::after {
         border-radius: 50%;
     }
+    li{
+        list-style: none;
+    }
+    #containerWidth{
+        width: 295px!important;
+        margin-bottom: 20px;
+    }
 </style>
 <div style="padding: 20px;">
     <form id="frm" method="post" target="mywin">
-        <div style="font-size: 40px;width:100%;text-align: center;">表单设计</div>
-        <button type="button" onclick="leipiFormDesign.exec('text',GetRequest());" class="btn btn-info btn-small">单行输入框</button>
-        <button type="button" onclick="leipiFormDesign.exec('textarea',GetRequest());" class="btn btn-info btn-small">多行输入框</button>
-        <button type="button" onclick="leipiFormDesign.exec('select',GetRequest());" class="btn btn-info btn-small">下拉菜单</button>
-        <button type="button" onclick="leipiFormDesign.exec('radios',GetRequest());" class="btn btn-info btn-small">单选框</button>
-        <button type="button" onclick="leipiFormDesign.exec('checkboxs',GetRequest());" class="btn btn-info btn-small">复选框</button>
-        <%--<button type="button" onclick="leipiFormDesign.exec('macros',GetRequest());" class="btn btn-info btn-small">宏控件</button>--%>
-        <button type="button" onclick="leipiFormDesign.exec('file',GetRequest());" class="btn btn-info btn-small">文件选择</button>
-        <label><input type="radio" name="mode" value="0"/>紧凑模式</label>
-        <label><input type="radio" name="mode" value="1" checked="checked"/>非紧凑模式</label>
-        <input style="width: 55px;margin-left: 5px;" type="number" id="containerWidth"/> px
-        <button type="button" onclick="containerWidthChange();" class="btn btn-info btn-small">修改表单宽度</button>
-       <%-- <button type="button" onclick="leipiFormDesign.exec('progressbar');" class="btn btn-info btn-small">进度条</button>--%>
-       <%-- <button type="button" onclick="leipiFormDesign.exec('qrcode');" class="btn btn-info btn-small">二维码</button>--%>
+        <div style="font-size: 40px;width:100%;text-align: center;">表单设计&nbsp;<font style="font-family: 宋体">[${formName}]</div>
+
         <div class="alert alert-warning">
             <button type="button" class="close" data-dismiss="alert">×</button>
             <strong>提醒：</strong>单选框和复选框，如：<code>{|-</code>选项<code>-|}</code>两边边界是防止误删除控件，程序会把它们替换为空，请不要手动删除！ 树结构人员选择控件请复制: <code>"\${selectTree}"粘贴至相应位置</code> || 时间选择控件请复制: <code>"\${timeSelect}"粘贴至相应位置</code>||默认当前登录用户<code> "\${defultUser}"粘贴至相应位置</code>||默认当前时间<code>"\${dafultTime}"粘贴至相应位置</code>
@@ -70,12 +65,33 @@
         </div>
       <%--  <textarea style="width:100%;height:100%" name="html" id="container"></textarea></form>--%>
         <div style="width:100%;">
-            <div style="float:left;width:255px;border:1px dashed greenyellow">
-                菜单
+            <div style="float:left;width:255px;">
+                <ul>
+                    <li><button type="button" onclick="leipiFormDesign.exec('text',GetRequest());" class="btn btn-info btn-small" style="width: 300px;margin-bottom: 20px;">单行输入框</button></li>
+                    <li><button type="button" onclick="leipiFormDesign.exec('textarea',GetRequest());" class="btn btn-info btn-small"  style="width: 300px;margin-bottom: 20px;">多行输入框</button></li>
+                    <li><button type="button" onclick="leipiFormDesign.exec('select',GetRequest());" class="btn btn-info btn-small"  style="width: 300px;margin-bottom: 20px;">下拉菜单</button></li>
+                    <li><button type="button" onclick="leipiFormDesign.exec('radios',GetRequest());" class="btn btn-info btn-small"  style="width: 300px;margin-bottom: 20px;">单选框</button></li>
+                    <li><button type="button" onclick="leipiFormDesign.exec('checkboxs',GetRequest());" class="btn btn-info btn-small"  style="width: 300px;margin-bottom: 20px;">复选框</button></li>
+                    <li><button type="button" onclick="leipiFormDesign.exec('file',GetRequest());" class="btn btn-info btn-small"  style="width: 300px;margin-bottom: 20px;">文件选择</button></li>
+                    <li><div>边框颜色 :<input style="width: 30%!important;margin-right: 20px;margin-bottom: 20px" type="color" id="color"></div></li>
+                    <li><div>表单宽度 :<input  style="width: 30%!important;margin-right: 20px;margin-bottom: 20px" type="number" id="containerWidth" placeholder="px"/><button type="button" onclick="containerWidthChange();" class="btn btn-info btn-small"  style="width: auto;">修改表单边框颜色和宽度</button></div></li>
+                    <%--<li><label><input type="radio" name="mode" value="0"/>紧凑模式</label></li>
+                    <li><label><input type="radio" name="mode" value="1" checked="checked"/>非紧凑模式</label></li>--%>
+                </ul>
             </div>
             <script type="text/javascript">
                 $(function () {
-                    $('#containerWidth').val($('#container').width()); // 为'#containerWidth'input赋初始值
+                    var containerWidth="${containerWidth}";
+                    var color="${color}";
+                    if(color!=null&&color!=''){
+                        $("#color").val(color);
+                    }
+                    if(containerWidth!=null&&containerWidth!=''){
+                        $('#containerWidth').val(containerWidth);
+                    }else{
+                        $('#containerWidth').val($('#container').width()); // 为'#containerWidth'input赋初始值
+                    }
+
                     $('#containerWidth').change(function () {
                         var width = $(this).val();
                         if (width > 574 && frequency == 0){
@@ -89,16 +105,19 @@
                         editor.container.style.width = width === 0 ? editor.container.style.width : width;
                         var htmlWidth = $('#container #edui10_iframeholder');
                         htmlWidth.css({'width':width == 0?$('#container').css('width'):width});
-                        setTableWidth(width == 0?$('#container').css('width'):width-35);
+                        setTableWidth(width == 0?$('#container').css('width'):width-18);
                     });
+                    containerWidthChange("load");
                 });
                 var frequency = 0;
-                function containerWidthChange(){ // 点击按钮时,修改
+                function containerWidthChange(flag){ // 点击按钮时,修改
                     var width = $('#containerWidth').val();
-                    if (width > 574 && frequency == 0){
-                        frequency = 1;
-                        if (!confirm('经测试,在1024分辨率下,将富文本宽度设置小于574px才可以正常显示,确定设置吗?')){
-                            return;
+                    if(flag!="load"){
+                        if (width > 574 && frequency == 0){
+                            frequency = 1;
+                            if (!confirm('经测试,在1024分辨率下,将富文本宽度设置小于574px才可以正常显示,确定设置吗?')){
+                                return;
+                            }
                         }
                     }
                     $('#container').css({'width':width == 0?$('#container').css('width'):width});
@@ -106,7 +125,7 @@
                     editor.container.style.width = width === 0 ? editor.container.style.width : width;
                     var htmlWidth = $('#container #edui10_iframeholder');
                     htmlWidth.css({'width':width == 0?$('#container').css('width'):width});
-                    setTableWidth(width == 0?$('#container').css('width'):width-35);
+                    setTableWidth(width == 0?$('#container').css('width'):width-18);
                 }
             </script>
             <div id="containerDIV" style="margin: 0 auto;width: 850px;">
@@ -388,7 +407,7 @@
         },
         /*type  =  save 保存设计 versions 保存版本  close关闭 */
         fnCheckForm: function (type) {
-            var mode=$("input[name='mode']:checked").val();
+           // var mode=$("input[name='mode']:checked").val();
             if (leipiEditor.queryCommandState('source'))
                 leipiEditor.execCommand('source');//切换到编辑模式才提交，否则有bug
 
@@ -419,11 +438,13 @@
                 $("#saveform").submit();
                 //$("#myModal").modal('show');
                 //异步提交数据
+                var containerWidth=$("#containerWidth").val();
+                var color=$("#color").val();
                 $.ajax({
                    type: 'POST',
                    url : '${ctx}/formDesign/save',
                    dataType : 'json',
-                   data : {'type' : type_value,'formid':formid,'parse_form':parse_form,'currentFlowId':GetRequest(),'mode':mode},
+                   data : {'type' : type_value,'formid':formid,'parse_form':parse_form,'currentFlowId':GetRequest(),"containerWidth":containerWidth,"color":color},
                    success : function(data){
                      if(data.success==1){
                          $.message('保存成功');
@@ -478,6 +499,8 @@
     }
     function setTableWidth(width) {
         var content=UE.getEditor('container').getContent();
+        var color=$("#color").val();
+        console.log(color);
         // var tableWidth=$("#tableWidth").val();
         var tableWidth=width;
         if(tableWidth==""){
@@ -488,7 +511,7 @@
             type: 'POST',
             url : '${ctx}/formDesign/editTableWidth',
             dataType : 'json',
-            data : {"tableWidth":tableWidth,"tableContent":content},
+            data : {"tableWidth":tableWidth,"tableContent":content,"color":color},
             contentType: "application/x-www-form-urlencoded; charset=utf-8",
             success : function(data){
                 UE.getEditor('container').setContent("");

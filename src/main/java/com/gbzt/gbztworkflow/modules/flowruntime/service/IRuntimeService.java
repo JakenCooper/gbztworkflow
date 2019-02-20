@@ -73,7 +73,23 @@ public interface IRuntimeService {
     //根据流程实例id查询附件
     public List<TaskModel> findCommonFileByProcInsId(TaskModel taskModel);
 
+    //删除附件数据库信息
     public TaskModel delCommonFileByproInsId(TaskModel taskModel);
 
+    //寻找结束节点
+    public TaskModel findNodeByFlowIdAndEndNode(TaskModel taskModel);
 
+    //寻找开始节点
+    public TaskModel findNodeByFlowIdAndBeginNode(TaskModel taskModel);
+
+    //根据结束节点id和当前节点名称 查询是否有结束连线
+    public TaskModel findLineByEndNodeIdAndBeginNodeId(TaskModel taskModel);
+
+    //寻找节点名称对应Id
+    public TaskModel findNodeByNodeDefIdAndFlowId(TaskModel taskModel);
+
+    //查询转出节点
+    public List<TaskModel> findNodeByFlowIdAndDelTagAndTransferOut(TaskModel taskModel);
+
+    public TaskModel findAdviseBussTblNameByProcInstId(TaskModel taskModel);
 }

@@ -92,6 +92,10 @@ public class TaskExecution {
 //    }
 
 
+    // [for rtn of retreating task]
+    public String secondLastTaskId;
+
+
     public String getId() {
         return id;
     }

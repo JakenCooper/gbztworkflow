@@ -3,15 +3,22 @@ package com.gbzt.gbztworkflow.modules.velocity.controller;
 import com.gbzt.gbztworkflow.modules.base.BaseController;
 import com.gbzt.gbztworkflow.modules.flowElement.entity.FlowElement;
 import com.gbzt.gbztworkflow.modules.flowElement.service.FlowElementService;
+import com.gbzt.gbztworkflow.modules.flowWordTemplet.entity.FlowWordTemplet;
+import com.gbzt.gbztworkflow.modules.flowWordTemplet.service.FlowWordTempletService;
+import com.gbzt.gbztworkflow.modules.flowdefination.dao.ConnectConfigDao;
+import com.gbzt.gbztworkflow.modules.flowdefination.entity.ConnectConfig;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
+import com.gbzt.gbztworkflow.modules.flowdefination.service.ConnectConfigService;
 import com.gbzt.gbztworkflow.modules.formDesign.Util.HtmlConstant;
 import com.gbzt.gbztworkflow.modules.formDesign.entity.FormDesign;
 import com.gbzt.gbztworkflow.modules.formDesign.service.FormDesignService;
 import com.gbzt.gbztworkflow.modules.velocity.service.VelocityService;
+import com.gbzt.gbztworkflow.utils.CommonUtils;
 import com.gbzt.gbztworkflow.utils.EntityUtils;
 import com.gbzt.gbztworkflow.utils.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.ResourceUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -49,12 +56,20 @@ public class VelocityController extends BaseController {
     private static final String JspTemplateAuditPath = "template/jsp/audit";
     private static final String JspTemplateAuditName = "JSPTemplateAudit.vm";
 
+    private static boolean firstTimeSuccess = false;
+
     @Autowired
     private VelocityService velocityService;
     @Autowired
     private FormDesignService formDesignService;
     @Autowired
     private FlowElementService flowElementService;
+    @Autowired
+    private ConnectConfigService connectConfigService;
+    @Autowired
+    private FlowWordTempletService flowWordTempletService;
+    @Autowired
+    private ConnectConfigDao connectConfigDao;
 
 
     @RequestMapping(value="velocity")
@@ -74,37 +89,134 @@ public class VelocityController extends BaseController {
                 e.printStackTrace();
             }
         }
+        
+        // 获取是否是否开发环境
+        String environment = velocityService.getValue("app.runtime.type"); // pro: 生产环境  dev: 开发环境
+        // environment = "dev";
 
+        // 获取数据库信息
+        String driverClass = velocityService.getValue("jdbc.driver"); // 根据jdbc.driver来确定jdbcPrefix
+        String mysqlDriver = velocityService.getValue("jdbc.mysql.buss.driver");
+        String oscarDriver = velocityService.getValue("jdbc.oscar.buss.driver");
+        String mysqlPreFix = velocityService.getValue("jdbc.mysql.buss.url.prefix");
+        String oscarPreFix = velocityService.getValue("jdbc.oscar.buss.url.prefix");
+        String jdbcPrefix = driverClass.equals(mysqlDriver)? mysqlPreFix:oscarPreFix;
+             /*
+            #jdbc.Prefix = jdbc:mysql://		ip地址之前的字符串
+            jdbc.Prefix = jdbc\:oscar\://
+            */
+        
         // 模块名
         String Package = flow.getModuleName();
         // 模块中文名(jsp标题显示文字)
         String fileTitle = flow.getModuleNameCn();
         // 生成文件路径
-        String generateFilePath = flow.getModuleRootPath();// 绝对路径E:\IdeaWorkSpace\party-oa(copy)\src
-        String javaFilePath = generateFilePath+"src/main/java/com/thinkgem/jeesite/modules/";
-        String webappFilePath = generateFilePath+"src/main/webapp/WEB-INF/views/modules/";
-        String mappingFilePath = generateFilePath+"src/main/resources/mappings/modules/";
+        List<ConnectConfig> connectConfigList=connectConfigService.list();
+        if(connectConfigList.size()==0){
+            // try {
+                // return URLEncoder.encode( "模块生成路径未配置生成失败","UTF-8");
+            // } catch (UnsupportedEncodingException e) {
+            //     e.printStackTrace();
+            // }
+        }
+        Map<String,String> datas = new HashMap<>();
+        // 生成文件路径(项目根路径)
+        String generateFilePath = null;
+        //String generateFilePath = flow.getModuleRootPath();// 绝对路径E:\IdeaWorkSpace\party-oa(copy)\src
+        // E:\IdeaWorkSpace\new_svn_work_space\OASys/
+        String javaFilePath = null;
+        String webappFilePath = null;
+        String mappingFilePath = null;
+        String wordResourcePath = null; // oa word模板存放路径
+        if("dev".equals(environment)){ // 开发环境
+           // generateFilePath = connectConfigList.get(0).getModulePath();
+           //generateFilePath = velocityService.getValue("jdbc.buss.default.modelpath") == null ?connectConfigList.get(0).getModulePath() : velocityService.getValue("jdbc.buss.default.modelpath");
+           generateFilePath = "E:/workspace_idea/gbztworkflow_new/trunk/OASys/";
+           if(null != generateFilePath){
+               if(generateFilePath.charAt(generateFilePath.length()-1) != '/' && generateFilePath.charAt(generateFilePath.length()-1) != '\\'){
+                   generateFilePath = generateFilePath+"/";
+               }
+           }else {
+               try {
+                   return URLEncoder.encode( "模块生成路径未配置生成失败","UTF-8");
+               } catch (UnsupportedEncodingException e) {
+                   e.printStackTrace();
+               }
+           }
+            // generateFilePath = "E:\\workspace_idea\\gbztworkflow_new\\trunk\\OASys";
+            javaFilePath = generateFilePath + "/src/main/java/com/thinkgem/jeesite/modules/";
+            webappFilePath = generateFilePath + "/src/main/webapp/WEB-INF/views/modules/";
+            mappingFilePath = generateFilePath + "/src/main/resources/mappings/modules/";
+            wordResourcePath = generateFilePath+ "/src/main/resources/templates/modules/doc/Print_template/";
+            datas.put("javaSuffix","src/main/java");
+            datas.put("mapperSuffix","src/main/resources");
+        }else { // 生产环境
+            generateFilePath = velocityService.getRootPath4Production(); // 获取的是target目录下的oa 应该获取的是\src\main\resources resources目录下的oa
+            // generateFilePath = generateFilePath.split("target")[0]+"src/main/resources/oa/";
+            // generateFilePath = this.getClass().getClassLoader().getResource("./prop/file.txt").getPath();
+            javaFilePath = generateFilePath + "src/com/thinkgem/jeesite/modules/";
+            webappFilePath = generateFilePath + "WEB-INF/views/modules/";
+            mappingFilePath = generateFilePath + "WEB-INF/classes/mappings/modules/";
+            wordResourcePath = generateFilePath+ "WEB-INF/classes/templates/modules/doc/Print_template/";
+            datas.put("javaSuffix","src/");
+            datas.put("mapperSuffix","WEB-INF/classes/");
+        }
         // 表名
+
         String table_name = flow.getBussTableName();
         String entityName = velocityService.humpNomenclature(table_name);//表名转驼峰
         String EntityName = velocityService.toUpperCaseFirstOne(entityName);// 首字母大写
 
-        String bussDbHost = flow.getBussDbHost();
-        String bussDbPort = flow.getBussDbPort();
-        String bussDbName = flow.getBussDbName();
-        String bussDbUserName = flow.getBussDbUserName();
-        String bussDbUserPwd = flow.getBussDbUserPwd();
+        String bussDbHost = connectConfigList.get(0).getDataBaseIp();
+        String bussDbPort = connectConfigList.get(0).getDataBasePort();
+        String bussDbName = connectConfigList.get(0).getDataBaseName();
+        String bussDbUserName = connectConfigList.get(0).getDataBaseUserName();
+        String bussDbUserPwd = connectConfigList.get(0).getDataBasePassword();
 
 
         // 生成的 逆向工程xml文件名
         String mapperName = entityName+"_generator_config";
         String ignoreMapperName = entityName+"_generator_configIgnore";
-        Map<String,String> datas = new HashMap<>();
 
 
+        // 获取已上传的word模板文件,并复制到oa资源文件处
+        FlowWordTemplet flowWordTemplet = new FlowWordTemplet();
+        flowWordTemplet.setFlowId(flow.getId());
+        flowWordTemplet.setUploadUserIp(CommonUtils.getIpAddress(request));
+        flowWordTemplet = flowWordTempletService.findFlowWordTempletByFlowIdAndUploadUserIp(flowWordTemplet);
+        if(null != flowWordTemplet){
+            datas.put("alreadyUploaded","true");
+            datas.put("wordTemplatName",flowWordTemplet.getWordTempletName());
+            // oa资源文件路径
+            File newFile = new File(wordResourcePath+flowWordTemplet.getWordTempletName());
+            File oldFile = new File(flowWordTemplet.getWordTempletAddress());
+            if(!newFile.exists()){ // 文件不存在则创建,存在则覆盖
+                try {
+                    newFile.createNewFile();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }else {
+                newFile.delete();
+            }
+            if(oldFile.exists()){
+                FileUtils.copyFile(oldFile,newFile);
+                System.out.println("文件复制成功.");
+            }else {
+                System.out.println("未发现上传文件.");
+            }
+        }else {
+            datas.put("alreadyUploaded","false");
+            // try {
+            //     return URLEncoder.encode( "必须先上传word模板才能使用打印功能,是否上传?","UTF-8");
+            // } catch (UnsupportedEncodingException e) {
+            //     e.printStackTrace();
+            // }
+        }
 
 
         datas.put("modeRemark",formDesign.getRemark());
+        datas.put("FlowId",flow.getId());
         datas.put("table_name",table_name);
         datas.put("flowName",flow.getFlowName());
         datas.put("bussDbHost",bussDbHost);
@@ -131,68 +243,124 @@ public class VelocityController extends BaseController {
         datas.put("readonly","readonly");
         datas.put("flowDefId",flow.getId());
         datas.put("form",formDesign.getJspCode());
+        datas.put("advisecontentaudit",velocityService.getAdviseContentJspCodeForAudit());
+        datas.put("advisecontentview",velocityService.getAdviseContentJspCodeForView());
+
         datas.put("entityName_CN",flow.getModuleNameCn());
         datas.put("formView",formDesign.getJspCodeView());
+        datas.put("driverClass",driverClass);
+        datas.put("jdbcPrefix",jdbcPrefix);
         // 设置fns标签
         datas.put("fnsloginName","${fns:getUser().loginName}");
-        
+
         String projectWarPath = null;
+
+        /*      *******************  新增变量   ****************  start   */
+        // com.gbzt.gbztworkflow.modules.velocity.web
+        String controllerFullPath = "com.thinkgem.jeesite.modules."+Package+".web."+EntityName+"Controller";
+        // com.thinkgem.jeesite.modules.testTable8.service.TestTable8Service
+        String serviceFullPath = "com.thinkgem.jeesite.modules."+Package+".service."+EntityName+"Service";
+        // com.thinkgem.jeesite.modules.testTable111.dao.TestTable111Dao
+        String daoFullPath = "com.thinkgem.jeesite.modules."+Package+".dao."+EntityName+"Dao";
+        // mappings/modules/testTable8/TestTable8Dao.xml
+        String mapperClassPath = "mappings/modules/"+Package+"/"+EntityName+"Dao.xml";
+        // 模块名称 就是 EntityName 和 entityName 中文名称 entityName_CN
+        /*      *******************  新增变量   ****************   end  */
+        
         try {
             // 生成文件
-            datas.put("templatePath",controllerTemplatePath);
-            datas.put("templateName", controllerTemplateName);
-            velocityService.velocityTest(javaFilePath,datas); // 生成controller
-            
-            datas.put("templatePath", serviceTemplatePath);
-            datas.put("templateName", serviceTemplateName);
-            velocityService.velocityTest(javaFilePath,datas); // 生成service
-
-            datas.put("templatePath", xmlTemplatePath);
-            datas.put("templateName", xmlTemplateName);
-            datas.put("AbsolutePath",generateFilePath);
-            velocityService.velocityTest(javaFilePath,datas); // 通过xmlTemplatePath模板生成文件
-            
-            datas.put("mappingFilePath",mappingFilePath);
-            datas.put("mapperName",mapperName);
-            velocityService.generator(datas,datas.get("generatorConfigFilePath"),true);// 生成 PoJo类及Mybatis Xml文件
-            
-            datas.put("templateName", xmlTemplateNameIgnore);
-            datas.put("templatePath", xmlTemplatePath);
-            datas.put("mapperName",ignoreMapperName);
-            velocityService.velocityTest(javaFilePath,datas);
-            
-            velocityService.generator(datas,datas.get("ignoregeneratorConfigFilePath"),false); // 生成 PoJo类及Mybatis Xml文件(替换之前生成的实体类)
-            // 删除创建的临时文件(上一步创建的mapper映射文件,仅保留实体类)
-            File xmlFileDir = new File(mappingFilePath+Package+"/TemporaryFiles");
-            FileUtils.deleteFile(xmlFileDir);
-
-            //改造自动生成的Pojo类,在原方法后追加通用方法.
-            String pojoPath = javaFilePath+Package+"/entity/"+EntityName+".java";
-            //？？？
-            List<FlowElement> flowElementList = flowElementService.findFlowElementsByFlowId(flowId);
-            Map<String,String> feMap = new HashMap<String,String>();
-            for(FlowElement flowElement : flowElementList){
-                feMap.put(flowElement.getHumpName() , flowElement.getElementNameCn());
+                datas.put("templatePath",controllerTemplatePath);
+                datas.put("templateName", controllerTemplateName);
+                velocityService.velocityTest(javaFilePath,datas); // 生成controller
+    
+                datas.put("templatePath", serviceTemplatePath);
+                datas.put("templateName", serviceTemplateName);
+                velocityService.velocityTest(javaFilePath,datas); // 生成service
+    
+                datas.put("templatePath", xmlTemplatePath);
+                datas.put("templateName", xmlTemplateName);
+                datas.put("AbsolutePath",generateFilePath);
+                velocityService.velocityTest(javaFilePath,datas); // 通过xmlTemplatePath模板生成文件
+    
+                datas.put("mappingFilePath",mappingFilePath);
+                datas.put("mapperName",mapperName);
+            try {
+                velocityService.generator(datas,datas.get("generatorConfigFilePath"),true);// 生成 PoJo类及Mybatis Xml文件
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            EntityUtils.addCommonMethods4Entity(pojoPath,feMap);
 
-            // dao层 接口需要在Mybatis逆向生成之后,覆盖原来的(其自动生成的)dao接口
-            datas.put("templatePath", daoTemplatePath);
-            datas.put("templateName", daoTemplateName);
-            velocityService.velocityTest(javaFilePath,datas);
-            // 生成jsp页面
-            datas.put("templatePath",JspTemplateFromPath);
-            datas.put("templateName",JspTemplateFromName);
-            velocityService.velocityTest(webappFilePath,datas);
-            datas.put("templatePath",JspTemplateAuditPath);
-            datas.put("templateName",JspTemplateAuditName);
-            velocityService.velocityTest(webappFilePath,datas);
-            datas.put("templatePath",JspTemplateViewPath);
-            datas.put("templateName",JspTemplateViewName);
-            velocityService.velocityTest(webappFilePath,datas);
-            datas.put("templatePath",JspTemplateListPath);
-            datas.put("templateName",JspTemplateListName);
-            velocityService.velocityTest(webappFilePath,datas);
+            datas.put("templateName", xmlTemplateNameIgnore);
+                datas.put("templatePath", xmlTemplatePath);
+                datas.put("mapperName",ignoreMapperName);
+                velocityService.velocityTest(javaFilePath,datas);
+    
+                velocityService.generator(datas,datas.get("ignoregeneratorConfigFilePath"),false); // 生成 PoJo类及Mybatis Xml文件(替换之前生成的实体类)
+                // 删除创建的临时文件(上一步创建的mapper映射文件,仅保留实体类)
+                File xmlFileDir = new File(mappingFilePath+Package+"/TemporaryFiles");
+                FileUtils.deleteFile(xmlFileDir);
+    
+                //改造自动生成的Pojo类,在原方法后追加通用方法.
+                String pojoPath = javaFilePath+Package+"/entity/"+EntityName+".java";
+                //？？？
+                List<FlowElement> flowElementList = flowElementService.findFlowElementsByFlowId(flowId);
+                Map<String,String> feMap = new HashMap<String,String>();
+                for(FlowElement flowElement : flowElementList){
+                    feMap.put(flowElement.getHumpName() , flowElement.getElementNameCn());
+                }
+                EntityUtils.addCommonMethods4Entity(pojoPath,feMap);
+    
+                // dao层 接口需要在Mybatis逆向生成之后,覆盖原来的(其自动生成的)dao接口
+                datas.put("templatePath", daoTemplatePath);
+                datas.put("templateName", daoTemplateName);
+                velocityService.velocityTest(javaFilePath,datas);
+                // 生成jsp页面
+                datas.put("templatePath",JspTemplateFromPath);
+                datas.put("templateName",JspTemplateFromName);
+                velocityService.velocityTest(webappFilePath,datas);
+                datas.put("templatePath",JspTemplateAuditPath);
+                datas.put("templateName",JspTemplateAuditName);
+                velocityService.velocityTest(webappFilePath,datas);
+                datas.put("templatePath",JspTemplateViewPath);
+                datas.put("templateName",JspTemplateViewName);
+                velocityService.velocityTest(webappFilePath,datas);
+                datas.put("templatePath",JspTemplateListPath);
+                datas.put("templateName",JspTemplateListName);
+                velocityService.velocityTest(webappFilePath,datas);
+
+            if("pro".equals(environment)){
+                String file = velocityService.baleAnt();
+                String result = velocityService.uploadToDeployer(file);
+                // error not-exist 需要手动启动tomcat服务器 exist 生成成功 ( 不需要了!)
+                if(!"error".equals(result)){
+                    result = "success";
+                }
+                System.out.println("first result ============ "+result);
+                if(!"error".equals(result)){
+                    result = velocityService.bindMapper(serviceFullPath,daoFullPath,entityName + "Service",
+                            entityName + "Dao",mapperClassPath);
+                    System.out.println("second result ============ "+result);
+                    if("error".equals(result)){
+                        return result;
+                    }
+                    result = velocityService.handleuri(controllerFullPath,serviceFullPath,entityName + "Service");
+                    System.out.println("third result ============ "+result);
+                }
+                if(!"error".equals(result)){
+                    result = "success";
+                }else{
+                    result = "error";
+                }
+                if(!firstTimeSuccess && result.equals("success")){
+                    firstTimeSuccess = true;
+                    return "success";
+                }
+                if(firstTimeSuccess){
+                    return "success";
+                }
+                System.out.println("result ============ "+result);
+                return result;
+            }
             
         } catch (Exception e) {
             e.printStackTrace();
@@ -204,9 +372,10 @@ public class VelocityController extends BaseController {
         }
         return datas.get("AbsolutePath"); // 返回项目路径
     }
+    
     /**
-     * 下载war包
-     * @param projectWarPath
+     * 生成war包
+     * @param absolutePath 项目路径
      * @param request
      * @param response
      * @return
@@ -282,6 +451,75 @@ public class VelocityController extends BaseController {
             }else {
                 // war包不存在
                 // return "Not found";
+            }
+        }
+            return null;
+    }
+    /**
+     * 根据路径下载war包
+     * @param projectWarPath
+     * @param request
+     * @param response
+     * @return
+     */
+    @RequestMapping(value="errorDownloadWar")
+    @ResponseBody
+    public String errorDownloadWar(HttpServletRequest request,HttpServletResponse response){
+        // 获取war包路径
+        File file = null;
+        String fileName = "WorkflowOA.war";
+        try {
+            file = ResourceUtils.getFile("classpath:oa/WorkflowOA.war");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        if (file.exists()) {
+            // 设置强制下载不打开
+            response.setContentType("application/force-download");
+            // 设置文件名
+            try {
+                if (request.getHeader("User-Agent").toLowerCase().indexOf("firefox") > 0) {
+                    fileName = new String(fileName.getBytes("UTF-8"), "ISO8859-1");//firefox浏览器
+                } else {
+                    //fileName = URLEncoder.encode(fileName, "UTF-8");//IE浏览器、360、谷歌
+                    fileName = new String(fileName.getBytes("GBK"), "ISO8859-1");
+                }
+                response.addHeader("Content-Disposition",
+                        "attachment;fileName=\""+fileName+"\"");
+            } catch (UnsupportedEncodingException e1) {
+                e1.printStackTrace();
+            }
+            byte[] buffer = new byte[1024];
+            FileInputStream fis = null;
+            BufferedInputStream bis = null;
+            try {
+                fis = new FileInputStream(file);
+                bis = new BufferedInputStream(fis);
+                OutputStream os = response.getOutputStream();
+                int i = bis.read(buffer);
+                while (i != -1) {
+                    os.write(buffer, 0, i);
+                    i = bis.read(buffer);
+                }
+                System.out.println("Download the file successfully!");
+            } catch (Exception e) {
+                System.out.println("Download the file failed!");
+                e.printStackTrace();
+            } finally {
+                if (bis != null) {
+                    try {
+                        bis.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                if (fis != null) {
+                    try {
+                        fis.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
             return null;

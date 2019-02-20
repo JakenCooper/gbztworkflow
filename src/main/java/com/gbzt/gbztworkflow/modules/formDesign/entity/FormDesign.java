@@ -40,6 +40,18 @@ public class FormDesign implements Serializable {
     private String currentFlowId;
     @Column(name="jsp_code_view")
     private String jspCodeView;
+    @Column(name = "container_width")
+    private String containerWidth;
+    @Column(name = "color")
+    private String color;
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
+    }
 
     public String getJspCodeView() {
         return jspCodeView;
@@ -117,4 +129,11 @@ public class FormDesign implements Serializable {
 		this.delflag = delflag;
 	}
 
+    public String getContainerWidth() {
+        return containerWidth;
+    }
+
+    public void setContainerWidth(String containerWidth) {
+        this.containerWidth = containerWidth;
+    }
 }

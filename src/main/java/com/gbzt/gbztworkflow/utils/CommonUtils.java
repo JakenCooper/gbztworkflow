@@ -7,6 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import javax.servlet.http.HttpServletRequest;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
@@ -26,7 +27,7 @@ public class CommonUtils {
 
     public static String convertTableName(String tableName){
         if(tableName.indexOf("_") == -1 || tableName.indexOf("_") == tableName.length()-1){
-            return tableName;
+            return tableName.toLowerCase();
         }
         String[] tableNameArr = tableName.split("_");
         List<char[]> charArrList = new ArrayList<char[]>();
@@ -243,6 +244,31 @@ public class CommonUtils {
         else{
             return (T)target;
         }
+    }
+
+    /**
+     * 获取用户ip地址
+     * @param request
+     * @return
+     */
+    public static String getIpAddress(HttpServletRequest request) {
+        String ip = request.getHeader("x-forwarded-for");
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("HTTP_CLIENT_IP");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("HTTP_X_FORWARDED_FOR");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        return ip;
     }
 
     public static Double getCurrentTimeMillsDouble(){

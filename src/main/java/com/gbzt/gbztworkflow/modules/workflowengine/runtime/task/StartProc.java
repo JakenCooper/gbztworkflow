@@ -51,7 +51,7 @@ public class StartProc extends EngineBaseExecutor {
             throw new EngineAccessException("arguments not enough..");
         }
         if(isNotBlank(execution.passStr)){
-            if(isBlank(execution.assignUser) && isBlank(execution.assignUserList)){
+            if(isBlank(execution.assignUser) && isBlank(execution.assignUserList) && !execution.getTempSaveTag()){
                 throw new EngineAccessException("no assigned user(s)..");
             }
             Flow flowInst = super.getFlowComplete(arg.definationService,arg.definationCacheService,execution.flowId);

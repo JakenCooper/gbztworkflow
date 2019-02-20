@@ -87,6 +87,7 @@ public class RetreatTask extends EngineBaseExecutor {
             Task lastTask = arg.lastTaskObj;
             Task thisTask = arg.thisTaskObj;
 
+
             // [logic] 收回或者退回操作，更新最后一个任务为完成状态，以及更新相关字段
             if(OPER_TYPE_WITHDRAW.equals(execution.retreatOperType)){
                 if(!AppConst.REDIS_SWITCH) {
@@ -155,7 +156,11 @@ public class RetreatTask extends EngineBaseExecutor {
         nextExcution.nodeId = targetTask.getNodeId();
         nextExcution.assignUser = targetTask.getAssignUser();
         nextExcution.assignUserList = targetTask.getAssignUserList();
+
+        HistProc secondLastHistProc = arg.secondLastHistProc;
+
         //  [logic] 对于收回或者退回的情况，已经删除最后一条histproc，创建任务也无需创建多余的histproc
+        //  [logic] 20190214新增by张岩松：虽然无需创建多余的histproc，但是需要在创建任务之后将曾经的倒数第二步的histproc的taskid更新成最新的taskid
         nextExcution.needHistProc = false;
 
 
@@ -167,6 +172,9 @@ public class RetreatTask extends EngineBaseExecutor {
         EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(CreateTask.class,nextArg,null);
         try {
             EngineManager.execute(engineTask);
+            List<String> allTaskIds = (List<String>)engineTask.getExecutedResult();
+            secondLastHistProc.setTaskId(allTaskIds.get(0));
+            arg.histProcDao.save(secondLastHistProc);
         } catch (Exception e) {
             throw e;
         }
@@ -206,6 +214,9 @@ public class RetreatTask extends EngineBaseExecutor {
         }
         HistProc lastHistProc = histProcs.get(histProcs.size()-1);
         HistProc secondLastHistProc = histProcs.get(histProcs.size()-2);
+
+        // 返回倒数第二个task的id(用于收回或者退回时删除对应任务id的处理意见)
+        execution.secondLastTaskId = secondLastHistProc.getTaskId();
 
         //zhangys
         Flow flowInst = super.getFlowComplete(arg.definationService,arg.definationCacheService,procInst.getFlowId());

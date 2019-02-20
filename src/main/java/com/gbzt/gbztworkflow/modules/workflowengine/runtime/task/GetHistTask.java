@@ -3,6 +3,8 @@ package com.gbzt.gbztworkflow.modules.workflowengine.runtime.task;
 import com.gbzt.gbztworkflow.consts.AppConst;
 import com.gbzt.gbztworkflow.modules.flowdefination.entity.Flow;
 import com.gbzt.gbztworkflow.modules.flowruntime.model.TaskModel;
+import com.gbzt.gbztworkflow.modules.todo.entity.PageEntity;
+import com.gbzt.gbztworkflow.modules.todo.service.ToDoService;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineAccessException;
 import com.gbzt.gbztworkflow.modules.workflowengine.exception.EngineRuntimeException;
 import com.gbzt.gbztworkflow.modules.workflowengine.pojo.HistTask;
@@ -14,14 +16,11 @@ import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.EngineBaseExecu
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.IEngineArg;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.entity.EngineTask;
 import com.gbzt.gbztworkflow.utils.CommonUtils;
-import org.apache.log4j.Logger;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 
-import javax.persistence.criteria.*;
+import org.apache.commons.collections.map.HashedMap;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import java.util.*;
 
 /**
@@ -40,6 +39,7 @@ public class GetHistTask extends EngineBaseExecutor {
         public TaskModel taskModel;
     }
 
+    
     @Override
     public EngineTask generateDefaultEngineTask(IEngineArg iarg, Object externalArg) {
         GetHistTask.GetHistTaskArg arg = (GetHistTask.GetHistTaskArg)iarg;
@@ -67,39 +67,6 @@ public class GetHistTask extends EngineBaseExecutor {
         final List<TaskVariables> oriTaskVariables = new ArrayList<TaskVariables>();
         // !!!! 现在只支持查询单个类型的变量对象（流程类型或者任务类型），否则直接抛出异常
         final String[] typeArr = new String[1];
-        if(execution.argMap != null && execution.argMap.keySet().size() !=0 ){
-            for(String argKey : execution.argMap.keySet()) {
-                String argValue = execution.argMap.get(argKey);
-                String realKey = null;
-                String varType = null;
-                if (argKey.startsWith(TaskVariables.VARS_TYPE_PROC_PREFIX)) {
-                    realKey = argKey.substring(argKey.indexOf(TaskVariables.VARS_TYPE_PROC_PREFIX) + 5, argKey.length());
-                    varType = TaskVariables.VARS_TYPE_PROC;
-                    // 类型校验
-                    if(isNotBlank(typeArr[0]) && !typeArr[0].equals(varType)){
-                        throw new EngineRuntimeException(ERR_MULTI_VARIABLE_TYPE);
-                    }
-                    typeArr[0] = TaskVariables.VARS_TYPE_PROC;
-                } else if (argKey.startsWith(TaskVariables.VARS_TYPE_TASK_PREFIX)) {
-                    realKey = argKey.substring(argKey.indexOf(TaskVariables.VARS_TYPE_TASK_PREFIX) + 5, argKey.length());
-                    varType = TaskVariables.VARS_TYPE_TASK;
-                    // 类型校验
-                    if(isNotBlank(typeArr[0]) && !typeArr[0].equals(varType)){
-                        throw new EngineRuntimeException(ERR_MULTI_VARIABLE_TYPE);
-                    }
-                    typeArr[0] = TaskVariables.VARS_TYPE_TASK;
-                } else {
-                    continue;
-                }
-                List<TaskVariables> taskVariablesList = null;
-                if(!AppConst.REDIS_SWITCH) {
-                    taskVariablesList = arg.taskVariableDao.findTaskVariablesByTypeAndKeyAndValue(varType, realKey, argValue);
-                }else{
-                    taskVariablesList = arg.jedisService.findTaskVariablesByTypeAndKeyAndValue(varType,realKey,argValue);
-                }
-                oriTaskVariables.addAll(taskVariablesList);
-            }
-        }
 
 
         if(!AppConst.REDIS_SWITCH) {
@@ -121,55 +88,50 @@ public class GetHistTask extends EngineBaseExecutor {
             for (HistTask histTask : histTasks) {
                 taskIds.add(histTask.getTaskId());
             }
-
-            Sort sort = new Sort(Sort.Direction.DESC, "createTime");
-            Specification<Task> specification = new Specification<Task>() {
-                @Override
-                public Predicate toPredicate(Root<Task> root, CriteriaQuery<?> criteriaQuery, CriteriaBuilder criteriaBuilder) {
-                    List<Predicate> predicates = new ArrayList<Predicate>();
-                    CriteriaBuilder.In<Object> in = criteriaBuilder.in(root.get("id"));
-                    for (String taskId : taskIds) {
-                        in.value(taskId);
-                    }
-                    predicates.add(in);
-
-                    if (oriTaskVariables.size() > 0) {
-                        // 按照变量类型过滤相关属性(流程类型必须按照流程实例id进行过滤——【【【【【因为不可能每一个task都提交任务变量！！！！！】】】】)
-                        // 任务类型就按照任务id进行过滤，其含义是精确过滤某些任务
-                        if (typeArr[0].equals(TaskVariables.VARS_TYPE_PROC)) {
-                            Set<String> procInstIds = new HashSet<String>();
-                            for (TaskVariables tmpTaskVariable : oriTaskVariables) {
-                                procInstIds.add(tmpTaskVariable.getProcInstId());
-                            }
-                            Expression<String> inexpression = root.<String>get("procInstId");
-                            predicates.add(inexpression.in(procInstIds));
-                        } else if (typeArr[0].equals(TaskVariables.VARS_TYPE_TASK)) {
-                            Set<String> taskIds = new HashSet<String>();
-                            for (TaskVariables tmpTaskVariable : oriTaskVariables) {
-                                taskIds.add(tmpTaskVariable.getTaskId());
-                            }
-                            Expression<String> inexpression = root.<String>get("id");
-                            predicates.add(inexpression.in(taskIds));
-                        }
-                    }
-
-                    Predicate[] predicateArray = new Predicate[predicates.size()];
-                    return criteriaBuilder.and(predicates.toArray(predicateArray));
-                }
-            };
-            Pageable pageable = new PageRequest(pageNum, pageSize, sort);
-            Page<Task> pageResult = arg.taskDao.findAll(specification, pageable);
-            List<Map<String, Object>> resultList = new ArrayList<Map<String, Object>>();
-
-            arg.taskModel.setTotalPage(pageResult.getTotalPages());
+            //条件信息
+            PageEntity page = new PageEntity();
+            Map<String,Object> map = new HashMap<>();
+            map.put("assignUser",arg.execution.passUser);
+            map.put("typeArr",typeArr);
+            map.put("limits",pageSize);
+            map.put("searchFlag", typeArr[0]);
+            Integer page_size=arg.taskModel.getPageSize();
+            page.setMaxPageSize(page_size);//每页数据大小
+            Integer cuurentPage=arg.taskModel.getPageNum();//当前页
+            Integer pass_page=(cuurentPage-1)*page_size;
+            map.put("pass_page",pass_page);
+            map.put("limit",page_size);
+            //设置页面分页数据信息
+            if(StringUtils.isBlank(arg.taskModel.getOrderBy())){
+                arg.taskModel.setOrderBy("grt.create_time desc");
+            }
+            map.put("orderByType",arg.taskModel.getOrderBy());
+            Integer count=arg.toDoService.getTodoListsCount(map);
+            if(count%page_size==0){
+                arg.taskModel.setTotalPage(count/page_size);
+            }else{
+                arg.taskModel.setTotalPage(count/page_size+1);
+            }
             arg.taskModel.setPageNum(pageNum + 1);
             arg.taskModel.setPageSize(pageSize);
-            arg.taskModel.setTotalCount(pageResult.getTotalElements());
+            Long ct=new Long(count);
+            arg.taskModel.setTotalCount(ct);
+            Long zjlCout=new Long(count);
+            arg.taskModel.setCount(zjlCout);
+            //当前需要显示的数据集合
+            List<Task> pageResult = arg.toDoService.getToDoLists(map);
+            List<Map<String, Object>> resultList = new ArrayList<Map<String, Object>>();
+            
             Integer currentIdx = 0;
-            for (Task resultTask : pageResult.getContent()) {
+            List<String> procInstIdList = new ArrayList<>();
+            for (int i = 0; i < pageResult.size(); i++) {
+            	procInstIdList.add(pageResult.get(i).getProcInstId());
+			}
+            //List<Task> lastTask = arg.toDoService.findFirstInProcInstIdOrderByCreateTimeDesc(procInstIdList);
+            for (int i = 0; i < pageResult.size(); i++) {
+            	Task resultTask = (Task) pageResult.get(i);
                 Map<String, Object> resultMap = new HashMap<String, Object>();
                 Flow flowInst = super.getFlowComplete(arg.definationService, arg.definationCacheService, resultTask.getFlowId());
-                Task lastTask = arg.taskDao.findFirstByProcInstIdOrderByCreateTimeDesc(resultTask.getProcInstId());
                 resultMap.put("taskId", resultTask.getId());
                 resultMap.put("flowId", resultTask.getFlowId());
                 resultMap.put("flowName", flowInst.getFlowName());
@@ -182,11 +144,7 @@ public class GetHistTask extends EngineBaseExecutor {
                 }
                 resultMap.put("procInstId", resultTask.getProcInstId());
                 resultMap.put("nodeId", resultTask.getNodeId());
-                try {
-                    resultMap.put("nodeName", flowInst.getNodeIdMap().get(lastTask.getNodeId()).getName());
-                } catch (Exception e) {
-                    resultMap.put("nodeName", "空");
-                }
+                resultMap.put("nodeName", resultTask.getNodeName());
                 resultMap.put("nodeDefId", resultTask.getNodeDefId());
                 resultMap.put("bussId", resultTask.getBussId());
                 resultMap.put("bussTable", resultTask.getBussTable());

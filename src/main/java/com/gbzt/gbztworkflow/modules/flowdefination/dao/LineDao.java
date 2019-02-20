@@ -15,5 +15,7 @@ public interface LineDao  extends JpaRepository<Line,String>,JpaSpecificationExe
 
     public List<Line> findLinesByBeginNodeIdAndEndNodeId(String beginNodeId,String endNodeId);
 
+    public Line findLineByEndNodeIdAndBeginNodeId(String  endNodeId,String beginNodeId);
+
 
 }

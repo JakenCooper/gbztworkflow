@@ -49,6 +49,18 @@ public class AppConst {
     public static final String FLOWRUNTIME_TASK_EXEC_TYPE_BLOCK ="block";
     public static final String FLOWRUNTIME_TASK_EXEC_TYPE_CONCURRENT ="concurrent";
 
+    public static final String GLOBAL_OA_PRODUCT_NAME = "WorkflowOA";
+    public static final String APP_DEPLOYER_URL;
+
+    public static final String APP_RUNTIME_TYPE_DEV = "dev";
+    public static final String APP_RUNTIME_TYPE_PRO = "pro";
+    public static final String APP_RUNTIME_TYPE;
+
+    public static final String OA_DYLOADER_BINDMAPPER_METHOD = "/bindmapper";
+    public static final String OA_DYLOADER_HANDLEURI_METHOD = "/handleuri";
+    public static final String OA_DYLOADER_BINDMAPPER_URL;
+    public static final String OA_DYLOADER_HANDLEURI_URL;
+
     static{
         PathMatchingResourcePatternResolver resourceLoader = new PathMatchingResourcePatternResolver();
         Resource configResource = resourceLoader.getResource("classpath:app.properties");
@@ -85,6 +97,11 @@ public class AppConst {
         }else{
             REDIS_SWITCH = false;
         }
+        APP_DEPLOYER_URL = prop.getProperty("appdeployer.url");
+        APP_RUNTIME_TYPE = prop.getProperty("app.runtime.type");
+
+        OA_DYLOADER_BINDMAPPER_URL = prop.getProperty("oa.dyloader.url") + OA_DYLOADER_BINDMAPPER_METHOD;
+        OA_DYLOADER_HANDLEURI_URL = prop.getProperty("oa.dyloader.url") + OA_DYLOADER_HANDLEURI_METHOD;
     }
 
 

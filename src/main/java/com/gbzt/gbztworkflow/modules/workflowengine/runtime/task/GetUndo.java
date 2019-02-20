@@ -83,7 +83,7 @@ public class GetUndo extends EngineBaseExecutor {
                 } else {
                     continue;
                 }
-                List<TaskVariables> taskVariablesList = null;
+                List<TaskVariables> taskVariablesList = new ArrayList<TaskVariables>();
                 if(AppConst.REDIS_SWITCH) {
                     taskVariablesList = arg.jedisService.findTaskVariablesByTypeAndKeyAndValue(varType,realKey,argValue);
                 }
@@ -102,24 +102,34 @@ public class GetUndo extends EngineBaseExecutor {
                 map.put("typeArr",typeArr);
                 map.put("limits",pageSize);
                 map.put("searchFlag", typeArr[0]);
-                com.gbzt.gbztworkflow.modules.workFlowPage.entity.Page page=new com.gbzt.gbztworkflow.modules.workFlowPage.entity.Page();
+                //com.gbzt.gbztworkflow.modules.workFlowPage.entity.Page page=new com.gbzt.gbztworkflow.modules.workFlowPage.entity.Page();
                 Integer page_size=arg.taskModel.getPageSize();
-                page.setMaxPageSize(page_size);//每页数据大小
+                //page.setMaxPageSize(page_size);//每页数据大小
                 Integer cuurentPage=arg.taskModel.getPageNum();//当前页
-                Integer pass_page=(cuurentPage-1)*page_size;
+                if(cuurentPage!=null&&page_size!=null){
+                    Integer pass_page=(cuurentPage-1)*page_size;
+                    map.put("pass_page",pass_page);
+                }
                 Integer limit=page_size;
-                map.put("pass_page",pass_page);
+
                 map.put("limit",page_size);
                 if(StringUtils.isBlank(arg.taskModel.getOrderBy())){
-                    arg.taskModel.setOrderBy("t.`create_time` desc");
+                    arg.taskModel.setOrderBy("t.create_time desc");
                 }
                 map.put("orderByType",arg.taskModel.getOrderBy());
+                if("yes".equals(arg.taskModel.getSearchAll())){
+                    map.put("isAll","yes");
+                }else{
+                    map.put("isAll","no");
+                }
                 Integer count=arg.undoService.getUndoListsCount(map);
                 taskList=arg.undoService.getUndoList(map);
-                if(count%page_size==0){
-                    arg.taskModel.setTotalPage(count/page_size);
-                }else{
-                    arg.taskModel.setTotalPage(count/page_size+1);
+                if(count!=null&&page_size!=null) {
+                    if (count % page_size == 0) {
+                        arg.taskModel.setTotalPage(count / page_size);
+                    } else {
+                        arg.taskModel.setTotalPage(count / page_size + 1);
+                    }
                 }
                 arg.taskModel.setPageNum(pageNum + 1);
                 arg.taskModel.setPageSize(pageSize);

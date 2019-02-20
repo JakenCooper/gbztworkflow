@@ -5,38 +5,66 @@ import java.util.*;
 
 import com.gbzt.gbztworkflow.modules.flowruntime.model.TaskData;
 import com.google.common.collect.Maps;
+import com.thinkgem.jeesite.common.config.Global;
+import com.thinkgem.jeesite.common.entity.ReceiveDocDetailStatus;
+import com.thinkgem.jeesite.common.mapper.JsonMapper;
+import com.thinkgem.jeesite.modules.doc.utils.JsonResult;
+import com.thinkgem.jeesite.modules.doc.entity.DocAttachment;
+import com.thinkgem.jeesite.common.utils.NoneSpringConstHolder;
+import com.thinkgem.jeesite.common.entity.RequestStatus;
+import com.thinkgem.jeesite.common.utils.ParamUtil;
+import com.thinkgem.jeesite.modules.act.entity.Act;
 import com.thinkgem.jeesite.modules.act.entity.TaskSearchArg;
 import com.thinkgem.jeesite.common.service.CrudService;
 import com.thinkgem.jeesite.common.utils.MessageUtils;
 import com.thinkgem.jeesite.common.utils.StringUtils;
 import com.thinkgem.jeesite.modules.act.service.ActTaskService;
+import com.thinkgem.jeesite.modules.act.utils.ActUtils;
+import com.thinkgem.jeesite.modules.doc.entity.DocReceive;
 import com.thinkgem.jeesite.modules.commonFileAttach.entity.CommonFileAttach;
 import com.thinkgem.jeesite.modules.commonFileAttach.service.CommonFileAttachService;
+import com.thinkgem.jeesite.modules.doc.utils.MsgConstant;
 import com.thinkgem.jeesite.modules.sys.entity.User;
 import com.thinkgem.jeesite.modules.sys.utils.UserUtils;
+import com.thinkgem.jeesite.modules.workbench.entity.DocOperEventArg;
+import com.thinkgem.jeesite.modules.workbench.xml.entity.Attach;
+import com.thinkgem.jeesite.modules.workbench.xml.entity.Receive;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.apache.log4j.Logger;
+import com.thinkgem.jeesite.common.utils.HttpUtil;
 import com.thinkgem.jeesite.modules.${package}.entity.${EntityName};
 import com.thinkgem.jeesite.modules.${package}.dao.${EntityName}Dao;
-
+import com.thinkgem.jeesite.common.utils.*;
+import com.gbzt.gbztworkflow.modules.flowruntime.model.TaskModel;
+import com.thinkgem.jeesite.modules.act.service.ActBaseService;
+import com.thinkgem.jeesite.modules.advisesummary.dao.AdviseSummaryDao;
+import com.thinkgem.jeesite.modules.advisesummary.entity.AdviseSummary;
+import com.thinkgem.jeesite.modules.advisesummary.service.AdviseBussService;
 /**
 * 单表生成Service
 * @version ${date}
 */
 @Service
 @Transactional(readOnly = true)
-public class ${EntityName}Service  extends CrudService<${EntityName}Dao, ${EntityName}>{
-
+public class ${EntityName}Service extends ActBaseService{
+    protected static final Logger LOGGER = Logger.getLogger(${EntityName}Service.class);
+    private static final String MODULE_NAME = "${entityName}";
     @Autowired
     private ${EntityName}Dao dao;
     @Autowired
     private ActTaskService actTaskService;
     @Autowired
     private CommonFileAttachService commonFileAttachService;
+
+    @Autowired
+    private AdviseSummaryDao adviseSummaryDao;
+    @Autowired
+    private AdviseBussService adviseBussService;
+
     
     //@Transactional(readOnly = false)
     //public ${EntityName} get${EntityName}ByProcInsId(String procInsId) {
@@ -75,11 +103,14 @@ public class ${EntityName}Service  extends CrudService<${EntityName}Dao, ${Entit
         try {
             //参数
             Map<String,String> argMap = new HashMap<String,String>();
+			Map maps = new HashMap();
             //初始化content为variable使用
             String content = String.format(MessageUtils.CONTENT_FORMAT_STR,
             StringUtils.isBlank(${entityName}.getTitle()) ? "" : ${entityName}.getTitle(),
             StringUtils.isBlank(${entityName}.getArticleSize()) ? "" : ${entityName}.getArticleSize(),"");// 拼接流程变量
             
+			List<String> assigneeList = new ArrayList<String>();
+            String assignee ="";
             //变量存储map
             Map<String,Object> vars = Maps.newHashMap();
             //自由跳设置下一步
@@ -88,11 +119,13 @@ public class ${EntityName}Service  extends CrudService<${EntityName}Dao, ${Entit
             
             if(${entityName}.getAct().getAssignee().indexOf(",") != -1){
                 String[] assignees = ${entityName}.getAct().getAssignee().split(",");
-                List<String> assigneeList = Arrays.asList(assignees);
+               	assigneeList = Arrays.asList(assignees);
                 vars.put("assigneeList", assigneeList);
             }else{
                 vars.put("assignee", ${entityName}.getAct().getAssignee());
             }
+
+            String adviseTaskId = null;
             
             if(StringUtils.isBlank(${entityName}.getId())){
                 ${entityName}.preInsert();
@@ -107,27 +140,30 @@ public class ${EntityName}Service  extends CrudService<${EntityName}Dao, ${Entit
                 insert(${entityName});
                 ${entityName}.getAct().setBusinessId(${entityName}.getId());
                 // finalstep: 设置转换map
+                vars.put("起草","yes");
                 ${entityName}.getAct().setVarsMap(vars);
                 // argMap.put(TaskData.VARS_TYPE_PREFIX_PROC+"content", content);
                 ${entityName}.getAct().setArgMap(argMap);
             
                 String procInsId = null;
+                String taskId = null;
 				// 起草暂存在后台接口处进行特殊处理; 其余暂存直接存入业务表,不进行处理
                 try {
-                    procInsId = (actTaskService.startProcess(${entityName}.getAct())).get(0);
+					//返回的是两个值 第一个值  procInsId  第二个 TaskId
+                    List<String> list = actTaskService.startProcess(${entityName}.getAct());
+                    procInsId=  list.get(0);
+                    if(list.size()>1){
+                        taskId = list.get(1); //Task2 待办的taskId
+                    }
+					// procInsId = actTaskService.startProcess(${entityName}.getAct());
                 } catch (Exception e1) {
                     e1.printStackTrace();
                     delete(${entityName});
                 }
+				${entityName}.getAct().setTaskId(taskId);
                 ${entityName}.setProcInsId(procInsId);
                 ${entityName}.getAct().setProcInsId(procInsId);
                 update(${entityName});
-                //任务间隔时间精确到秒，延迟1S，避免流转信息顺序混乱
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
             }else{
                 @SuppressWarnings("unused")
                 // unused only in template,should be the reference during updating.
@@ -141,20 +177,51 @@ public class ${EntityName}Service  extends CrudService<${EntityName}Dao, ${Entit
                 @SuppressWarnings("unused")
                 //unused only in template,should be handled correctly during actual business.
                 TaskData taskData = actTaskService.getAllCurrentTask(${entityName}.getProcInsId(),  UserUtils.getUser().getLoginName(),null,null,new TaskSearchArg()).get(0);
+                vars.put("起草","no");
+                ${entityName}.getAct().setVarsMap(vars);
             
                 ${entityName}.getAct().setVarsMap(vars);
+                adviseTaskId = ${entityName}.getAct().getTaskId();
                 try {
-                    actTaskService.finishTask(${entityName}.getAct());
+                    List<String> list =  actTaskService.finishTask(${entityName}.getAct());
+                    if(list!=null && list.size()>0){
+                       /* if("4".equals(passStr)){*/
+                        if(assigneeList.size()>0){
+                            //送阅
+                            Map map = new HashMap<String,String>();
+                            map.put(UserUtils.getUser().getLoginName(),list.get(0));
+                            for(int k=1;k<list.size();k++){
+                            map.put(assigneeList.get(k-1),list.get(k));
+                            }
+							map.put("起草","no");
+							${entityName}.getAct().setVarsMap(map);
+                        }
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
+
+            if(adviseTaskId != null){
+                List<AdviseSummary> adviseSummarys = adviseSummaryDao.getAdviseSummaryByModuleName(MODULE_NAME);
+                String currentTimeStr = DateUtils.formatDateTime(new Date());
+                if(adviseSummarys != null && adviseSummarys.size() > 0){
+                    for(AdviseSummary adviseSummary : adviseSummarys){
+                        String adviseValue = super.getAttrValueForAct(${entityName}, adviseSummary.getAttrName());
+                        if(StringUtils.isBlank(adviseValue)){
+                            continue;
+                        }
+                        adviseBussService.insertAdviseBuss(adviseValue, adviseSummary.getTableName(), currentTimeStr, adviseSummary.getAdviseType(),
+                            UserUtils.getUser().getLoginName(),UserUtils.getUser().getName(),${entityName}.getProcInsId(),adviseTaskId);
+                    }
+                }
+             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-                return ${entityName};
+        return ${entityName};
     }
-public void uploadFile(String fileJsonInfo, ${EntityName} ${entityName}){
+    public void uploadFile(String fileJsonInfo, ${EntityName} ${entityName}){
         JSONArray json = null;
         try {
             json = JSONArray.fromObject(fileJsonInfo);
@@ -182,5 +249,304 @@ public void uploadFile(String fileJsonInfo, ${EntityName} ${entityName}){
             commonFileAttachService.save(commonFileAttach);
         }
     }
-    
+    /**
+    * 转出
+    * 2019-1-15
+    * ch
+    */
+    public void sendToDocSys(${EntityName} ${entityName}) {
+            //接口地址
+            String url = HttpUtil.INSERT_DOC_PATH;
+
+            //获取当前用户对象ID
+            String userId = UserUtils.getUser().getId();
+            //生成token
+            String tokenStr = TokenHandler.makeToken(userId, TokenInfoInit.getSecretKey());
+            //保存附件地址
+            StringBuilder docAttachment = new StringBuilder();
+            //保存附件实际地址
+            StringBuilder docAttachmentLocal = new StringBuilder();
+            //保存附件名称
+            StringBuilder docAttachmentFileName = new StringBuilder();
+
+            Map<String,String> map = new HashMap<String,String>();
+
+            map.put("apiToken", tokenStr);//必选参数
+            map.put("docType",${entityName}.getDocumentType());//必选参数 1:正式公文  2：普通公文
+            if(MsgConstant.DOC_TYPE_ZHENGSHI.equals(${entityName}.getDocumentType())){
+            if(StringUtils.isBlank(${entityName}.getSealUnitName())){
+                ${entityName}.setSealUnitName(MsgConstant.UNIT_NO);
+            }
+            map.put("isUnionDoc",${entityName}.getSealUnitName());	//是否联合盖章	1：是 2：否
+            }else{
+                map.put("isUnionDoc",MsgConstant.UNIT_NO);
+            }
+            //来文号
+            if(StringUtils.isNotEmpty(${entityName}.getReferenceNum())){
+                map.put("issuedDoc", ${entityName}.getReferenceNum());
+            }
+            map.put("docTitle", ${entityName}.getTitle());//必选参数
+            String docBody = ${entityName}.getTextAddr(); // 必选参数,正文地址
+            map.put("docBody", docBody);//必选参数,正文地址
+            map.put("docBodyLocal", ${entityName}.getTextRealurl());//必选参数，正文磁盘地址
+            String name = StringUtils.isBlank(${entityName}.getReferenceNum()) ? "" : ${entityName}.getReferenceNum();
+            String ext = FileUtils.getFileExtension(docBody);
+            String fileName = name + "." + ext;
+            String defaultFileName = FileUtils.getFileNameByPath(docBody);
+            map.put("docBodyFileName", StringUtils.isBlank(name) ? defaultFileName : fileName);//必选参数，正文文件名
+            //if(StringUtils.isNotBlank(confFile.getIfPublicity())){
+            //	map.put("isOpen", confFile.getIfPublicity());//可选参数  是否公示 1：是；2：否
+            //}
+            if(StringUtils.isNotBlank(${entityName}.getUrgentLevel())){
+            map.put("urgentType", MessageUtils.oa_urgent_level.get(${entityName}.getUrgentLevel()));//可选参数 1：急件；2：特急；3：一般
+            }
+            List<CommonFileAttach> commonFileAttachList=commonFileAttachService.findCommonFileAttachByProcInsId(${entityName}.getProcInsId());
+                if(commonFileAttachList!=null || !commonFileAttachList.isEmpty()){
+                for (int i = 0; i < commonFileAttachList.size(); i++) {
+                    if(i==0){
+                        docAttachment.append(commonFileAttachList.get(i).getFileUrl());
+                        docAttachmentLocal.append(commonFileAttachList.get(i).getFileRealUrl());
+                        docAttachmentFileName.append(commonFileAttachList.get(i).getFileName());
+                    }else{
+                        docAttachment = docAttachment.append(",");
+                        docAttachmentLocal = docAttachmentLocal.append(",");
+                        docAttachmentFileName = docAttachmentFileName.append(",");
+                        docAttachment.append(commonFileAttachList.get(i).getFileUrl());
+                        docAttachmentLocal.append(commonFileAttachList.get(i).getFileRealUrl());
+                        docAttachmentFileName.append(commonFileAttachList.get(i).getFileName());
+                    }
+                }
+                map.put("docAttachment", docAttachment.toString());//可选参数 公文附件地址
+                map.put("docAttachmentLocal", docAttachmentLocal.toString());//可选参数 公文附件实际地址
+                map.put("docAttachmentFileName", docAttachmentFileName.toString());//可选参数 公文附件名称
+                }
+                String result = HttpUtil.posturlActity(url, map);
+                if(StringUtils.isNotBlank(result)){
+                try {
+                     net.sf.json.JSONObject retObj = net.sf.json.JSONObject.fromObject(result);
+                     RequestStatus ret = (RequestStatus) net.sf.json.JSONObject.toBean(retObj, RequestStatus.class);
+                    if(ret.getStatus() != 0){
+                         ErrorException ex = new ErrorException();
+                         ex.setErrorMsg("转出失败："+ret.getMsg());
+                         throw ex;
+                    }
+                    } catch (ErrorException e) {
+                        throw e;
+                    } catch (Exception e) {
+                        LogUtils.info(LOGGER, e.getMessage());
+                        ErrorException ex = new ErrorException();
+                        ex.setErrorMsg("转出失败：未知错误");
+                        throw ex;
+                    }
+                }
+             }
+
+    public boolean isHaveEndLine(String flowName,${EntityName} ${entityName}){
+        boolean flag=false;
+        //判断是否有结束连线：start
+        String flowId=actTaskService.findFlowByFlowName("${map.flowName}").getFlowId();//流程定义id
+        String endNodeId= (String) actTaskService.getEndPassNum(flowId).get("endNodeId");//结束连线id
+        String currentId=actTaskService.findCurrentId(${entityName}.getAct().getTaskDefKey(),flowId).getNodeId();//当前节点对应id
+        TaskModel taskModel=actTaskService.canEnd(endNodeId,currentId);//寻找是否有结束连线
+        if(!taskModel.isCanEnd()){
+            LogUtils.info(LOGGER,"未找到当前节点对应结束连线");
+        }else{
+            flag=true;
+        }
+        return flag;
+     }
+
+    public DocReceive getDocReceive(String id) {
+        // 接口地址
+        String url = HttpUtil.GET_RECEIVEDOCDETAIL_PATH;
+        // 获取当前用户对象ID
+        String userId = UserUtils.getUser().getId();
+        DocReceive docReceive = null;
+        try {
+            // 生成token
+            String tokenStr = TokenHandler.makeToken(userId, TokenInfoInit.getSecretKey());
+            Map<String, String> map = new HashMap<String, String>();
+            map.put("apiToken", tokenStr);// 必选参数
+            map.put("receiveId", id);// 必选参数 收文id
+            String result = HttpUtil.posturlActity(url, map);
+            if (StringUtils.isNotBlank(result)) {
+                ReceiveDocDetailStatus ret = (ReceiveDocDetailStatus) JsonMapper.fromJsonString(result,
+                ReceiveDocDetailStatus.class);
+                if (ret.getStatus() == 0) {
+                    docReceive = ret.getValue();
+                } else{
+                    ErrorException err = new ErrorException();
+                    err.setErrorMsg(ret.getMsg());
+                    throw err;
+                }
+            }
+        } catch (ErrorException e) {
+            LogUtils.info(LOGGER, "获取公文传输数据失败！" + e);
+            /*ErrorException err = new ErrorException();
+            err.setErrorMsg(e.getErrorMsg());
+            throw err;*/
+        } catch (Exception e) {
+            LogUtils.info(LOGGER, "获取公文传输数据失败！" + e);
+            /*ErrorException err = new ErrorException();
+            err.setErrorMsg("操作失败，请重试。");
+            throw err;*/
+        }
+        return docReceive;
+    }
+
+                
+                
+                
+    public void downloadFile(String fileUrl) {
+        // 接口地址
+        String url = HttpUtil.GET_DOWNFILE_PATH;
+        // 获取当前用户对象ID
+        String userId = UserUtils.getUser().getId();
+        try {
+            // 生成token
+            String tokenStr = TokenHandler.makeToken(userId, TokenInfoInit.getSecretKey());
+            Map<String, String> map = new HashMap<String, String>();
+            map.put("token", tokenStr);// 必选参数
+            map.put("fileUrl",fileUrl);// 必选参数 文件地址
+            String result = HttpUtil.posturlActity(url, map);
+            if (StringUtils.isNotBlank(result)) {
+                JsonResult ret = (JsonResult) JsonMapper.fromJsonString(result,JsonResult.class);
+                if (ret.getStatus() == 1) {
+                    ErrorException err = new ErrorException();
+                    err.setErrorMsg(ret.getMsg());
+                    throw err;
+                }
+            }
+        } catch (ErrorException e) {
+            LogUtils.info(LOGGER, "文件下载失败！" + e);
+            ErrorException err = new ErrorException();
+            err.setErrorMsg(e.getErrorMsg());
+            throw err;
+        } catch (Exception e) {
+            LogUtils.info(LOGGER, "文件下载失败！" + e);
+            ErrorException err = new ErrorException();
+            err.setErrorMsg("文件下载失败，请重试。");
+            throw err;
+        }
+    }
+
+    /**
+    * 更新文件地址为本服务对应文件存储服务
+    * @param fileUrl 文件地址
+    * @return
+    */
+    public String getLocalFileUrl(String fileUrl) {
+        String url = HttpUtil.GOV_OFFICALSTORESYS_PATH;
+        String localurl =  HttpUtil.SENDMSG_PATH;
+        fileUrl = fileUrl.replace(url, localurl);
+        return fileUrl;
+    }
+
+    /**
+    * 获取一般收文
+    *
+    * @param docReceive
+    */
+    public ${EntityName} get${EntityName}(DocReceive docReceive) {
+        ${EntityName} ${entityName} = new ${EntityName}();
+        // 来文单位
+        ${entityName}.setFromUnit(docReceive.getDocBase().getSendOfficeName());
+        // 文件标题
+        ${entityName}.setTitle(docReceive.getDocBase().getDocTitle());
+        // 来文号
+        ${entityName}.setReferenceNum(docReceive.getDocBase().getIssuedDoc());
+        // 紧急程度
+        String urgent = MessageUtils.doc_urgent_level.get(docReceive.getDocBase().getUrgentType());
+        ${entityName}.setUrgentLevel(urgent); // 紧急程度
+        // 生成最新的总序号
+        // 办文编号
+        //${entityName}.setTextNum(docReceive.getDocBase().getIssuedDoc()); // 办文编号
+        // 来文类型
+        ${entityName}.setFileType("");
+        // 附件
+        List<CommonFileAttach> ${entityName}ChildList = new ArrayList<CommonFileAttach>();
+        for (DocAttachment docAttachment : docReceive.getDocBase().getDocAttachmentList()) {
+            CommonFileAttach ${entityName}Child = new CommonFileAttach();
+            ${entityName}Child.setId("");
+            ${entityName}Child.setFileName(docAttachment.getFileName());
+            ${entityName}Child.setFileUrl(docAttachment.getDocAttachment());
+            ${entityName}Child.setFileRealUrl(docAttachment.getDocAttachmentLocal());
+            ${entityName}ChildList.add(${entityName}Child);
+        }
+        ${entityName}.setFileList(${entityName}ChildList);
+        //正文
+        ${entityName}.setTextAddr(docReceive.getDocBase().getDocBody());
+        ${entityName}.setTextRealurl(docReceive.getDocBase().getDocBodyLocal());
+        ${entityName}.setTextType(getTextTypeByUrl(${entityName}.getTextAddr()));
+
+        // 备注
+        ${entityName}.setRemarks(docReceive.getDocBase().getRemarks());
+        return ${entityName};
+    }
+
+    /**
+    * 根据正文地址得到文件类型
+    *
+    * 0：word； 1：excel； 3：ofd/pdf
+    * */
+    private String getTextTypeByUrl(String filePath) {
+        String textType = "";
+        try {
+            filePath = filePath.toLowerCase();
+            int index = filePath.lastIndexOf(".");
+            if(index != -1){
+                String ext = filePath.substring(index + 1);
+                if(ext.equals("doc") || ext.equals("docx")){
+                    textType = "0";
+                }else if (ext.equals("xls") || ext.equals("xlsx")) {
+                    textType = "1";
+                }else if (ext.equals("ofd") || ext.equals("pdf")) {
+                    textType = "3";
+                }
+            }
+        } catch (Exception e) {
+            // TODO: handle exception
+            LOGGER.error("获取正文类型失败！ ", e);
+        }
+        return textType;
+    }
+
+    public void handleDoc(DocReceive docReceive) {
+        // 接口地址
+        String url = HttpUtil.GET_RECEIVEDOCHANDEL_PATH;
+        // 获取当前用户对象ID
+        String userId = UserUtils.getUser().getId();
+        try {
+            // 生成token
+            String tokenStr = TokenHandler.makeToken(userId, TokenInfoInit.getSecretKey());
+        
+            Map<String, String> map = new HashMap<String, String>();
+            map.put("apiToken", tokenStr);// 必选参数
+            map.put("id", docReceive.getId());// 必选参数 公文id
+            map.put("handle_type", docReceive.getHandleType());// 必选参数 办理类型
+            // 1：待办；2：签收；3：拒收；4:归档
+            map.put("handle_advice", docReceive.getHandleAdvice());// 可选参数 办理意见
+            map.put("old_handle_type", docReceive.getSrcHandleType());// 必选参数
+            // 原办理状态
+            map.put("loginName", UserUtils.getUser().getLoginName());// 必选参数 登录名
+        
+            String result = HttpUtil.posturlActity(url, map);
+            if (StringUtils.isNotBlank(result)) {
+                RequestStatus ret = (RequestStatus) JsonMapper.fromJsonString(result, RequestStatus.class);
+                if (ret.getStatus() != 0) {
+                    ErrorException err = new ErrorException();
+                    err.setErrorMsg(ret.getMsg());
+                    throw err;
+                }
+            }
+        }catch (ErrorException e) {
+            ErrorException err = new ErrorException();
+            err.setErrorMsg(e.getErrorMsg());
+            throw err;
+        } catch (Exception e) {
+            ErrorException err = new ErrorException();
+            err.setErrorMsg("操作失败，请重试。");
+            throw err;
+        }
+    }
 }

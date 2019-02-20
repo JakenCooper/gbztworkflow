@@ -58,7 +58,7 @@ function addColumnName() {
             $.each(data, function (index) {
                 /* if(oNode == null) {*/
                 var text = data[index].columnName;
-                $("#name").append("<option value='"+text+"'>"+text+"</option>");
+                $("#name").append("<option value='"+text+"'>"+text.replace('_timestamp','')+"</option>");
                 /*  }else{
                       var namereal = oNode.getAttribute('name');
                       
@@ -245,6 +245,18 @@ window.onload = function() {
     getCurrentflowid();
     addColumnName();
 };
+function orgtypeChange() {
+    if ($('#orgtype').val() == 'date'){ // 时间选择框只能选择用户新增的时间类型字段
+        $("#name").children().each(function (i, e) {
+            if ($(e).val().indexOf('_timestamp') < 0) {
+                $(e).remove();
+            }
+        });
+    } else {
+        $("#name").children().remove();
+        addColumnName();
+    }
+}
 dialog.oncancel = function () {
     if( UE.plugins[thePlugins].editdom ) {
         delete UE.plugins[thePlugins].editdom;
@@ -450,7 +462,7 @@ dialog.onok = function (){
     </tr>
     <tr>
         <td>
-             <select id="orgtype">
+             <select onchange="orgtypeChange()" id="orgtype">
                 <option value="text">普通文本</option>
                 <option value="date">时间选择框</option>
                  <option value="userTree">人员树</option>
@@ -466,15 +478,15 @@ dialog.onok = function (){
     </tr>
 
    <tr >
-        <th><span>&nbsp;&nbsp;&nbsp;&nbsp;宽&nbsp;&nbsp;X&nbsp;&nbsp;长&nbsp;&nbsp;&nbsp;&&nbsp;&nbsp;&nbsp;字体大小</span> </th>
+        <th><span>&nbsp;&nbsp;&nbsp;&nbsp;宽&nbsp;&nbsp;X&nbsp;&nbsp;高&nbsp;&nbsp;&nbsp;&&nbsp;&nbsp;&nbsp;字体大小</span> </th>
         <th><span>可见性</span> </th>
     </tr>
     <tr >
         <td>
-            <input id="orgwidth" type="text" value="85" class="input-small span1" placeholder="auto"/>
-            X
-            <input id="orgheight" type="text" value="" class="input-small span1" placeholder="auto"/>
-            &
+            <input id="orgwidth" type="text" value="99.6" class="input-small span1" placeholder="auto"/>
+            %
+            <input id="orgheight" type="text" value="28" class="input-small span1" placeholder="auto"/>
+            px
             <input id="orgfontsize" type="text"  value="" class="input-small span1" placeholder="auto"/> px
 
         </td>

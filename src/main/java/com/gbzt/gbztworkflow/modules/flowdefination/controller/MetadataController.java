@@ -35,6 +35,7 @@ public class MetadataController extends BaseController {
         metadata.setBussDbUserName(AppConst.METADATA_DEFAULT_USERNAME);
         metadata.setBussDbUserPwd(AppConst.METADATA_DEFAULT_USERPWD);
         metadata.setBussModelPath(AppConst.METADATA_DEFAULT_MODULEPATH);
+
         return buildResp(200,metadata);
     }
 

@@ -20,6 +20,7 @@ import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.EngineBaseExecu
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.base.IEngineArg;
 import com.gbzt.gbztworkflow.modules.workflowengine.runtime.entity.EngineTask;
 import com.gbzt.gbztworkflow.utils.CommonUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import redis.clients.jedis.Jedis;
 
@@ -125,6 +126,11 @@ public class FinishTask extends EngineBaseExecutor {
                 if(isNotBlank(solidUser)){
                     nextArg.execution.assignUser = solidUser;
                 }
+                if(nextLine != null && "multi".equals(nextLine.getFinishType()) && isBlank(execution.getAssignUserList())){
+                    nextArg.execution.assignUserList = new ArrayList<String>();
+                    nextArg.execution.assignUserList.add(nextArg.execution.assignUser);
+                }
+
                 EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(CreateTask.class,nextArg,null);
                 try {
                     List<String> resultList = EngineManager.execute(engineTask);
@@ -176,6 +182,11 @@ public class FinishTask extends EngineBaseExecutor {
                 nextArg.lineInst = nextLine;
                 nextArg.execution.assignUser = thisNode.getAssignUser();
                 nextArg.execution.assignUserList = null;
+                // add by zhangys @20190214
+                nextArg.updateToFinishTaskTag = false;
+                if(StringUtils.isBlank(nextArg.execution.assignUser) && StringUtils.isNotBlank(solidUser)){
+                    nextArg.execution.assignUser = solidUser;
+                }
 
                 EngineTask  engineTask = EngineTaskTemplateFactory.buildEngineTask(CreateTask.class,nextArg,null);
                 try {
@@ -233,6 +244,8 @@ public class FinishTask extends EngineBaseExecutor {
                 } catch (Exception e) {
                     throw e;
                 }
+            }else{
+                task.setExecutedResult(new ArrayList<String>());
             }
         }
         return null;

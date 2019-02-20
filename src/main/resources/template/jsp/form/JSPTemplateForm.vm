@@ -5,8 +5,9 @@
 	<title>${map.title}</title>
     <meta name="decorator" content="default"/>
     <%@ include file="/WEB-INF/views/include/treeview.jsp" %>
-    <%@ include file="/WEB-INF/views/include/fileupload.jsp"%>
+    <%--<%@ include file="/WEB-INF/views/include/fileupload.jsp"%>--%>
     <%@ include file="/WEB-INF/views/include/selectNext.jsp" %>
+    <%@ include file="/WEB-INF/views/include/plupload.jsp" %>
     <script src="${pageContext.request.contextPath}/static/custom/textEditor.js" type="text/javascript"></script>
     <script src="${pageContext.request.contextPath}/static/commonUtils.js" type="text/javascript"></script>
     <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/static/css/commonstyle.css">
@@ -15,6 +16,28 @@
     <script src="${ctxStatic}/My97DatePicker/WdatePicker.js" type="text/javascript"></script>
     <script type="text/javascript">
         $(function () {
+            var affair = $("#affair").val();
+            var  iscollect = $('#iscollect').val();
+            if("yes"==affair ||"yes"==iscollect){
+                $(".halfsave").hide();
+                $(".takeback").hide();
+            }
+            // 为每一个textarea绑定事件使其高度自适应
+            $.each($("textarea"), function(i, n){
+                autoTextarea($(n)[0]);
+            });
+            //设置td内容水平上下居中
+            $.each($("td"), function(i, n){
+                $(n).removeAttr("valign");
+                $(n).removeAttr("align");
+                $(n).attr("valign","middle");
+                $(n).attr("align","center");
+            });
+            //设置文件高度和左对齐
+            $(".fileList").parent().attr("align","left").attr("height","30px")
+            //设置select 高度
+            $(".select2-container").parent().parent().attr("height","30px");
+            $(".input-append").css("width","100%");
             
             $("#inputForm").validate({
                 errorPlacement: function(error, element) {
@@ -37,10 +60,10 @@
             // 根据流程加载tree数据
             selectNextPersonAudit();
 
-
+            styleControl();
             cleanBlankP();
             /***start*************************初始化附件上传插件**************************start***/
-            initWebUploader();
+            uploader = uploaderInit("attrBrowse");
             /***end***************************初始化附件上传插件****************************end***/
             // setTitleWidth("fileTitle", "mainView");
             //提交表单方式
@@ -61,7 +84,8 @@
         // 1.提交表单
         function submitForm(flagTrans) {
             /***start***********************check是否有正在上传的附件**********************start***/
-            if(attsUploading()){
+            if(!isUploaded(uploader)){
+                showTip("文件正在上传中，请稍后...", "info");
                 return;
             }
             /***end*************************check是否有正在上传的附件************************end***/
@@ -76,7 +100,7 @@
         // 2.check参数
         function cheackForm(flagTrans) {
             var title = $("[name='title']").val();
-            if(title.length ==0){
+            if(undefined === title || title.length ==0){
                 alertx("请输入发文标题");
                 return false;
             }
@@ -88,7 +112,12 @@
             $('#flagTrans').val(flagTrans);
             var action="${ctx}/${package}/${entityName}/save";
             // in textEditor.js ，保存正文
-            submitType(flagTrans, 'cacheAddr', 'textContent', 'textType', action);
+            var isTemporarySave = $('#isTemporarySave').val();
+            if (isTemporarySave == 'true'){ // 暂存不进行人员选择校验
+                submitType('draft', 'cacheAddr', 'textContent', 'textType', action);
+            }else {
+                submitType(flagTrans, 'cacheAddr', 'textContent', 'textType', action);
+            }
         }
 
         // 3.选择下一步
@@ -98,6 +127,7 @@
 
             //不进行指派人员是否选择的校验
             if(flagTrans == "draft" || flagTrans == "update"){
+                setNextStep(nextStep, "");
                 submitReal(flagTrans,action);
             }else{
                 var nextName = $("#userfulWord option:selected").text();
@@ -148,7 +178,8 @@
         }
         function cleanBlankP() { // 清除空P
             $('#mainView p').each(function(index,ele){
-                if($(ele).html()==='<br>' || $(ele).html()=='&nbsp; &nbsp;' || $(ele).html()=='   '){
+                var data = $(ele).html().replace(/&nbsp;/ig, "").replace(/<br>/ig, "").replace(/\s+/g,""); // 先去&nbsp; 再去<br>,最后去空格,若为空则删除
+                if(data == null || data == ''){
                     $(ele).remove();
                 }
             });
@@ -157,6 +188,18 @@
         function temporarySave(yes){
             $('#isTemporarySave').val('true');
             submitForm(yes);
+        }
+        
+        // 控制样式
+        function styleControl(){
+            // 去除bootstrap table :max-width 属性
+            var tableWidth = parseInt($('div#containerDIV div#mainView table').css('width'));
+            var containerDIVWidth = 80;
+            containerDIVWidth = tableWidth+225;
+            $('div#containerDIV').css('width',containerDIVWidth+'px');
+            var bodyWidth = parseInt($('body').width());
+            var leftWidth = (bodyWidth-containerDIVWidth)/2;
+            $('div#containerDIV').css('left',leftWidth+'px');
         }
     </script>
     <script type="text/javascript">
@@ -222,7 +265,8 @@
         //打印
         function download(){
             /***start***********************check是否有正在上传的附件**********************start***/
-            if(attsUploading()){
+            if(!isUploaded(uploader)){
+                showTip("文件正在上传中，请稍后...", "info");
                 return;
             }
             /***end*************************check是否有正在上传的附件************************end***/
@@ -302,6 +346,17 @@
         #containerDIV #mainView #inputForm table tr td input,#containerDIV #mainView #inputForm table tr td textarea{
             padding: 0px;
         }
+
+        table {
+            max-width: 999999px;
+        }
+        #treeSelectName{
+            height: 28px;
+            margin-right:-35px;
+        }
+        .select2-container{
+            width: 99.6%!important;
+        }
     </style>
 </head>
 <body>
@@ -317,92 +372,96 @@
 	</div>
 </ul>
 
-<div id="newButtonDiv" style="width:811px;margin:0 auto;height:30px;">
-    <%--暂存 编辑正文 返回 流转历史--%>
-    <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="返  回" onclick="refreshList()"/>&nbsp;
-    <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="暂  存" onclick="temporarySave('yes')"/>&nbsp;
-        <c:if test="${empty} ${entityName}.textType}">
-            <div class="dropdown" style="float: right;margin-left: 10px;">
-                <button type="button" class="btn" id="dropdownMenu1" style="background: #25669A; color: white;"
-                        data-toggle="dropdown">
-                    编辑正文 <span class="caret"></span>
-                </button>
-                <ul class="dropdown-menu" role="menu"
-                    aria-labelledby="dropdownMenu1">
-                    <li role="presentation"><a id="openDoc" role="menuitem"
-                                               tabindex="-1" href="#" onclick="operDoc(0,1,'textAddr','cacheAddr','textContent','${ctx}','${pageContext.request.contextPath}',DocStorePath)">打开word</a></li>
-                        <%--<li role="presentation"><a id="openExcel" role="menuitem"--%>
-                        <%--tabindex="-1" href="#" onclick="operDoc(1,1,'textAddr','cacheAddr','textContent','${ctx}','${pageContext.request.contextPath}',DocStorePath)">打开excel</a></li>--%>
-                        <%--<li role="presentation"><a id="openEdit" role="menuitem"--%>
-                        <%--tabindex="-1" href="#" onclick="operDoc(2,1,'textAddr','cacheAddr','textContent','${ctx}','${pageContext.request.contextPath}',DocStorePath)">打开富文本</a></li>--%>
-                </ul>
-            </div>
+
+<div id="containerDIV" style="position:absolute;top:11%;">
+    <div id="newButtonDiv" style="height:30px;margin-right:5px;">
+        <%--暂存 编辑正文 返回 流转历史--%>
+        <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="返  回" onclick="refreshList()"/>&nbsp;
+        <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="暂  存" onclick="temporarySave('yes')"/>&nbsp;
+            <c:if test="${empty} ${entityName}.textType}">
+                <div class="dropdown" style="float: right;margin-left: 10px;">
+                    <button type="button" class="btn" id="dropdownMenu1" style="background: #25669A; color: white;"
+                            data-toggle="dropdown">
+                        编辑正文 <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" role="menu"
+                        aria-labelledby="dropdownMenu1">
+                        <li role="presentation"><a id="openDoc" role="menuitem"
+                                                   tabindex="-1" href="#" onclick="operDoc(0,1,'textAddr','cacheAddr','textContent','${ctx}','${pageContext.request.contextPath}',DocStorePath)">打开word</a></li>
+                            <%--<li role="presentation"><a id="openExcel" role="menuitem"--%>
+                            <%--tabindex="-1" href="#" onclick="operDoc(1,1,'textAddr','cacheAddr','textContent','${ctx}','${pageContext.request.contextPath}',DocStorePath)">打开excel</a></li>--%>
+                            <%--<li role="presentation"><a id="openEdit" role="menuitem"--%>
+                            <%--tabindex="-1" href="#" onclick="operDoc(2,1,'textAddr','cacheAddr','textContent','${ctx}','${pageContext.request.contextPath}',DocStorePath)">打开富文本</a></li>--%>
+                    </ul>
+                </div>
+            </c:if>
+    
+            <c:if test="${notEmpty} ${entityName}.textType}">
+                <input id="assignButton" class="btn" type="button" value="查看正文" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;"
+                       onclick="seeDoc($('#textType').val(),3,'textAddr','','textContent','${ctx}','${pageContext.request.contextPath}',DocStorePath)"/>&nbsp;
+            </c:if>
+        <c:if test="${notEmpty} ${entityName}.procInsId}">
+            <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="监  控" onclick="history('${${entityName}.act.procInsId}');"/>&nbsp;
         </c:if>
-
-        <c:if test="${notEmpty} ${entityName}.textType}">
-            <input id="assignButton" class="btn" type="button" value="查看正文" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;"
-                   onclick="seeDoc($('#textType').val(),3,'textAddr','','textContent','${ctx}','${pageContext.request.contextPath}',DocStorePath)"/>&nbsp;
-        </c:if>    
-	<input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="监  控" onclick="history('${${entityName}.act.procInsId}');"/>&nbsp;
-    <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="发  送" onclick="submitForm('yes')"/>&nbsp;
-</div>
-<div id="containerDIV" style="margin: 0 auto;width: 773px">
-    <div id="mainView" style="height:auto;float: left;width: 570px;margin-top: 10px;">
-	<form:form id="inputForm" modelAttribute="${map.entityName}" name="form"
-			   action="${ctx}/${map.package}/${map.entityName}/" method="post"
-			   class="form-horizontal" enctype="multipart/form-data">
-
-        <form:hidden path="id" />
-        <form:hidden path="act.taskId" />
-        <form:hidden path="act.taskName" />
-        <form:hidden path="act.taskDefKey" />
-        <form:hidden path="act.procInsId" />
-        <form:hidden path="act.procDefId" />
-        <form:hidden path="act.procDefKey" />
-        <form:hidden id="flagTrans" path="act.flagTrans" />
-        <sys:message content="${message}" />
-
-        <input type="hidden" id="cacheAddr"/><!-- 历史缓存地址 -->
-        <input type="hidden" id="cacheAddrDoc"/><!-- word历史缓存地址 -->
-        <input type="hidden" id="cacheAddrExcel"/><!-- Excel历史缓存地址 -->
-        <input type="hidden" id="cacheRealAddrDoc"/><!-- word历史缓存实际地址 -->
-        <input type="hidden" id="cacheRealAddrExcel"/><!-- Excel历史缓存实际地址 -->
-        <input type="hidden" id="cacheTypeDoc"/><!-- word历史缓存文件类型 -->
-        <input type="hidden" id="cacheTypeExcel"/><!-- Excel历史缓存文件类型 -->
-        <input type="hidden" id="cacheCountDoc"/><!-- doc历史缓存字数 -->
-
-
-        <form:hidden id="textAddr" path="textAddr" htmlEscape="false"/>
-        <form:hidden id="textType" path="textType" htmlEscape="false"/>
-        <form:hidden id="textContent" path="textContent" htmlEscape="false"/>
-        <form:hidden id="textRealurl" path="textRealurl" htmlEscape="false"/>
-        <form:hidden id="wordsCount" path="wordsCount" htmlEscape="false"/>
-
-        <input type="hidden" id="fileJsonInfo" name="fileJsonInfo"/><!-- 上传返回结果 -->
-        <input type="hidden" id="isTemporarySave" value="false" name="isTemporarySave"/><!-- 是否暂存 -->
-        <input type="hidden" id="flowDefId" value="${flowDefId}" name="flowDefId"/><!-- 流程id -->
-
-        <!-- 查询条件 -->
-        <input name="procDefKey_s" type="hidden" value="${procDefKey_s}"/>
-        <input name="secretType_s" type="hidden" value="${secretType_s}"/>
-        <input name="beginDate_s" type="hidden" value="${beginDate_s}"/>
-        <input name="endDate_s" type="hidden" value="${endDate_s}"/>
-        <input name="pageNo_s" type="hidden" value="${pageNo_s}"/>
-        <input name="pageSize_s" type="hidden" value="${pageSize_s}"/>
-        <input name="title_s" type="hidden" value="${title_s}"/>
-        <input name="referenceNum_s" type="hidden" value="${referenceNum_s}"/>
-        <input name="isDoData_s" type="hidden" value="${isDoData_s}"/>
-        <input name="uuid" id="uuid" type="hidden" value="${uuid}"/>
-        <!-- 下一步骤 -->
-        <form:input type="hidden" id="nextStep" path="act.flag" value=""/>
-        <!-- 下一步负责人 -->
-        <form:input type="hidden" id="assignee" path="act.assignee" value=""/>
-
-        <div>${map.form}</div>
-	</form:form>
-</div>
-	<!--右侧发送区域  -->
-	<div id="fasongPanel" style="float: left;height:200px;width:200px;margin-top: 10px;">
+        <input id="btnSubmit" style="width:80px;background: #25669A; color: white;float: right;margin-left: 10px;" class="btn" type="button" value="发  送" onclick="submitForm('yes')"/>&nbsp;
+    </div>
+    <div style="clear:both;">
+        <div id="mainView" style="height:auto;float: left;margin-top: 10px;">
+        <form:form id="inputForm" modelAttribute="${map.entityName}" name="form"
+                   action="${ctx}/${map.package}/${map.entityName}/" method="post"
+                   class="form-horizontal" enctype="multipart/form-data">
+    
+            <form:hidden path="id" />
+            <form:hidden path="act.taskId" />
+            <form:hidden path="act.taskName" />
+            <form:hidden path="act.taskDefKey" />
+            <form:hidden path="act.procInsId" />
+            <form:hidden path="act.procDefId" />
+            <form:hidden path="act.procDefKey" />
+            <form:hidden id="flagTrans" path="act.flagTrans" />
+            <sys:message content="${message}" />
+    
+            <input type="hidden" id="cacheAddr"/><!-- 历史缓存地址 -->
+            <input type="hidden" id="cacheAddrDoc"/><!-- word历史缓存地址 -->
+            <input type="hidden" id="cacheAddrExcel"/><!-- Excel历史缓存地址 -->
+            <input type="hidden" id="cacheRealAddrDoc"/><!-- word历史缓存实际地址 -->
+            <input type="hidden" id="cacheRealAddrExcel"/><!-- Excel历史缓存实际地址 -->
+            <input type="hidden" id="cacheTypeDoc"/><!-- word历史缓存文件类型 -->
+            <input type="hidden" id="cacheTypeExcel"/><!-- Excel历史缓存文件类型 -->
+            <input type="hidden" id="cacheCountDoc"/><!-- doc历史缓存字数 -->
+    
+    
+            <form:hidden id="textAddr" path="textAddr" htmlEscape="false"/>
+            <form:hidden id="textType" path="textType" htmlEscape="false"/>
+            <form:hidden id="textContent" path="textContent" htmlEscape="false"/>
+            <form:hidden id="textRealurl" path="textRealurl" htmlEscape="false"/>
+            <form:hidden id="wordsCount" path="wordsCount" htmlEscape="false"/>
+    
+            <input type="hidden" id="fileJsonInfo" name="fileJsonInfo"/><!-- 上传返回结果 -->
+            <input type="hidden" id="isTemporarySave" value="false" name="isTemporarySave"/><!-- 是否暂存 -->
+            <input type="hidden" id="flowDefId" value="${flowDefId}" name="flowDefId"/><!-- 流程id -->
+    
+            <!-- 查询条件 -->
+            <input name="procDefKey_s" type="hidden" value="${procDefKey_s}"/>
+            <input name="secretType_s" type="hidden" value="${secretType_s}"/>
+            <input name="beginDate_s" type="hidden" value="${beginDate_s}"/>
+            <input name="endDate_s" type="hidden" value="${endDate_s}"/>
+            <input name="pageNo_s" type="hidden" value="${pageNo_s}"/>
+            <input name="pageSize_s" type="hidden" value="${pageSize_s}"/>
+            <input name="title_s" type="hidden" value="${title_s}"/>
+            <input name="referenceNum_s" type="hidden" value="${referenceNum_s}"/>
+            <input name="isDoData_s" type="hidden" value="${isDoData_s}"/>
+            <input name="uuid" id="uuid" type="hidden" value="${uuid}"/>
+            <!-- 下一步骤 -->
+            <form:input type="hidden" id="nextStep" path="act.flag" value=""/>
+            <!-- 下一步负责人 -->
+            <form:input type="hidden" id="assignee" path="act.assignee" value=""/>
+    
+            <div>${map.form}</div>
+        </form:form>
+    </div>
+        <!--右侧发送区域  -->
+        <div id="fasongPanel" style="float: left;height:200px;width:200px;margin-top: 10px;">
 		<table class="table table-bordered table-condensed">
             <tr>
                 <td style="text-align: center; vertical-align: middle;">
@@ -423,11 +482,12 @@
             </tr>
 			<tr>
 				<td>
-                    <div id="tree" class="ztree" style="height: 200px;overflow:auto;"></div>
+                    <div id="tree" class="ztree" style="height: 200px;max-width:184px;overflow:auto;"></div>
 				</td>
 			</tr>
 		</table>
 	</div>
+    </div>
 </div>
     <div class="modal fade" id="myModal" style="top:10%;display:none;width:700px;position:fixed;left:40%;" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-dialog">
